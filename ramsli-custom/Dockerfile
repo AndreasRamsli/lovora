@@ -17,4 +17,4 @@ RUN mkdir -p /var/log/supervisor && chmod 755 /var/log/supervisor
 
 EXPOSE 3001
 
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
+ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
