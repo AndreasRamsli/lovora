@@ -1,0 +1,5 @@
+ramsli.tech {
+    reverse_proxy localhost:3001
+    header_up X-Forwarded-For {remote_host}
+    # Clerk will add X-User-Email header here later
+}
