@@ -3,8 +3,6 @@ name: Build & Push Lovora Image
 on:
   push:
     branches: [master]
-    paths:
-      - 'ramsli-custom/**'
 
 jobs:
   build:
