@@ -12,7 +12,8 @@ RUN curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/c
 # Copy supervisor config
 COPY supervisord.conf /etc/supervisor/conf.d/lovora.conf
 
-USER anythingllm
+# Create log dir and set permissions
+RUN mkdir -p /var/log/supervisor && chmod 755 /var/log/supervisor
 
 EXPOSE 3001
 
