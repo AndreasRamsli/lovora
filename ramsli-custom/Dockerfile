@@ -9,12 +9,14 @@ RUN apt-get update && apt-get install -y supervisor curl && rm -rf /var/lib/apt/
 RUN curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
     -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
 
-# Copy supervisor config
+# Copy supervisor config and entrypoint
 COPY supervisord.conf /etc/supervisor/conf.d/lovora.conf
+COPY entrypoint.sh /usr/local/bin/lovora-entrypoint.sh
 
 # Create log dir and set permissions
-RUN mkdir -p /var/log/supervisor && chmod 755 /var/log/supervisor
+RUN mkdir -p /var/log/supervisor && chmod 755 /var/log/supervisor && \
+    chmod +x /usr/local/bin/lovora-entrypoint.sh
 
 EXPOSE 3001
 
-ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
+ENTRYPOINT ["/usr/local/bin/lovora-entrypoint.sh"]
