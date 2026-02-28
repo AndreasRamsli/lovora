@@ -47,7 +47,7 @@ export default function OnboardingHome() {
             </p>
             <img
               src={AnythingLLMLogo}
-              alt="AnythingLLM"
+              alt="Lovora"
               className="md:h-[50px] flex-shrink-0 max-w-[300px] light:invert"
             />
             <button
