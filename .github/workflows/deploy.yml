@@ -26,5 +26,4 @@ jobs:
           file: ./ramsli-custom/Dockerfile
           push: true
           tags: andreasramsli/lovora:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          no-cache: true
