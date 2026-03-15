@@ -149,7 +149,7 @@ export const ThoughtChainComponent = forwardRef(
                 transition: "all 0.1s ease-in-out",
                 borderRadius: "16px",
               }}
-              className="relative bg-zinc-800 light:bg-slate-100 p-4"
+              className="relative bg-zinc-900 light:bg-slate-100 p-4"
             >
               <div className="absolute top-4 left-4 w-[18px] h-[18px]">
                 {isThinking || isComplete ? (

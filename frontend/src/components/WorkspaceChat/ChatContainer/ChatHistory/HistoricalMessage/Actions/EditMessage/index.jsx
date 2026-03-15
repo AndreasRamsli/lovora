@@ -118,7 +118,7 @@ export function EditMessageForm({
           ref={formRef}
           name="editedMessage"
           spellCheck={Appearance.get("enableSpellCheck")}
-          className="text-white light:text-slate-900 w-full rounded-2xl bg-zinc-800 light:bg-slate-100 border border-sky-300 focus:border-sky-300 active:outline-none focus:outline-none focus:ring-0 px-4 py-3 resize-none overflow-hidden"
+          className="text-white light:text-slate-900 w-full rounded-2xl bg-zinc-900 light:bg-slate-100 border border-sky-300 focus:border-sky-300 active:outline-none focus:outline-none focus:ring-0 px-4 py-3 resize-none overflow-hidden"
           defaultValue={message}
           onChange={adjustTextArea}
         />
@@ -140,7 +140,7 @@ export function EditMessageForm({
         ref={formRef}
         name="editedMessage"
         spellCheck={Appearance.get("enableSpellCheck")}
-        className="text-white light:text-slate-900 w-full rounded-2xl bg-zinc-800 light:bg-slate-100 border border-sky-300 focus:border-sky-300 active:outline-none focus:outline-none focus:ring-0 px-4 py-3 resize-none overflow-hidden"
+        className="text-white light:text-slate-900 w-full rounded-2xl bg-zinc-900 light:bg-slate-100 border border-sky-300 focus:border-sky-300 active:outline-none focus:outline-none focus:ring-0 px-4 py-3 resize-none overflow-hidden"
         defaultValue={message}
         onChange={adjustTextArea}
       />
@@ -152,7 +152,7 @@ export function EditMessageForm({
 function EditActionBar({ onCancel, onSave, isUserMessage = false }) {
   const { t } = useTranslation();
   return (
-    <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2 bg-zinc-800 light:bg-divine-pleasure rounded-lg p-2">
+    <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2 bg-zinc-900 light:bg-divine-pleasure rounded-lg p-2">
       <div className="flex items-start gap-2">
         <Info
           size={12}
