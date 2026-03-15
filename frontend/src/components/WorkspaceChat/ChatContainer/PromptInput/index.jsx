@@ -17,10 +17,7 @@ import Appearance from "@/models/appearance";
 import usePromptInputStorage from "@/hooks/usePromptInputStorage";
 import ToolsMenu, { TOOLS_MENU_KEYBOARD_EVENT } from "./ToolsMenu";
 import { useSearchParams } from "react-router-dom";
-<<<<<<< HEAD
-=======
 import { useIsAgentSessionActive } from "@/utils/chat/agent";
->>>>>>> upstream/master
 
 export const PROMPT_INPUT_ID = "primary-prompt-input";
 export const PROMPT_INPUT_EVENT = "set_prompt_input";
@@ -49,10 +46,7 @@ export default function PromptInput({
   const agentSessionActive = useIsAgentSessionActive();
   const [promptInput, setPromptInput] = useState("");
   const [showTools, setShowTools] = useState(false);
-<<<<<<< HEAD
-=======
   const autoOpenedToolsRef = useRef(false);
->>>>>>> upstream/master
   const toolsHighlightRef = useRef(-1);
   const formRef = useRef(null);
   const textareaRef = useRef(null);
@@ -122,10 +116,7 @@ export default function PromptInput({
   const debouncedSaveState = debounce(saveCurrentState, 250);
 
   function handleSubmit(e) {
-<<<<<<< HEAD
-=======
     // Ignore submits from portaled modals (slash command preset forms)
->>>>>>> upstream/master
     if (e.target !== e.currentTarget) return;
     setFocused(false);
     setShowTools(false);
@@ -156,11 +147,8 @@ export default function PromptInput({
         );
         return;
       }
-<<<<<<< HEAD
-=======
       // When an item is highlighted via arrow keys, Enter selects it.
       // Otherwise, Enter falls through to submit the form normally.
->>>>>>> upstream/master
       if (event.key === "Enter" && toolsHighlightRef.current >= 0) {
         event.preventDefault();
         window.dispatchEvent(
@@ -185,14 +173,10 @@ export default function PromptInput({
       !event.metaKey &&
       promptInput.trim() === ""
     ) {
-<<<<<<< HEAD
-      setShowTools((prev) => !prev);
-=======
       setShowTools((prev) => {
         autoOpenedToolsRef.current = !prev;
         return !prev;
       });
->>>>>>> upstream/master
       return;
     }
 
@@ -377,36 +361,6 @@ export default function PromptInput({
                 />
               </div>
               <div className="flex justify-between items-center pt-3.5 pb-3">
-<<<<<<< HEAD
-                <div className="flex gap-x-0.5 items-center">
-                  <AttachItem
-                    workspaceSlug={workspaceSlug}
-                    workspaceThreadSlug={threadSlug}
-                  />
-                  <button
-                    id="tools-btn"
-                    type="button"
-                    onClick={() => {
-                      setShowTools(!showTools);
-                      textareaRef.current?.focus();
-                    }}
-                    className={`group border-none cursor-pointer flex items-center justify-center h-8 px-3 rounded-full ${
-                      showTools
-                        ? "bg-zinc-700 light:bg-divine-pleasure"
-                        : "hover:bg-zinc-700 light:hover:bg-divine-pleasure"
-                    }`}
-                  >
-                    <span
-                      className={`text-sm font-medium ${
-                        showTools
-                          ? "text-white light:text-infinite-night"
-                          : "text-doctor/75 light:text-infinite-night/55 group-hover:text-white light:group-hover:text-slate-800"
-                      }`}
-                    >
-                      {t("chat_window.tools")}
-                    </span>
-                  </button>
-=======
                 <div className="flex items-center gap-x-0.25">
                   <div className="flex items-center gap-x-1">
                     <AttachItem
@@ -426,52 +380,17 @@ export default function PromptInput({
                     textareaRef={textareaRef}
                     autoOpenedToolsRef={autoOpenedToolsRef}
                   />
->>>>>>> upstream/master
                 </div>
                 <div className="flex gap-x-2 items-center">
                   <SpeechToText sendCommand={sendCommand} />
                   {isStreaming ? (
                     <StopGenerationButton />
                   ) : (
-<<<<<<< HEAD
-                    <>
-                      <button
-                        ref={formRef}
-                        type="submit"
-                        disabled={isDisabled || !promptInput.trim().length}
-                        className={`border-none flex justify-center items-center rounded-full w-8 h-8 transition-all ${
-                          promptInput.trim().length && !isDisabled
-                            ? "cursor-pointer bg-white hover:bg-zinc-200 light:bg-slate-800 light:hover:bg-slate-600"
-                            : "cursor-not-allowed bg-zinc-600 light:bg-slate-400"
-                        }`}
-                        data-tooltip-id="send-prompt"
-                        data-tooltip-content={
-                          isDisabled
-                            ? t("chat_window.attachments_processing")
-                            : t("chat_window.send")
-                        }
-                        aria-label={t("chat_window.send")}
-                      >
-                        <ArrowUp
-                          className="w-[18px] h-[18px] pointer-events-none text-zinc-800 light:text-white"
-                          weight="bold"
-                        />
-                        <span className="sr-only">Send message</span>
-                      </button>
-                      <Tooltip
-                        id="send-prompt"
-                        place="bottom"
-                        delayShow={300}
-                        className="tooltip !text-xs z-99"
-                      />
-                    </>
-=======
                     <SendPromptButton
                       formRef={formRef}
                       promptInput={promptInput}
                       isDisabled={isDisabled}
                     />
->>>>>>> upstream/master
                   )}
                 </div>
               </div>
