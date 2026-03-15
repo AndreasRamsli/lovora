@@ -3,11 +3,11 @@ import LGroupImg from "./l_group.png";
 import RGroupImg from "./r_group.png";
 import LGroupImgLight from "./l_group-light.png";
 import RGroupImgLight from "./r_group-light.png";
-import AnythingLLMLogo from "@/media/logo/anything-llm.png";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "@/hooks/useTheme";
+import { useThemeContext } from "@/ThemeContext";
 import { useTranslation } from "react-i18next";
 import useRedirectToHomeOnOnboardingComplete from "@/hooks/useOnboardingComplete";
+import useLogo from "@/hooks/useLogo";
 
 const IMG_SRCSET = {
   light: {
@@ -23,9 +23,10 @@ const IMG_SRCSET = {
 export default function OnboardingHome() {
   const navigate = useNavigate();
   useRedirectToHomeOnOnboardingComplete();
-  const { theme } = useTheme();
+  const { resolvedTheme } = useThemeContext();
+  const { logo, isCustomLogo } = useLogo();
   const { t } = useTranslation();
-  const srcSet = IMG_SRCSET?.[theme] || IMG_SRCSET.default;
+  const srcSet = IMG_SRCSET?.[resolvedTheme] || IMG_SRCSET.default;
 
   return (
     <>
@@ -46,9 +47,11 @@ export default function OnboardingHome() {
               {t("onboarding.home.title")}
             </p>
             <img
-              src={AnythingLLMLogo}
+              src={logo}
               alt="Lovora"
-              className="md:h-[50px] flex-shrink-0 max-w-[300px] light:invert"
+              className={`flex-shrink-0 object-contain max-w-[300px] ${
+                isCustomLogo ? "max-h-[80px]" : "md:h-[58px]"
+              }`}
             />
             <button
               onClick={() => navigate(paths.onboarding.llmPreference())}

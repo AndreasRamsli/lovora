@@ -80,7 +80,7 @@ export default function DefaultChatContainer() {
           className={`mb-5 rounded-lg object-contain ${
             isCustomLogo
               ? "max-w-[320px] max-h-[120px] w-auto h-auto"
-              : "w-[200px] h-fit"
+              : "w-[240px] h-fit"
           }`}
         />
         <h1 className="text-white text-2xl font-semibold">

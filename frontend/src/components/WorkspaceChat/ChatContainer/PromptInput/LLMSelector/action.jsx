@@ -1,7 +1,7 @@
 import { Tooltip } from "react-tooltip";
 import { Brain, CheckCircle } from "@phosphor-icons/react";
 import LLMSelectorModal from "./index";
-import { useTheme } from "@/hooks/useTheme";
+import { useThemeContext } from "@/ThemeContext";
 import { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import useUser from "@/hooks/useUser";
@@ -16,7 +16,7 @@ export default function LLMSelectorAction({ workspaceSlug = null }) {
   const { slug: urlSlug } = useParams();
   const slug = urlSlug ?? workspaceSlug;
   const tooltipRef = useRef(null);
-  const { theme } = useTheme();
+  const { resolvedTheme } = useThemeContext();
   const { user } = useUser();
   const [saved, setSaved] = useState(false);
   const {
@@ -115,7 +115,7 @@ export default function LLMSelectorAction({ workspaceSlug = null }) {
         delayShow={300} // dont trigger tooltip instantly to not spam the UI
         delayHide={800} // Prevent the travel time from icon to window hiding tooltip
         arrowColor={
-          theme === "light"
+          resolvedTheme === "light"
             ? "var(--theme-modal-border)"
             : "var(--theme-bg-primary)"
         }

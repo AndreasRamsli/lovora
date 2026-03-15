@@ -60,7 +60,7 @@ export default function SettingsSidebar() {
               src={logo}
               alt="Logo"
               className={`block mx-auto w-auto object-contain ${
-                isCustomLogo ? "max-h-[44px] max-w-[180px]" : "h-6 max-h-[40px]"
+                isCustomLogo ? "max-h-[44px] max-w-[180px]" : "h-8 max-h-[48px]"
               }`}
             />
           </div>
@@ -94,7 +94,7 @@ export default function SettingsSidebar() {
                     className={`rounded w-auto object-contain ${
                       isCustomLogo
                         ? "max-h-[52px] max-w-[200px]"
-                        : "max-h-[40px]"
+                        : "max-h-[48px]"
                     }`}
                   />
                 </div>
@@ -151,7 +151,7 @@ export default function SettingsSidebar() {
             className={`rounded object-contain ${
               isCustomLogo
                 ? "max-h-[40px] max-w-[220px]"
-                : "max-h-[24px] max-w-[220px]"
+                : "max-h-[32px] max-w-[240px]"
             }`}
           />
         </Link>

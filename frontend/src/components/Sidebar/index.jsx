@@ -52,7 +52,7 @@ export default function Sidebar() {
                   className={`rounded object-contain transition-opacity duration-500 ${
                     isCustomLogo
                       ? "max-h-[40px] max-w-[220px]"
-                      : "max-h-[24px] max-w-[220px]"
+                      : "max-h-[32px] max-w-[240px]"
                   } ${showSidebar ? "opacity-100" : "opacity-0"}`}
                 />
               </Link>
@@ -128,7 +128,7 @@ export function SidebarMobileHeader() {
             src={logo}
             alt="Logo"
             className={`block mx-auto w-auto object-contain ${
-              isCustomLogo ? "max-h-[44px] max-w-[180px]" : "h-6 max-h-[40px]"
+              isCustomLogo ? "max-h-[44px] max-w-[180px]" : "h-8 max-h-[48px]"
             }`}
           />
         </div>
@@ -160,7 +160,7 @@ export function SidebarMobileHeader() {
                   src={logo}
                   alt="Logo"
                   className={`rounded w-auto object-contain ${
-                    isCustomLogo ? "max-h-[52px] max-w-[200px]" : "max-h-[40px]"
+                    isCustomLogo ? "max-h-[52px] max-w-[200px]" : "max-h-[48px]"
                   }`}
                 />
               </div>

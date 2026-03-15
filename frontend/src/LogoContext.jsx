@@ -2,22 +2,18 @@ import { createContext, useEffect, useState } from "react";
 import LogoLight from "./media/logo/lovora-light.svg";
 import LogoDark from "./media/logo/lovora-dark.svg";
 import System from "./models/system";
-
-export const REFETCH_LOGO_EVENT = "refetch-logo";
-
-function isLightMode() {
-  return document.documentElement.getAttribute("data-theme") === "light";
-}
+import { useThemeContext } from "./ThemeContext";
 export const LogoContext = createContext();
 
 export function LogoProvider({ children }) {
-  const [logo, setLogo] = useState("");
-  const [loginLogo, setLoginLogo] = useState("");
+  const { resolvedTheme = "dark" } = useThemeContext() ?? {};
+  const defaultLogo = resolvedTheme === "light" ? LogoLight : LogoDark;
+  const [logo, setLogo] = useState(defaultLogo);
+  const [loginLogo, setLoginLogo] = useState(defaultLogo);
   const [isCustomLogo, setIsCustomLogo] = useState(false);
 
   async function fetchInstanceLogo() {
-    const defaultLogo = isLightMode() ? LogoLight : LogoDark;
-    // Apply the theme-correct default immediately (no async wait)
+    // Apply the theme-correct default immediately while checking for a custom logo.
     setLogo(defaultLogo);
     setLoginLogo(defaultLogo);
     setIsCustomLogo(false);
@@ -34,12 +30,15 @@ export function LogoProvider({ children }) {
   }
 
   useEffect(() => {
+    if (!isCustomLogo) {
+      setLogo(defaultLogo);
+      setLoginLogo(defaultLogo);
+    }
+  }, [defaultLogo, isCustomLogo]);
+
+  useEffect(() => {
     fetchInstanceLogo();
-    window.addEventListener(REFETCH_LOGO_EVENT, fetchInstanceLogo);
-    return () => {
-      window.removeEventListener(REFETCH_LOGO_EVENT, fetchInstanceLogo);
-    };
-  }, []);
+  }, [defaultLogo]);
 
   return (
     <LogoContext.Provider value={{ logo, setLogo, loginLogo, isCustomLogo }}>

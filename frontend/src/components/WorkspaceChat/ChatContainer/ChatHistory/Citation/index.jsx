@@ -185,7 +185,6 @@ export function CitationDetailModal({
 }) {
   const { references, title } = source;
   const { isUrl, text: webpageUrl, href: linkTo } = parseChunkSource(source);
-  const { t } = useTranslation();
 
   return (
     <ModalWrapper isOpen={!!source}>

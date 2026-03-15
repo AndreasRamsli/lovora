@@ -1,4 +1,3 @@
-import { REFETCH_LOGO_EVENT } from "@/LogoContext";
 import { useState, useEffect } from "react";
 
 const availableThemes = {
@@ -40,7 +39,6 @@ export function useTheme() {
     document.documentElement.setAttribute("data-theme", resolvedTheme);
     document.body.classList.toggle("light", resolvedTheme === "light");
     localStorage.setItem("theme", theme);
-    window.dispatchEvent(new Event(REFETCH_LOGO_EVENT));
   }, [resolvedTheme, theme]);
 
   // In development, attach keybind combinations to toggle theme
@@ -65,5 +63,5 @@ export function useTheme() {
     _setTheme(newTheme);
   }
 
-  return { theme, setTheme, availableThemes };
+  return { theme, resolvedTheme, setTheme, availableThemes };
 }
