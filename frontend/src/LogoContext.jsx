@@ -17,21 +17,18 @@ export function LogoProvider({ children }) {
 
   async function fetchInstanceLogo() {
     const defaultLogo = isLightMode() ? LogoLight : LogoDark;
+    // Apply the theme-correct default immediately (no async wait)
+    setLogo(defaultLogo);
+    setLoginLogo(defaultLogo);
+    setIsCustomLogo(false);
     try {
       const { isCustomLogo, logoURL } = await System.fetchLogo();
-      if (logoURL) {
+      if (isCustomLogo && logoURL) {
         setLogo(logoURL);
-        setLoginLogo(isCustomLogo ? logoURL : defaultLogo);
-        setIsCustomLogo(isCustomLogo);
-      } else {
-        setLogo(defaultLogo);
-        setLoginLogo(defaultLogo);
-        setIsCustomLogo(false);
+        setLoginLogo(logoURL);
+        setIsCustomLogo(true);
       }
     } catch (err) {
-      setLogo(defaultLogo);
-      setLoginLogo(defaultLogo);
-      setIsCustomLogo(false);
       console.error("Failed to fetch logo:", err);
     }
   }
