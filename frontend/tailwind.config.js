@@ -115,6 +115,9 @@ export default {
           modal: {
             border: 'var(--theme-modal-border)',
           },
+          highlight: {
+            border: 'var(--theme-highlight-border)',
+          },
           "file-picker": {
             hover: 'var(--theme-file-picker-hover)',
           },

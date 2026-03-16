@@ -96,6 +96,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
       endSTTSession();
     }
     setChatHistory(prevChatHistory);
+    chatHistoryRef.current?.scrollToBottom();
     setMessageEmit("");
     setLoadingResponse(true);
   };
@@ -200,6 +201,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
     }
 
     setChatHistory(prevChatHistory);
+    chatHistoryRef.current?.scrollToBottom();
     setMessageEmit("");
     setLoadingResponse(true);
   };

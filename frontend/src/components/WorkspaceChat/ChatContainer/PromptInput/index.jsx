@@ -336,7 +336,7 @@ export default function PromptInput({
               centered={centered}
               highlightedIndexRef={toolsHighlightRef}
             />
-            <div className="bg-zinc-900 light:bg-white light:border light:border-slate-300 rounded-[20px] pwa:rounded-3xl flex flex-col px-5 overflow-hidden">
+            <div className="bg-theme-bg-chat-input border border-theme-chat-input-border light:bg-white light:border-slate-300 rounded-[20px] pwa:rounded-3xl flex flex-col px-5 overflow-hidden">
               <AttachmentManager attachments={attachments} />
               <div className="flex items-center">
                 <textarea
@@ -428,11 +428,11 @@ function AgentSessionButton({
         data-tooltip-id="agent-session"
         data-tooltip-content={t("chat_window.start_agent_session")}
         aria-label={t("chat_window.start_agent_session")}
-        className="group border-none relative flex justify-center items-center cursor-pointer w-6 h-6 rounded-full hover:bg-zinc-700 light:hover:bg-slate-200"
+        className="group border-none relative flex justify-center items-center cursor-pointer w-6 h-6 rounded-full hover:bg-theme-action-menu-item-hover light:hover:bg-slate-200"
       >
         <At
           size={18}
-          className="pointer-events-none text-zinc-300 light:text-slate-600 group-hover:text-white light:group-hover:text-slate-600 shrink-0"
+          className="pointer-events-none text-white/70 light:text-slate-600 group-hover:text-white light:group-hover:text-slate-600 shrink-0"
         />
       </button>
       <Tooltip
@@ -464,15 +464,15 @@ function ToolsButton({
       }}
       className={`group border-none cursor-pointer flex items-center justify-center h-6 px-2 rounded-full ${
         showTools
-          ? "bg-zinc-700 light:bg-slate-200"
-          : "hover:bg-zinc-700 light:hover:bg-slate-200"
+          ? "bg-theme-action-menu-item-hover light:bg-slate-200"
+          : "hover:bg-theme-action-menu-item-hover light:hover:bg-slate-200"
       }`}
     >
       <span
         className={`text-sm font-medium ${
           showTools
             ? "text-white light:text-slate-800"
-            : "text-zinc-300 light:text-slate-600 group-hover:text-white light:group-hover:text-slate-800"
+            : "text-white/70 light:text-slate-600 group-hover:text-white light:group-hover:text-slate-800"
         }`}
       >
         {t("chat_window.tools")}
@@ -492,8 +492,8 @@ function SendPromptButton({ formRef, promptInput, isDisabled }) {
         disabled={isDisabled || !promptInput.trim().length}
         className={`border-none flex justify-center items-center rounded-full w-8 h-8 transition-all ${
           promptInput.trim().length && !isDisabled
-            ? "cursor-pointer bg-white hover:bg-zinc-200 light:bg-slate-800 light:hover:bg-slate-600"
-            : "cursor-not-allowed bg-zinc-600 light:bg-slate-400"
+            ? "cursor-pointer bg-white hover:bg-slate-200 light:bg-slate-800 light:hover:bg-slate-600"
+            : "cursor-not-allowed bg-white/25 light:bg-slate-400"
         }`}
         data-tooltip-id="send-prompt"
         data-tooltip-content={

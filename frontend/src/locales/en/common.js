@@ -956,6 +956,7 @@ const TRANSLATIONS = {
     attach_file: "Attach a file to this chat",
     slash: "View all available slash commands for chatting.",
     agents: "View all available agents you can use for chatting.",
+    start_agent_session: "Start agent session",
     text_size: "Change text size.",
     microphone: "Speak your prompt.",
     send: "Send prompt message to workspace",

@@ -29,7 +29,7 @@ export default function useChatHistoryScrollHandle(
         }
       },
       scrollToBottom() {
-        setIsUserScrolling(true);
+        setIsUserScrolling(false);
         scrollToBottom(isStreaming ? false : true);
       },
     }),

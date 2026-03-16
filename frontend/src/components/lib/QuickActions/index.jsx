@@ -49,7 +49,7 @@ function QuickActionButton({ label, onClick, show = true }) {
     <button
       type="button"
       onClick={onClick}
-      className="px-4 py-2 rounded-full bg-theme-bg-chat-input text-white/80 text-sm font-normal leading-5 hover:bg-zinc-700 light:hover:bg-black/20 transition-colors light:text-theme-text-primary"
+      className="px-4 py-2 rounded-full bg-theme-home-button-secondary text-theme-home-button-secondary-text border border-theme-chat-input-border text-sm font-normal leading-5 hover:bg-theme-home-button-secondary-hover hover:text-theme-home-button-secondary-hover-text transition-colors light:hover:bg-black/20 light:text-theme-text-primary"
     >
       {label}
     </button>

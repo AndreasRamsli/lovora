@@ -9,12 +9,12 @@
 :root {
   /* Default theme — Infinite Night dark, Marsh Field accent */
   --theme-loader: #F9F9F9;
-  --theme-bg-primary: #071037;
-  --theme-bg-secondary: #0b1845;
+  --theme-bg-primary: #081233;
+  --theme-bg-secondary: #060d2e;
   --theme-bg-sidebar: #060d2e;
-  --theme-bg-container: #071037;
-  --theme-bg-chat: #0b1845;
-  --theme-bg-chat-input: #0f1f50;
+  --theme-bg-container: #040a21;
+  --theme-bg-chat: #060d2e;
+  --theme-bg-chat-input: #1b2f6f;
   --theme-text-primary: #F9F9F9;
   --theme-text-secondary: rgba(249, 249, 249, 0.55);
   --theme-placeholder: rgba(249, 249, 249, 0.32);
@@ -35,39 +35,40 @@
   --theme-sidebar-footer-icon-fill: #F9F9F9;
   --theme-sidebar-footer-icon-hover: rgba(249, 249, 249, 0.15);
 
-  --theme-chat-input-border: rgba(249, 249, 249, 0.12);
-  --theme-action-menu-bg: #0b1845;
-  --theme-action-menu-item-hover: rgba(249, 249, 249, 0.06);
+  --theme-chat-input-border: rgba(249, 249, 249, 0.18);
+  --theme-action-menu-bg: #112055;
+  --theme-action-menu-item-hover: rgba(249, 249, 249, 0.10);
   --theme-settings-input-bg: #060d2e;
   --theme-settings-input-placeholder: rgba(249, 249, 249, 0.4);
   --theme-settings-input-active: rgba(249, 249, 249, 0.15);
   --theme-settings-input-text: #F9F9F9;
   --theme-modal-border: rgba(249, 249, 249, 0.10);
+  --theme-highlight-border: #B18A56;
 
   --theme-button-primary: #D4C477;
   --theme-button-primary-hover: rgba(212, 196, 119, 0.15);
 
   --theme-button-cta: #D4C477;
 
-  --theme-file-row-even: #071037;
-  --theme-file-row-odd: #0b1845;
+  --theme-file-row-even: #081233;
+  --theme-file-row-odd: #112055;
   --theme-file-row-selected-even: rgba(212, 196, 119, 0.15);
   --theme-file-row-selected-odd: rgba(212, 196, 119, 0.10);
   --theme-file-picker-hover: rgba(212, 196, 119, 0.10);
 
   --theme-home-text: #F9F9F9;
   --theme-home-text-secondary: rgba(249, 249, 249, 0.50);
-  --theme-home-bg-card: #0b1845;
-  --theme-home-bg-button: #0f1f50;
+  --theme-home-bg-card: #060d2e;
+  --theme-home-bg-button: #1b2f6f;
   --theme-home-border: rgba(249, 249, 249, 0.08);
   --theme-home-button-primary: #D4C477;
   --theme-home-button-primary-hover: #C4B467;
-  --theme-home-button-secondary: rgba(212, 196, 119, 0.10);
-  --theme-home-button-secondary-hover: rgba(212, 196, 119, 0.20);
+  --theme-home-button-secondary: #1b2f6f;
+  --theme-home-button-secondary-hover: #223b86;
   --theme-home-button-secondary-text: #F9F9F9;
   --theme-home-button-secondary-hover-text: #D4C477;
-  --theme-home-update-card-bg: #0b1845;
-  --theme-home-update-card-hover: #0f1f50;
+  --theme-home-update-card-bg: #112055;
+  --theme-home-update-card-hover: #1b2f6f;
   --theme-home-update-source: #B18A56;
 
   --theme-checklist-item-bg: rgba(177, 138, 86, 0.18);
@@ -87,14 +88,14 @@
   --theme-home-button-secondary-border: rgba(177, 138, 86, 0.40);
   --theme-home-button-secondary-border-hover: rgba(177, 138, 86, 0.70);
 
-  --theme-attachment-bg: #0b1845;
+  --theme-attachment-bg: #112055;
   --theme-attachment-error-bg: rgba(157, 69, 49, 0.30);
-  --theme-attachment-success-bg: #0b1845;
+  --theme-attachment-success-bg: #112055;
   --theme-attachment-text: #F9F9F9;
   --theme-attachment-text-secondary: rgba(249, 249, 249, 0.75);
   --theme-attachment-icon: #F9F9F9;
   --theme-attachment-icon-spinner: #D4C477;
-  --theme-attachment-icon-spinner-bg: #0f1f50;
+  --theme-attachment-icon-spinner-bg: #1b2f6f;
 
   --theme-button-text: rgba(249, 249, 249, 0.50);
   --theme-button-code-hover-text: #D4C477;
@@ -146,6 +147,7 @@
   --theme-settings-input-active: rgba(7, 16, 55, 0.15);
   --theme-settings-input-text: #071037;
   --theme-modal-border: rgba(7, 16, 55, 0.12);
+  --theme-highlight-border: #B18A56;
 
   --theme-button-primary: #9D4531;
   --theme-button-primary-hover: rgba(157, 69, 49, 0.10);
