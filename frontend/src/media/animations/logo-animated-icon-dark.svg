@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 38 224 194" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
+  <defs>
+    <style>
+      .pillar {
+        fill-opacity: 0;
+        stroke: #F4EFE1;
+        stroke-width: 5.5;
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: drawPillar 4s infinite;
+      }
+      .top-block {
+        fill-opacity: 0;
+        stroke: #F4EFE1;
+        stroke-width: 5.5;
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: drawTop 4s infinite;
+      }
+
+      @keyframes drawPillar {
+        0% { stroke-dashoffset: 100; fill-opacity: 0; stroke-width: 5.5; opacity: 1; }
+        20% { stroke-dashoffset: 0; fill-opacity: 0; stroke-width: 5.5; opacity: 1; }
+        40% { stroke-dashoffset: 0; fill-opacity: 1; stroke-width: 0; opacity: 1; }
+        80% { stroke-dashoffset: 0; fill-opacity: 1; stroke-width: 0; opacity: 1; }
+        90% { opacity: 0; fill-opacity: 1; stroke-width: 0; }
+        100% { opacity: 0; stroke-dashoffset: 100; fill-opacity: 0; stroke-width: 5.5; }
+      }
+
+      @keyframes drawTop {
+        0%, 15% { stroke-dashoffset: 100; fill-opacity: 0; stroke-width: 5.5; opacity: 1; }
+        35% { stroke-dashoffset: 0; fill-opacity: 0; stroke-width: 5.5; opacity: 1; }
+        50% { stroke-dashoffset: 0; fill-opacity: 1; stroke-width: 0; opacity: 1; }
+        80% { stroke-dashoffset: 0; fill-opacity: 1; stroke-width: 0; opacity: 1; }
+        90% { opacity: 0; fill-opacity: 1; stroke-width: 0; }
+        100% { opacity: 0; stroke-dashoffset: 100; fill-opacity: 0; stroke-width: 5.5; }
+      }
+    </style>
+  </defs>
+  <g transform="translate(20, 25) scale(1.1)" fill="#F4EFE1">
+    <polygon class="top-block" pathLength="100" points="5,47 95,20 95,40 5,67" />
+    <polygon class="top-block" pathLength="100" points="15,74 95,50 95,70 15,94" />
+    <polygon class="pillar" pathLength="100" points="25,101 65,89 65,171 45,165 45,115 25,115" />
+    <polygon class="pillar" pathLength="100" points="75,86 95,80 95,180 75,174" />
+    <polygon class="top-block" pathLength="100" points="195,47 105,20 105,40 195,67" />
+    <polygon class="top-block" pathLength="100" points="185,74 105,50 105,70 185,94" />
+    <polygon class="pillar" pathLength="100" points="175,101 135,89 135,171 155,165 155,115 175,115" />
+    <polygon class="pillar" pathLength="100" points="125,86 105,80 105,180 125,174" />
+  </g>
+</svg>
