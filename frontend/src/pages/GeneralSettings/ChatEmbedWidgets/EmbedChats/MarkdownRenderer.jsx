@@ -2,6 +2,7 @@ import { useState } from "react";
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
 import { CaretDown } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 import "highlight.js/styles/github-dark.css";
 import DOMPurify from "@/utils/chat/purify";
 
@@ -19,6 +20,7 @@ const md = new MarkdownIt({
 });
 
 const ThoughtBubble = ({ thought }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!thought) return null;
@@ -37,7 +39,9 @@ const ThoughtBubble = ({ thought }) => {
           weight="bold"
           className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
         />
-        <span className="text-xs font-medium">View thoughts</span>
+        <span className="text-xs font-medium">
+          {t("embed-chats.view_thoughts")}
+        </span>
       </div>
       {isExpanded && (
         <div className="bg-theme-bg-chat-input rounded-md p-3 border-l-2 border-theme-text-secondary/30">

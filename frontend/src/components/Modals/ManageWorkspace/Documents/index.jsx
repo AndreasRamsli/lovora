@@ -1,5 +1,6 @@
 import { ArrowsDownUp } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Workspace from "../../../../models/workspace";
 import System from "../../../../models/system";
 import showToast from "../../../../utils/toast";
@@ -16,6 +17,7 @@ const MODEL_COSTS = {
 };
 
 export default function DocumentSettings({ workspace, systemSettings }) {
+  const { t } = useTranslation();
   const [highlightWorkspace, setHighlightWorkspace] = useState(false);
   const [availableDocs, setAvailableDocs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,8 +88,10 @@ export default function DocumentSettings({ workspace, systemSettings }) {
   const updateWorkspace = async (e) => {
     e.preventDefault();
     setLoading(true);
-    showToast("Updating workspace...", "info", { autoClose: false });
-    setLoadingMessage("This may take a while for large documents");
+    showToast(t("connectors.manage.workspace_updating"), "info", {
+      autoClose: false,
+    });
+    setLoadingMessage(t("connectors.manage.workspace_updating_help"));
 
     const changesToSend = {
       adds: movedItems.map((item) => `${item.folderName}/${item.name}`),
@@ -99,17 +103,23 @@ export default function DocumentSettings({ workspace, systemSettings }) {
     await Workspace.modifyEmbeddings(workspace.slug, changesToSend)
       .then((res) => {
         if (!!res.message) {
-          showToast(`Error: ${res.message}`, "error", { clear: true });
+          showToast(
+            t("connectors.manage.error_with_message", { error: res.message }),
+            "error",
+            { clear: true }
+          );
           return;
         }
-        showToast("Workspace updated successfully.", "success", {
+        showToast(t("connectors.manage.workspace_updated"), "success", {
           clear: true,
         });
       })
       .catch((error) => {
-        showToast(`Workspace update failed: ${error}`, "error", {
-          clear: true,
-        });
+        showToast(
+          t("connectors.manage.workspace_update_failed", { error }),
+          "error",
+          { clear: true }
+        );
       });
 
     setMovedItems([]);

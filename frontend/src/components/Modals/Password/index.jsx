@@ -8,14 +8,17 @@ import {
   AUTH_TIMESTAMP,
 } from "../../../utils/constants";
 import useLogo from "../../../hooks/useLogo";
+import AnimatedBrandLogo from "@/components/AnimatedBrandLogo";
 
 export default function PasswordModal({ mode = "single" }) {
   const { loginLogo, isCustomLogo } = useLogo();
   return (
     <div className="fixed inset-0 bg-zinc-950 light:bg-doctor flex flex-col items-center justify-center overflow-hidden">
-      <img
-        src={loginLogo}
+      <AnimatedBrandLogo
+        staticSrc={loginLogo}
+        isCustomLogo={isCustomLogo}
         alt="Logo"
+        shouldAnimate={!isCustomLogo}
         className={`object-contain ${isCustomLogo ? "max-h-[104px] max-w-[280px] rounded-lg" : "max-h-[96px]"}`}
       />
       {mode === "single" ? <SingleUserAuth /> : <MultiUserAuth />}

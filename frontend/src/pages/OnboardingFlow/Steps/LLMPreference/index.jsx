@@ -388,7 +388,7 @@ export default function LLMPreference({
     const data = {};
     const formData = new FormData(form);
     data.LLMProvider = selectedLLM;
-    // Default to AnythingLLM embedder and LanceDB
+    // Default to Lovora embedder and LanceDB
     data.EmbeddingEngine = "native";
     data.VectorDB = "lancedb";
     for (var [key, value] of formData.entries()) data[key] = value;
@@ -427,7 +427,7 @@ export default function LLMPreference({
               />
               <input
                 type="text"
-                placeholder="Search LLM providers"
+                placeholder={t("onboarding.llm.search_placeholder")}
                 className="bg-theme-bg-secondary placeholder:text-theme-text-secondary z-20 pl-10 h-[38px] rounded-full w-full px-4 py-1 text-sm border border-theme-chat-input-border outline-none focus:outline-primary-button active:outline-primary-button outline-none text-theme-text-primary"
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoComplete="off"

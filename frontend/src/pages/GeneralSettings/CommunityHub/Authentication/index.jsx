@@ -8,8 +8,9 @@ import { FullScreenLoader } from "@/components/Preloader";
 import paths from "@/utils/paths";
 import { Info } from "@phosphor-icons/react";
 import UserItems from "./UserItems";
+import { Trans, useTranslation } from "react-i18next";
 
-function useCommunityHubAuthentication() {
+function useCommunityHubAuthentication(t) {
   const [originalConnectionKey, setOriginalConnectionKey] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
   const [connectionKey, setConnectionKey] = useState("");
@@ -34,13 +35,16 @@ function useCommunityHubAuthentication() {
         hub_api_key: connectionKey,
       });
       if (!response.success)
-        return showToast("Failed to save API key", "error");
+        return showToast(
+          t("community_hub.authentication.save_failed"),
+          "error"
+        );
       setHasChanges(false);
-      showToast("API key saved successfully", "success");
+      showToast(t("community_hub.authentication.save_success"), "success");
       setOriginalConnectionKey(connectionKey);
     } catch (error) {
       console.error(error);
-      showToast("Failed to save API key", "error");
+      showToast(t("community_hub.authentication.save_failed"), "error");
     } finally {
       setLoading(false);
     }
@@ -53,14 +57,20 @@ function useCommunityHubAuthentication() {
         hub_api_key: "",
       });
       if (!response.success)
-        return showToast("Failed to disconnect from hub", "error");
+        return showToast(
+          t("community_hub.authentication.disconnect_failed"),
+          "error"
+        );
       setHasChanges(false);
-      showToast("Disconnected from AnythingLLM Community Hub", "success");
+      showToast(
+        t("community_hub.authentication.disconnect_success"),
+        "success"
+      );
       setOriginalConnectionKey("");
       setConnectionKey("");
     } catch (error) {
       console.error(error);
-      showToast("Failed to disconnect from hub", "error");
+      showToast(t("community_hub.authentication.disconnect_failed"), "error");
     } finally {
       setLoading(false);
     }
@@ -95,6 +105,7 @@ function useCommunityHubAuthentication() {
 }
 
 export default function CommunityHubAuthentication() {
+  const { t } = useTranslation();
   const {
     connectionKey,
     originalConnectionKey,
@@ -104,7 +115,7 @@ export default function CommunityHubAuthentication() {
     hasChanges,
     resetChanges,
     disconnectHub,
-  } = useCommunityHubAuthentication();
+  } = useCommunityHubAuthentication(t);
   if (loading) return <FullScreenLoader />;
   return (
     <div className="w-screen h-screen overflow-hidden bg-theme-bg-container flex">
@@ -122,13 +133,14 @@ export default function CommunityHubAuthentication() {
           <div className="w-full flex flex-col gap-y-1 pb-6 border-white light:border-theme-sidebar-border border-b-2 border-opacity-10">
             <div className="items-center">
               <p className="text-lg leading-6 font-bold text-theme-text-primary">
-                Your AnythingLLM Community Hub Account
+                {t("community_hub.authentication.title")}
               </p>
             </div>
             <p className="text-xs leading-[18px] font-base text-theme-text-secondary">
-              Connecting your AnythingLLM Community Hub account allows you to
-              access your <b>private</b> AnythingLLM Community Hub items as well
-              as upload your own items to the AnythingLLM Community Hub.
+              <Trans
+                i18nKey="community_hub.authentication.description"
+                components={{ bold: <b /> }}
+              />
             </p>
           </div>
 
@@ -138,21 +150,17 @@ export default function CommunityHubAuthentication() {
                 <div className="gap-x-2 flex items-center">
                   <Info size={25} />
                   <h1 className="text-lg font-semibold">
-                    Why connect my AnythingLLM Community Hub account?
+                    {t("community_hub.authentication.why_title")}
                   </h1>
                 </div>
                 <p className="text-sm text-theme-text-secondary">
-                  Connecting your AnythingLLM Community Hub account allows you
-                  to pull in your <b>private</b> items from the AnythingLLM
-                  Community Hub as well as upload your own items to the
-                  AnythingLLM Community Hub.
+                  <Trans
+                    i18nKey="community_hub.authentication.why_description"
+                    components={{ bold: <b /> }}
+                  />
                   <br />
                   <br />
-                  <i>
-                    You do not need to connect your AnythingLLM Community Hub
-                    account to pull in public items from the AnythingLLM
-                    Community Hub.
-                  </i>
+                  <i>{t("community_hub.authentication.why_note")}</i>
                 </p>
               </div>
             </div>
@@ -162,32 +170,37 @@ export default function CommunityHubAuthentication() {
           <div className="mt-6 mb-12">
             <div className="flex flex-col w-full max-w-[400px]">
               <label className="text-theme-text-primary text-sm font-semibold block mb-2">
-                AnythingLLM Hub API Key
+                {t("community_hub.authentication.api_key_label")}
               </label>
               <input
                 type="password"
                 value={connectionKey || ""}
                 onChange={onConnectionKeyChange}
                 className="border-none bg-theme-settings-input-bg text-theme-text-primary placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
-                placeholder="Enter your AnythingLLM Hub API key"
+                placeholder={t(
+                  "community_hub.authentication.api_key_placeholder"
+                )}
               />
               <div className="flex items-center justify-between mt-2">
                 <p className="text-theme-text-secondary text-xs">
-                  You can get your API key from your{" "}
-                  <a
-                    href={paths.communityHub.profile()}
-                    className="underline text-primary-button"
-                  >
-                    AnythingLLM Community Hub profile page
-                  </a>
-                  .
+                  <Trans
+                    i18nKey="community_hub.authentication.api_key_helper"
+                    components={{
+                      profile: (
+                        <a
+                          href={paths.communityHub.profile()}
+                          className="underline text-primary-button"
+                        />
+                      ),
+                    }}
+                  />
                 </p>
                 {!!originalConnectionKey && (
                   <button
                     onClick={disconnectHub}
                     className="border-none text-red-500 hover:text-red-600 text-sm font-medium transition-colors duration-200"
                   >
-                    Disconnect
+                    {t("community_hub.authentication.disconnect")}
                   </button>
                 )}
               </div>

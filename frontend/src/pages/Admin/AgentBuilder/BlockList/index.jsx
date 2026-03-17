@@ -11,6 +11,7 @@ import {
   BracketsCurly,
 } from "@phosphor-icons/react";
 import { Tooltip } from "react-tooltip";
+import { useTranslation } from "react-i18next";
 import Toggle from "@/components/lib/Toggle";
 import StartNode from "../nodes/StartNode";
 import ApiCallNode from "../nodes/ApiCallNode";
@@ -34,30 +35,31 @@ const BLOCK_TYPES = {
   FINISH: "finish",
 };
 
-const BLOCK_INFO = {
+const BLOCK_INFO = (t) => ({
   [BLOCK_TYPES.FLOW_INFO]: {
-    label: "Flow Information",
+    label: t("agent_builder.blocks.flow_info.label"),
     icon: <Info className="w-5 h-5 text-theme-text-primary" />,
-    description: "Basic flow information",
+    description: t("agent_builder.blocks.flow_info.description"),
     defaultConfig: {
       name: "",
       description: "",
     },
-    getSummary: (config) => config.name || "Untitled Flow",
+    getSummary: (config) =>
+      config.name || t("agent_builder.blocks.flow_info.untitled"),
   },
   [BLOCK_TYPES.START]: {
-    label: "Flow Variables",
+    label: t("agent_builder.blocks.start.label"),
     icon: <BracketsCurly className="w-5 h-5 text-theme-text-primary" />,
-    description: "Configure agent variables and settings",
+    description: t("agent_builder.blocks.start.description"),
     getSummary: (config) => {
       const varCount = config.variables?.filter((v) => v.name)?.length || 0;
-      return `${varCount} variable${varCount !== 1 ? "s" : ""} defined`;
+      return t("agent_builder.blocks.start.summary", { count: varCount });
     },
   },
   [BLOCK_TYPES.API_CALL]: {
-    label: "API Call",
+    label: t("agent_builder.blocks.api_call.label"),
     icon: <Globe className="w-5 h-5 text-theme-text-primary" />,
-    description: "Make an HTTP request",
+    description: t("agent_builder.blocks.api_call.description"),
     defaultConfig: {
       url: "",
       method: "GET",
@@ -69,7 +71,7 @@ const BLOCK_INFO = {
       directOutput: false,
     },
     getSummary: (config) =>
-      `${config.method || "GET"} ${config.url || "(no URL)"}`,
+      `${config.method || "GET"} ${config.url || t("agent_builder.blocks.api_call.no_url")}`,
   },
   // TODO: Implement website, file, and code blocks
   /* [BLOCK_TYPES.WEBSITE]: {
@@ -112,20 +114,22 @@ const BLOCK_INFO = {
   },
   */
   [BLOCK_TYPES.LLM_INSTRUCTION]: {
-    label: "LLM Instruction",
+    label: t("agent_builder.blocks.llm_instruction.label"),
     icon: <Brain className="w-5 h-5 text-theme-text-primary" />,
-    description: "Process data using LLM instructions",
+    description: t("agent_builder.blocks.llm_instruction.description"),
     defaultConfig: {
       instruction: "",
       resultVariable: "",
       directOutput: false,
     },
-    getSummary: (config) => config.instruction || "No instruction",
+    getSummary: (config) =>
+      config.instruction ||
+      t("agent_builder.blocks.llm_instruction.no_instruction"),
   },
   [BLOCK_TYPES.WEB_SCRAPING]: {
-    label: "Web Scraping",
+    label: t("agent_builder.blocks.web_scraping.label"),
     icon: <Browser className="w-5 h-5 text-theme-text-primary" />,
-    description: "Scrape content from a webpage",
+    description: t("agent_builder.blocks.web_scraping.description"),
     defaultConfig: {
       url: "",
       captureAs: "text",
@@ -133,17 +137,18 @@ const BLOCK_INFO = {
       resultVariable: "",
       directOutput: false,
     },
-    getSummary: (config) => config.url || "No URL specified",
+    getSummary: (config) =>
+      config.url || t("agent_builder.blocks.web_scraping.no_url"),
   },
   [BLOCK_TYPES.FINISH]: {
-    label: "Flow Complete",
+    label: t("agent_builder.blocks.finish.label"),
     icon: <Flag className="w-4 h-4" />,
-    description: "End of agent flow",
-    getSummary: () => "Flow will end here",
+    description: t("agent_builder.blocks.finish.description"),
+    getSummary: () => t("agent_builder.blocks.finish.summary"),
     defaultConfig: {},
     renderConfig: () => null,
   },
-};
+});
 
 export default function BlockList({
   blocks,
@@ -155,6 +160,8 @@ export default function BlockList({
   moveBlock,
   refs,
 }) {
+  const { t } = useTranslation();
+  const blockInfo = BLOCK_INFO(t);
   const renderBlockConfig = (block) => {
     const isLastConfigurableBlock = blocks[blocks.length - 2]?.id === block.id;
     const props = {
@@ -177,8 +184,8 @@ export default function BlockList({
             <Toggle
               size="md"
               variant="horizontal"
-              label="Direct Output"
-              description="The output of this block will be returned directly to the chat. This will prevent any further tool calls from being executed."
+              label={t("agent_builder.direct_output.label")}
+              description={t("agent_builder.direct_output.description")}
               enabled={props.config.directOutput || false}
               onChange={(checked) =>
                 props.onConfigChange({
@@ -216,7 +223,7 @@ export default function BlockList({
       case BLOCK_TYPES.FINISH:
         return <FinishNode />;
       default:
-        return <div>Configuration options coming soon...</div>;
+        return <div>{t("agent_builder.config_coming_soon")}</div>;
     }
   };
 
@@ -235,17 +242,17 @@ export default function BlockList({
             >
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-lg bg-white/10 light:bg-white flex items-center justify-center">
-                  {React.cloneElement(BLOCK_INFO[block.type].icon, {
+                  {React.cloneElement(blockInfo[block.type].icon, {
                     className: "w-4 h-4 text-white",
                   })}
                 </div>
                 <div className="flex-1 text-left min-w-0 max-w-[115px]">
                   <span className="text-sm font-medium text-white block">
-                    {BLOCK_INFO[block.type].label}
+                    {blockInfo[block.type].label}
                   </span>
                   {!block.isExpanded && (
                     <p className="text-xs text-white/60 truncate">
-                      {BLOCK_INFO[block.type].getSummary(block.config)}
+                      {blockInfo[block.type].getSummary(block.config)}
                     </p>
                   )}
                 </div>
@@ -263,7 +270,9 @@ export default function BlockList({
                           }}
                           className="w-7 h-7 flex items-center justify-center rounded-lg bg-theme-bg-primary border border-white/5 text-white hover:bg-theme-action-menu-item-hover transition-colors duration-300"
                           data-tooltip-id="block-action"
-                          data-tooltip-content="Move block up"
+                          data-tooltip-content={t(
+                            "agent_builder.actions.move_up"
+                          )}
                         >
                           <CaretUp className="w-3.5 h-3.5" />
                         </button>
@@ -276,7 +285,9 @@ export default function BlockList({
                           }}
                           className="w-7 h-7 flex items-center justify-center rounded-lg bg-theme-bg-primary border border-white/5 text-white hover:bg-theme-action-menu-item-hover transition-colors duration-300"
                           data-tooltip-id="block-action"
-                          data-tooltip-content="Move block down"
+                          data-tooltip-content={t(
+                            "agent_builder.actions.move_down"
+                          )}
                         >
                           <CaretDown className="w-3.5 h-3.5" />
                         </button>
@@ -288,7 +299,9 @@ export default function BlockList({
                         }}
                         className="w-7 h-7 flex items-center justify-center rounded-lg bg-theme-bg-primary border border-white/5 text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-colors duration-300"
                         data-tooltip-id="block-action"
-                        data-tooltip-content="Delete block"
+                        data-tooltip-content={t(
+                          "agent_builder.actions.delete_block"
+                        )}
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>

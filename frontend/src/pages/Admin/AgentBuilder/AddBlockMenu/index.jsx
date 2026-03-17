@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { Plus, CaretDown } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 import { BLOCK_TYPES, BLOCK_INFO } from "../BlockList";
 
 /**
@@ -23,7 +24,9 @@ export default function AddBlockMenu({
   setShowBlockMenu,
   addBlock,
 }) {
+  const { t } = useTranslation();
   const menuRef = useRef(null);
+  const blockInfo = BLOCK_INFO(t);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -46,14 +49,14 @@ export default function AddBlockMenu({
         className="transition-all duration-300 w-full p-2.5 bg-theme-action-menu-bg hover:bg-theme-action-menu-item-hover border border-white/10 rounded-lg text-white flex items-center justify-center gap-2 text-sm font-medium"
       >
         <Plus className="w-4 h-4" />
-        Add Block
+        {t("agent_builder.actions.add_block")}
         <CaretDown
           className={`w-3.5 h-3.5 transition-transform duration-300 ${showBlockMenu ? "rotate-180" : ""}`}
         />
       </button>
       {showBlockMenu && (
         <div className="absolute left-0 right-0 mt-2 bg-theme-action-menu-bg border border-white/10 rounded-lg shadow-lg overflow-hidden z-10 animate-fadeUpIn">
-          {Object.entries(BLOCK_INFO).map(
+          {Object.entries(blockInfo).map(
             ([type, info]) =>
               type !== BLOCK_TYPES.START &&
               type !== BLOCK_TYPES.FINISH &&

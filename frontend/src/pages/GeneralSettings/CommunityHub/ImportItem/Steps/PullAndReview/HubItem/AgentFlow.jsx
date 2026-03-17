@@ -6,8 +6,10 @@ import { CircleNotch } from "@phosphor-icons/react";
 import { useState } from "react";
 import AgentFlows from "@/models/agentFlows";
 import { safeJsonParse } from "@/utils/request";
+import { useTranslation } from "react-i18next";
 
 export default function AgentFlow({ item, setStep }) {
+  const { t } = useTranslation();
   const flowInfo = safeJsonParse(item.flow, { steps: [] });
   const [loading, setLoading] = useState(false);
 
@@ -21,11 +23,19 @@ export default function AgentFlow({ item, setStep }) {
       if (!success) throw new Error(error);
       if (!!flow?.uuid) await AgentFlows.toggleFlow(flow.uuid, true); // Enable the flow automatically after import
 
-      showToast(`Agent flow imported successfully!`, "success");
+      showToast(
+        t("community_hub.import.item.agent_flow.import_success"),
+        "success"
+      );
       setStep(CommunityHubImportItemSteps.completed.key);
     } catch (e) {
       console.error(e);
-      showToast(`Failed to import agent flow. ${e.message}`, "error");
+      showToast(
+        t("community_hub.import.item.agent_flow.import_error", {
+          error: e.message,
+        }),
+        "error"
+      );
     } finally {
       setLoading(false);
     }
@@ -35,11 +45,13 @@ export default function AgentFlow({ item, setStep }) {
     <div className="flex flex-col mt-4 gap-y-4">
       <div className="flex flex-col gap-y-1">
         <h2 className="text-base text-theme-text-primary font-semibold">
-          Import Agent Flow &quot;{item.name}&quot;
+          {t("community_hub.import.item.agent_flow.title", {
+            name: item.name,
+          })}
         </h2>
         {item.creatorUsername && (
           <p className="text-white/60 light:text-theme-text-secondary text-xs font-mono">
-            Created by{" "}
+            {t("community_hub.import.item.created_by")}{" "}
             <a
               href={paths.communityHub.profile(item.creatorUsername)}
               target="_blank"
@@ -52,14 +64,21 @@ export default function AgentFlow({ item, setStep }) {
         )}
       </div>
       <div className="flex flex-col gap-y-[25px] text-white/80 light:text-theme-text-secondary text-sm">
-        <p>
-          Agent flows allow you to create reusable sequences of actions that can
-          be triggered by your agent.
-        </p>
+        <p>{t("community_hub.import.item.agent_flow.description")}</p>
         <div className="flex flex-col gap-y-2">
-          <p className="font-semibold">Flow Details:</p>
-          <p>Description: {item.description}</p>
-          <p className="font-semibold">Steps ({flowInfo.steps.length}):</p>
+          <p className="font-semibold">
+            {t("community_hub.import.item.agent_flow.flow_details")}
+          </p>
+          <p>
+            {t("community_hub.import.item.agent_flow.description_label", {
+              description: item.description,
+            })}
+          </p>
+          <p className="font-semibold">
+            {t("community_hub.import.item.agent_flow.steps_label", {
+              count: flowInfo.steps.length,
+            })}
+          </p>
           <ul className="list-disc pl-6">
             {flowInfo.steps.map((step, index) => (
               <li key={index}>{step.type}</li>
@@ -73,7 +92,9 @@ export default function AgentFlow({ item, setStep }) {
         onClick={importAgentFlow}
       >
         {loading ? <CircleNotch size={16} className="animate-spin" /> : null}
-        {loading ? "Importing..." : "Import agent flow"}
+        {loading
+          ? t("community_hub.import.item.agent_flow.importing")
+          : t("community_hub.import.item.agent_flow.import_button")}
       </CTAButton>
     </div>
   );

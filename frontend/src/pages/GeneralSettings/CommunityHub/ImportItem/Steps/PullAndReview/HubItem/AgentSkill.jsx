@@ -13,19 +13,29 @@ import renderMarkdown from "@/utils/chat/markdown";
 import DOMPurify from "dompurify";
 import CommunityHub from "@/models/communityHub";
 import { setEventDelegatorForCodeSnippets } from "@/components/WorkspaceChat";
+import { Trans, useTranslation } from "react-i18next";
 
 export default function AgentSkill({ item, settings, setStep }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   async function importAgentSkill() {
     try {
       setLoading(true);
       const { error } = await CommunityHub.importBundleItem(settings.itemId);
       if (error) throw new Error(error);
-      showToast(`Agent skill imported successfully!`, "success");
+      showToast(
+        t("community_hub.import.item.agent_skill.import_success"),
+        "success"
+      );
       setStep(CommunityHubImportItemSteps.completed.key);
     } catch (e) {
       console.error(e);
-      showToast(`Failed to import agent skill. ${e.message}`, "error");
+      showToast(
+        t("community_hub.import.item.agent_skill.import_error", {
+          error: e.message,
+        }),
+        "error"
+      );
     } finally {
       setLoading(false);
     }
@@ -42,26 +52,24 @@ export default function AgentSkill({ item, settings, setStep }) {
           <div className="gap-x-2 flex items-center">
             <Warning size={25} />
             <h1 className="text-lg font-semibold">
-              {" "}
-              Only import agent skills you trust{" "}
+              {t("community_hub.import.item.agent_skill.warning_title")}
             </h1>
           </div>
           <p className="text-sm">
-            Agent skills can execute code on your AnythingLLM instance, so only
-            import agent skills from sources you trust. You should also review
-            the code before importing. If you are unsure about what a skill does
-            - don't import it!
+            {t("community_hub.import.item.agent_skill.warning_description")}
           </p>
         </div>
       </div>
 
       <div className="flex flex-col gap-y-1">
         <h2 className="text-base text-theme-text-primary font-semibold">
-          Review Agent Skill "{item.name}"
+          {t("community_hub.import.item.agent_skill.review_title", {
+            name: item.name,
+          })}
         </h2>
         {item.creatorUsername && (
           <p className="text-white/60 light:text-theme-text-secondary text-xs font-mono">
-            Created by{" "}
+            {t("community_hub.import.item.created_by")}{" "}
             <a
               href={paths.communityHub.profile(item.creatorUsername)}
               target="_blank"
@@ -74,10 +82,12 @@ export default function AgentSkill({ item, settings, setStep }) {
         )}
         <div className="flex gap-x-1">
           {item.verified ? (
-            <p className="text-green-500 text-xs font-mono">Verified code</p>
+            <p className="text-green-500 text-xs font-mono">
+              {t("community_hub.import.item.agent_skill.verified")}
+            </p>
           ) : (
             <p className="text-red-500 text-xs font-mono">
-              This skill is not verified.
+              {t("community_hub.import.item.agent_skill.unverified")}
             </p>
           )}
           <a
@@ -86,18 +96,20 @@ export default function AgentSkill({ item, settings, setStep }) {
             className="text-xs font-mono text-blue-500 hover:underline"
             rel="noreferrer"
           >
-            Learn more &rarr;
+            {t("community_hub.import.item.learn_more")}
           </a>
         </div>
       </div>
       <div className="flex flex-col gap-y-[25px] text-white/80 light:text-theme-text-secondary text-sm">
         <p>
-          Agent skills unlock new capabilities for your AnythingLLM workspace
-          via{" "}
-          <code className="font-mono bg-zinc-900 light:bg-divine-pleasure px-1 py-0.5 rounded-md text-sm">
-            @agent
-          </code>{" "}
-          skills that can do specific tasks when invoked.
+          <Trans
+            i18nKey="community_hub.import.item.agent_skill.description"
+            components={{
+              code: (
+                <code className="font-mono bg-zinc-900 light:bg-divine-pleasure px-1 py-0.5 rounded-md text-sm" />
+              ),
+            }}
+          />
         </p>
       </div>
       <FileReview item={item} />
@@ -107,13 +119,16 @@ export default function AgentSkill({ item, settings, setStep }) {
         onClick={importAgentSkill}
       >
         {loading ? <CircleNotch size={16} className="animate-spin" /> : null}
-        {loading ? "Importing..." : "Import agent skill"}
+        {loading
+          ? t("community_hub.import.item.agent_skill.importing")
+          : t("community_hub.import.item.agent_skill.import_button")}
       </CTAButton>
     </div>
   );
 }
 
 function FileReview({ item }) {
+  const { t } = useTranslation();
   const files = item.manifest.files || [];
   const [index, setIndex] = useState(0);
   const [file, setFile] = useState(files[index]);
@@ -158,7 +173,11 @@ function FileReview({ item }) {
             <CaretLeft size={16} />
           </button>
           <p className="text-white/60 light:text-theme-text-secondary text-xs font-mono">
-            {file.name} ({index + 1} of {files.length} files)
+            {t("community_hub.import.item.file_counter", {
+              name: file.name,
+              index: index + 1,
+              count: files.length,
+            })}
           </p>
           <button
             type="button"

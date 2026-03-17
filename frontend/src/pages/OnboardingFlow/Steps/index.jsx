@@ -7,6 +7,7 @@ import LLMPreference from "./LLMPreference";
 import UserSetup from "./UserSetup";
 import DataHandling from "./DataHandling";
 import Survey from "./Survey";
+import { useTranslation } from "react-i18next";
 
 const OnboardingSteps = {
   home: Home,
@@ -19,6 +20,7 @@ const OnboardingSteps = {
 export default OnboardingSteps;
 
 export function OnboardingLayout({ children }) {
+  const { t } = useTranslation();
   useRedirectToHomeOnOnboardingComplete();
   const [header, setHeader] = useState({
     title: "",
@@ -100,7 +102,7 @@ export function OnboardingLayout({ children }) {
             disabled={backBtn.disabled}
             onClick={backBtn.onClick}
             className="group p-2 rounded-lg border-2 border-theme-sidebar-border h-fit w-fit disabled:cursor-not-allowed hover:bg-theme-bg-secondary disabled:hover:bg-transparent"
-            aria-label="Back"
+            aria-label={t("common.previous")}
           >
             <ArrowLeft
               className="text-theme-text-secondary group-hover:text-theme-text-primary group-disabled:text-gray-500"
@@ -128,7 +130,7 @@ export function OnboardingLayout({ children }) {
             disabled={forwardBtn.disabled}
             onClick={forwardBtn.onClick}
             className="group p-2 rounded-lg border-2 border-theme-sidebar-border h-fit w-fit disabled:cursor-not-allowed hover:bg-teal disabled:hover:bg-transparent"
-            aria-label="Continue"
+            aria-label={t("common.next")}
           >
             <ArrowRight
               className="text-theme-text-secondary group-hover:text-white group-disabled:text-gray-500"

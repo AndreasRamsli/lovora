@@ -1,4 +1,3 @@
-// Anything with "null" requires a translation. Contribute to translation via a PR!
 const TRANSLATIONS = {
   onboarding: {
     home: {
@@ -9,6 +8,7 @@ const TRANSLATIONS = {
       title: "LLM 偏好",
       description:
         "AnythingLLM 可以與多家 LLM 提供商合作。這將是處理聊天的服務。",
+      search_placeholder: "Search LLM providers",
     },
     userSetup: {
       title: "使用者設定",
@@ -25,6 +25,12 @@ const TRANSLATIONS = {
       adminPasswordReq: "密碼必須至少包含 8 個字元。",
       teamHint:
         "預設情況下，您將是唯一的管理員。完成入職後，您可以創建和邀請其他人成為使用者或管理員。不要遺失您的密碼，因為只有管理員可以重置密碼。",
+      admin_username_placeholder: "Your admin username",
+      admin_password_placeholder: "Your admin password",
+      password_symbols_error:
+        "Your password has restricted characters in it. Allowed symbols are _,-,!,@,$,%,^,&,*,(,),;",
+      password_set_failed: "Failed to set password: {{error}}",
+      setup_failed: "Error: {{error}}",
     },
     data: {
       title: "資料處理與隱私",
@@ -66,6 +72,19 @@ const TRANSLATIONS = {
     search: "搜尋",
     username_requirements:
       "使用者名稱必須為 2-32 個字元，以小寫字母開頭，且只能包含小寫字母、數字、底線、連字號和句點。",
+    cancel: "Cancel",
+    close: "Close",
+    copy: "Copy",
+    copied: "Copied",
+    edit: "Edit",
+    delete: "Delete",
+  },
+  home: {
+    welcome: "歡迎",
+    chooseWorkspace: "選擇一個工作區開始聊天！",
+    notAssigned:
+      "你目前還沒有分配到任何工作區。\n請聯繫你的管理員請求訪問一個工作區。",
+    goToWorkspace: '前往 "{{workspace}}"',
   },
   settings: {
     title: "系統設定",
@@ -75,6 +94,9 @@ const TRANSLATIONS = {
     workspaces: "工作區管理",
     "workspace-chats": "工作區對話紀錄",
     customization: "介面自訂",
+    interface: "使用者介面偏好設定",
+    branding: "品牌與白標設定",
+    chat: "聊天室",
     "api-keys": "開發者 API",
     llm: "大型語言模型 (LLM)",
     transcription: "語音轉錄",
@@ -89,22 +111,19 @@ const TRANSLATIONS = {
     privacy: "隱私與資料",
     "ai-providers": "AI 服務提供者",
     "agent-skills": "智慧代理人技能",
-    admin: "系統管理",
-    tools: "工具",
-    "experimental-features": "實驗性功能",
-    contact: "聯絡支援",
-    "browser-extension": "瀏覽器擴充功能",
-    "system-prompt-variables": "系統提示變數",
-    interface: "使用者介面偏好設定",
-    branding: "品牌與白標設定",
-    chat: "聊天室",
-    "mobile-app": "AnythingLLM 應用程式",
     "community-hub": {
       title: "社區中心",
       trending: "探索熱門",
       "your-account": "您的帳戶",
       "import-item": "進口商品",
     },
+    admin: "系統管理",
+    tools: "工具",
+    "system-prompt-variables": "系統提示變數",
+    "experimental-features": "實驗性功能",
+    contact: "聯絡支援",
+    "browser-extension": "瀏覽器擴充功能",
+    "mobile-app": "AnythingLLM 應用程式",
   },
   login: {
     "multi-user": {
@@ -123,6 +142,93 @@ const TRANSLATIONS = {
       "recovery-codes": "復原碼",
       "recovery-code": "復原碼 {{index}}",
       "back-to-login": "返回登入頁面",
+    },
+  },
+  "main-page": {
+    greeting: "今天我能幫您什麼？",
+    noWorkspaceError: "請先建立工作空間才能開始對話。",
+    checklist: {
+      title: "開始使用",
+      tasksLeft: "個任務未完成",
+      completed: "你已經走在成為AnythingLLM專家的路上！",
+      dismiss: "關閉",
+      tasks: {
+        create_workspace: {
+          title: "建立工作空間",
+          description: "建立你的第一個工作空間來開始使用",
+          action: "建立",
+        },
+        send_chat: {
+          title: "發送對話",
+          description: "開始與你的AI助理對話",
+          action: "對話",
+        },
+        embed_document: {
+          title: "嵌入文件",
+          description: "將你的第一個文件添加到工作空間",
+          action: "嵌入",
+        },
+        setup_system_prompt: {
+          title: "設置系統提示",
+          description: "設定你的AI助理的行為模式",
+          action: "設置",
+        },
+        define_slash_command: {
+          title: "定義斜線命令",
+          description: "為你的助理創建自定義命令",
+          action: "定義",
+        },
+        visit_community: {
+          title: "訪問社群中心",
+          description: "探索社群資源和模板",
+          action: "瀏覽",
+        },
+      },
+    },
+    quickActions: {
+      createAgent: "建立一個代理",
+      editWorkspace: "編輯工作區",
+      uploadDocument: "上傳文件",
+    },
+    quickLinks: {
+      title: "快速連結",
+      sendChat: "發送對話",
+      embedDocument: "嵌入文件",
+      createWorkspace: "建立工作空間",
+    },
+    exploreMore: {
+      title: "探索更多功能",
+      features: {
+        customAgents: {
+          title: "自定義AI代理",
+          description: "無需編碼即可建立強大的AI代理和自動化流程。",
+          primaryAction: "使用@代理進行對話",
+          secondaryAction: "建立代理流程",
+        },
+        slashCommands: {
+          title: "斜線命令",
+          description: "節省時間並使用自定義斜線命令注入提示。",
+          primaryAction: "創建斜線命令",
+          secondaryAction: "在中心探索",
+        },
+        systemPrompts: {
+          title: "系統提示",
+          description: "修改系統提示以自定義工作空間的AI回覆。",
+          primaryAction: "修改系統提示",
+          secondaryAction: "管理提示變數",
+        },
+      },
+    },
+    announcements: {
+      title: "更新與公告",
+    },
+    resources: {
+      title: "資源",
+      links: {
+        docs: "文檔",
+        star: "在Github上加星標",
+      },
+      keyboardShortcuts: "鍵盤快捷鍵",
     },
   },
   "new-workspace": {
@@ -183,6 +289,11 @@ const TRANSLATIONS = {
     },
     mode: {
       title: "對話模式",
+      automatic: {
+        title: "Auto",
+        description:
+          "will automatically use tools if the model and provider support native tool calling. If native tooling is not supported, you will need to use the @agent command to use tools.",
+      },
       chat: {
         title: "對話",
         "desc-start": "將會利用 LLM 的一般知識",
@@ -212,10 +323,10 @@ const TRANSLATIONS = {
         noHistory: "沒有可用的系統提示歷史記錄",
         restore: "恢復",
         delete: "刪除",
+        publish: "發布到社群中心",
         deleteConfirm: "您確定要刪除此歷史記錄項目嗎？",
         clearAllConfirm: "您確定要刪除所有歷史記錄嗎？此操作無法復原。",
         expand: "展開",
-        publish: "發布到社群中心",
       },
     },
     refusal: {
@@ -330,6 +441,111 @@ const TRANSLATIONS = {
       response: "回應",
       at: "傳送時間",
     },
+    export_success: "Chats exported successfully as {{name}}.",
+    export_failed: "Failed to export chats.",
+    clear: "Clear Chats",
+    clear_confirm:
+      "Are you sure you want to clear all chats?\n\nThis action is irreversible.",
+    cleared: "Cleared all chats.",
+    row: {
+      delete_confirm:
+        "Are you sure you want to delete this chat?\n\nThis action is irreversible.",
+      viewing_text: "Viewing Text",
+    },
+  },
+  customization: {
+    interface: {
+      title: "介面偏好設定",
+      description: "設定你在 AnythingLLM 的使用介面偏好。",
+    },
+    branding: {
+      title: "品牌與白標設定",
+      description: "使用自訂品牌設計將 AnythingLLM 白標化。",
+    },
+    chat: {
+      title: "聊天",
+      description: "設定你在 AnythingLLM 的聊天偏好。",
+      auto_submit: {
+        title: "語音輸入自動送出",
+        description: "在靜音一段時間後自動送出語音輸入內容",
+      },
+      auto_speak: {
+        title: "自動語音回應",
+        description: "自動朗讀 AI 的回應內容",
+      },
+      spellcheck: {
+        title: "拼字檢查功能",
+        description: "在聊天輸入框中啟用或停用拼字檢查",
+      },
+    },
+    items: {
+      theme: {
+        title: "主題",
+        description: "選擇應用程式的顏色主題。",
+      },
+      "show-scrollbar": {
+        title: "顯示捲軸",
+        description: "在聊天視窗中啟用或停用捲軸。",
+      },
+      "support-email": {
+        title: "支援信箱",
+        description: "設定使用者在需要幫助時可以聯繫的支援電子信箱。",
+      },
+      "app-name": {
+        title: "應用名稱",
+        description: "設定所有使用者在登入頁面上看到的應用名稱。",
+      },
+      "chat-message-alignment": {
+        title: "聊天訊息對齊方式",
+        description: "選擇使用聊天介面時訊息的對齊模式。",
+      },
+      "display-language": {
+        title: "顯示語言",
+        description: "選擇 AnythingLLM 使用者介面的顯示語言（如有提供翻譯）。",
+      },
+      logo: {
+        title: "品牌標誌",
+        description: "上傳自訂標誌，顯示於所有頁面。",
+        add: "新增自訂標誌",
+        recommended: "建議尺寸：800 x 200",
+        remove: "移除",
+        replace: "更換",
+      },
+      "welcome-messages": {
+        title: "歡迎訊息",
+        description: "自訂顯示給使用者的歡迎訊息。只有非管理者會看到這些訊息。",
+        new: "新增",
+        system: "系統",
+        user: "使用者",
+        message: "訊息",
+        assistant: "AnythingLLM 聊天助理",
+        "double-click": "雙擊進行編輯...",
+        save: "儲存訊息",
+      },
+      "browser-appearance": {
+        title: "瀏覽器外觀",
+        description: "自訂應用程式在瀏覽器分頁上的外觀與標題。",
+        tab: {
+          title: "分頁標題",
+          description: "當應用程式在瀏覽器中開啟時設定自訂的分頁標題。",
+        },
+        favicon: {
+          title: "網站圖示 (Favicon)",
+          description: "為瀏覽器分頁設定自訂網站圖示。",
+        },
+      },
+      "sidebar-footer": {
+        title: "側邊欄底部項目",
+        description: "自訂側邊欄底部顯示的項目。",
+        icon: "圖示",
+        link: "連結",
+      },
+      "render-html": {
+        title: "將 HTML 內容轉換為聊天格式",
+        description:
+          "將 HTML 格式的回應嵌入到助理的回應中。\n這可以顯著提高回應品質，但也可能帶來潛在的安全風險。",
+      },
+    },
   },
   api: {
     title: "API 金鑰",
@@ -355,10 +571,10 @@ const TRANSLATIONS = {
         chat_deployment_name: "聊天部署名稱",
         chat_model_token_limit: "聊天模型令牌限制",
         model_type: "模型類型",
-        default: "預設",
-        reasoning: "推理",
         model_type_tooltip:
           "如果您的部署使用推理模型（例如 o1、o1-mini、o3-mini 等），請將此設定設為「推理」。否則，您的對話請求可能會失敗。",
+        default: "預設",
+        reasoning: "推理",
       },
     },
   },
@@ -418,6 +634,15 @@ const TRANSLATIONS = {
       active: "已啟用網域",
       created: "建立",
     },
+    row: {
+      disable_confirm:
+        "Are you sure you want to disable this embed?\nOnce disabled, the embed will no longer respond to any chat requests.",
+      disabled: "Embed has been disabled.",
+      enabled: "Embed is active again.",
+      delete_confirm:
+        "Are you sure you want to delete this embed?\nOnce deleted, this embed will no longer respond to chats or be active.\n\nThis action is irreversible.",
+      deleted: "Embed deleted from system.",
+    },
   },
   "embed-chats": {
     title: "嵌入對話",
@@ -429,6 +654,39 @@ const TRANSLATIONS = {
       message: "訊息",
       response: "回應",
       at: "傳送時間",
+    },
+    export_success: "Embed chats exported successfully as {{name}}.",
+    export_failed: "Failed to export embed chats.",
+    view_thoughts: "View thoughts",
+    row: {
+      delete_confirm:
+        "Are you sure you want to delete this chat?\n\nThis action is irreversible.",
+      viewing_text: "Viewing Text",
+      session_id: "sessionID",
+      username: "username",
+      client_ip: "client IP address",
+      client_host: "client host URL",
+    },
+  },
+  security: {
+    title: "安全性設定",
+    multiuser: {
+      title: "多使用者模式",
+      description: "透過啟用多使用者模式來設定您的系統，以支援您的團隊。",
+      enable: {
+        "is-enable": "多使用者模式已啟用",
+        enable: "啟用多使用者模式",
+        description:
+          "預設情況下，您將是唯一的管理員。身為管理員，您需要為所有新使用者或管理員建立帳號。請勿遺失您的密碼，因為只有管理員使用者可以重設密碼。",
+        username: "管理員帳號使用者名稱",
+        password: "管理員帳號密碼",
+      },
+    },
+    password: {
+      title: "密碼保護",
+      description:
+        "使用密碼保護您的 AnythingLLM 系統。如果您忘記這個密碼，將沒有復原方法，因此請務必儲存此密碼。",
+      "password-label": "實例密碼",
     },
   },
   event: {
@@ -453,6 +711,18 @@ const TRANSLATIONS = {
   connectors: {
     "search-placeholder": "搜尋資料連接器",
     "no-connectors": "未找到資料連接器。",
+    obsidian: {
+      name: "Obsidian",
+      description: "一鍵匯入 Obsidian 保險庫。",
+      vault_location: "保險庫位置",
+      vault_description:
+        "選擇您的 Obsidian 保險庫資料夾以匯入所有筆記及其連接。",
+      selected_files: "找到 {{count}} 個 Markdown 檔案",
+      importing: "正在匯入保險庫...",
+      import_vault: "匯入保險庫",
+      processing_time: "這可能需要一段時間，具體取決於您的保險庫大小。",
+      vault_warning: "為避免任何衝突，請確保您的 Obsidian 保險庫目前未開啟。",
+    },
     github: {
       name: "GitHub 倉庫",
       description: "單擊即可匯入整個公共或私有的 GitHub 倉庫。",
@@ -554,10 +824,10 @@ const TRANSLATIONS = {
       token_desc: "用於認證的存取權杖",
       pat_token: "Confluence 個人存取權杖",
       pat_token_explained: "您的 Confluence 個人存取權杖。",
-      task_explained: "完成後，頁面內容將可供嵌入到工作區中的檔案選擇器。",
       bypass_ssl: "跳過 SSL 憑證驗證",
       bypass_ssl_explained:
         "啟用此選項，以繞過自簽憑證的 SSL 憑證驗證，適用於您自行託管的 Confluence 實例。",
+      task_explained: "完成後，頁面內容將可供嵌入到工作區中的檔案選擇器。",
     },
     manage: {
       documents: "文件",
@@ -566,6 +836,11 @@ const TRANSLATIONS = {
         "編輯這些設定僅在桌面裝置上可用。請在桌面上訪問此頁面以繼續。",
       dismiss: "忽略",
       editing: "編輯中",
+      workspace_updating: "Updating workspace...",
+      workspace_updating_help: "This may take a while for large documents",
+      workspace_updated: "Workspace updated successfully.",
+      workspace_update_failed: "Workspace update failed: {{error}}",
+      error_with_message: "Error: {{error}}",
     },
     directory: {
       "my-documents": "我的文件",
@@ -587,6 +862,34 @@ const TRANSLATIONS = {
       remove_selected: "移除選擇的項目",
       costs: "*一次性嵌入費用",
       save_embed: "儲存並嵌入",
+      moving_message: "Moving {{count}} documents. Please wait.",
+      move_error: "Error moving files: {{error}}",
+      create_new_folder: "Create New Folder",
+      folder_name: "Folder Name",
+      folder_name_placeholder: "Enter folder name",
+      create_folder: "Create Folder",
+      new_folder_failed: "Failed to create folder",
+      removing_selected_from_workspace:
+        "Removing selected files from workspace",
+      removing_file_from_workspace: "Removing file from workspace",
+      estimated_cost: "Estimated Cost",
+      pin_failed: "Failed to pin document.",
+      unpin_failed: "Failed to unpin document.",
+      pin_success: "Document pinned to workspace",
+      unpin_success: "Document unpinned from workspace",
+      pin_failed_error: "Failed to pin document. {{error}}",
+      pin_tooltip: "Pin to workspace",
+      unpin_tooltip: "Un-pin from workspace",
+      pinned: "Pinned",
+      unpin: "Un-pin",
+      watch_failed: "Failed to watch document.",
+      unwatch_failed: "Failed to unwatch document.",
+      watch_success: "Document will be watched for changes.",
+      unwatch_success: "Document will no longer be watched for changes.",
+      watch_failed_error: "Failed to watch document. {{error}}",
+      stop_watching: "Stop watching for changes",
+      watch_for_changes: "Watch document for changes",
+      remove_document: "Remove document from workspace",
     },
     upload: {
       "processor-offline": "文件處理器無法使用",
@@ -600,6 +903,11 @@ const TRANSLATIONS = {
       "fetch-website": "擷取網站",
       "privacy-notice":
         "這些檔案將上傳到此 AnythingLLM 實例中的文件處理器。這些檔案不會發送或共享給第三方。",
+      "scraping-link": "Scraping link...",
+      "link-error": "Error uploading link: {{error}}",
+      "link-success": "Link uploaded successfully",
+      "uploading-file": "Uploading file...",
+      "file-failed": "this file failed to upload",
     },
     pinning: {
       what_pinning: "什麼是文件固定？",
@@ -622,17 +930,27 @@ const TRANSLATIONS = {
       watch_explained_block3_end: " 管理觀看的文件。",
       accept: "好的，明白了",
     },
-    obsidian: {
-      name: "Obsidian",
-      description: "一鍵匯入 Obsidian 保險庫。",
-      vault_location: "保險庫位置",
-      vault_description:
-        "選擇您的 Obsidian 保險庫資料夾以匯入所有筆記及其連接。",
-      selected_files: "找到 {{count}} 個 Markdown 檔案",
-      importing: "正在匯入保險庫...",
-      import_vault: "匯入保險庫",
-      processing_time: "這可能需要一段時間，具體取決於您的保險庫大小。",
-      vault_warning: "為避免任何衝突，請確保您的 Obsidian 保險庫目前未開啟。",
+    drupalwiki: {
+      fetching:
+        "Fetching all pages for the given Drupal Wiki spaces. This may take a while.",
+      success:
+        "Pages collected from Drupal Wiki spaces {{spaceIds}}. Output folder is {{destination}}.",
+      base_url: "Drupal Wiki base URL",
+      base_url_help: "This is the base URL of your <link>Drupal Wiki</link>.",
+      base_url_placeholder:
+        "eg: https://mywiki.drupal-wiki.net, https://drupalwiki.mycompany.tld, etc...",
+      space_ids: "Drupal Wiki Space IDs",
+      space_ids_help:
+        "Comma separated Space IDs you want to extract. See the <manual>manual</manual> on how to retrieve the Space IDs. Be sure that your API-Token User has access to those spaces.",
+      space_ids_placeholder: "eg: 12,34,69",
+      api_token: "Drupal Wiki API Token",
+      api_token_help:
+        "You need to provide an API token for authentication. See the Drupal Wiki <manual>manual</manual> on how to generate an API token for your user.",
+      api_token_description: "Access token for authentication.",
+      collecting: "Collecting pages...",
+      submit: "Submit",
+      loading_note:
+        "Once complete, all pages will be available for embedding into workspaces.",
     },
   },
   chat_window: {
@@ -641,15 +959,16 @@ const TRANSLATIONS = {
     get_started_default: "開始使用",
     upload: "上傳文件",
     or: "或",
+    attachments_processing: "附件正在處理中，請稍後...",
     send_chat: "發送訊息。",
     send_message: "發送訊息",
     attach_file: "附加檔案到此對話",
     slash: "查看所有可用的斜線指令。",
     agents: "查看所有可用的聊天代理。",
+    start_agent_session: "Start agent session",
     text_size: "變更文字大小。",
     microphone: "語音輸入提示。",
     send: "將提示訊息發送到工作區",
-    attachments_processing: "附件正在處理中，請稍後...",
     tts_speak_message: "TTS 朗讀訊息",
     copy: "複製",
     regenerate: "重新",
@@ -658,18 +977,33 @@ const TRANSLATIONS = {
     more_actions: "更多操作",
     hide_citations: "隱藏引文",
     show_citations: "顯示引文",
+    sources: "來源",
+    source_count_one: "{{count}} 參考",
+    source_count_other: "{{count}} 的相關資料",
+    document: "文件",
+    similarity_match: "比賽",
     pause_tts_speech_message: "暫停訊息撥放 TTS 語音 ",
     fork: "分叉",
     delete: "刪除",
     save_submit: "提交保存",
     cancel: "取消",
+    submit: "提交",
     edit_prompt: "編輯問題",
     edit_response: "編輯回應",
+    edit_info_user: "「提交」會重新產生 AI 的回覆。 「儲存」僅會更新您的訊息。",
+    edit_info_assistant: "您的修改將直接儲存到此處。",
+    see_less: "查看更多",
+    see_more: "查看更多",
     at_agent: "@agent",
     default_agent_description: " - 此工作區的預設代理。",
     custom_agents_coming_soon: "自訂代理功能即將推出！",
     preset_reset_description: "清除聊天紀錄並開始新的聊天",
+    preset_exit_description: "暫停目前的工作階段",
     add_new_preset: "新增預設",
+    add_new: "新增",
+    edit: "編輯",
+    publish: "發行",
+    stop_generating: "停止生成回應",
     command: "指令",
     your_command: "你的指令",
     placeholder_prompt: "提示範例",
@@ -679,6 +1013,15 @@ const TRANSLATIONS = {
     small: "小",
     normal: "一般",
     large: "大",
+    tools: "工具",
+    slash_commands: "簡短指令",
+    agent_skills: "代理人技能",
+    manage_agent_skills: "Manage Agent Skills",
+    agent_skills_disabled_in_session:
+      "Can't modify skills during an active agent session. Use /exit to end the session first.",
+    browse: "瀏覽",
+    text_size_label: "文字大小",
+    select_model: "選擇模型",
     workspace_llm_manager: {
       search: "搜尋",
       loading_workspace_settings: "正在載入工作區設定",
@@ -689,27 +1032,6 @@ const TRANSLATIONS = {
       missing_credentials: "缺少憑證",
       missing_credentials_description: "缺少憑證說明",
     },
-    submit: "提交",
-    edit_info_user: "「提交」會重新產生 AI 的回覆。 「儲存」僅會更新您的訊息。",
-    edit_info_assistant: "您的修改將直接儲存到此處。",
-    see_less: "查看更多",
-    see_more: "查看更多",
-    tools: "工具",
-    slash_commands: "簡短指令",
-    agent_skills: "代理人技能",
-    browse: "瀏覽",
-    text_size_label: "文字大小",
-    select_model: "選擇模型",
-    sources: "來源",
-    document: "文件",
-    similarity_match: "比賽",
-    source_count_one: "{{count}} 參考",
-    source_count_other: "{{count}} 的相關資料",
-    preset_exit_description: "暫停目前的工作階段",
-    add_new: "新增",
-    edit: "編輯",
-    publish: "發行",
-    stop_generating: "停止生成回應",
   },
   profile_settings: {
     edit_account: "編輯帳戶",
@@ -731,187 +1053,6 @@ const TRANSLATIONS = {
     support: "支援",
     signout: "登出",
   },
-  customization: {
-    interface: {
-      title: "介面偏好設定",
-      description: "設定你在 AnythingLLM 的使用介面偏好。",
-    },
-    branding: {
-      title: "品牌與白標設定",
-      description: "使用自訂品牌設計將 AnythingLLM 白標化。",
-    },
-    chat: {
-      title: "聊天",
-      description: "設定你在 AnythingLLM 的聊天偏好。",
-      auto_submit: {
-        title: "語音輸入自動送出",
-        description: "在靜音一段時間後自動送出語音輸入內容",
-      },
-      auto_speak: {
-        title: "自動語音回應",
-        description: "自動朗讀 AI 的回應內容",
-      },
-      spellcheck: {
-        title: "拼字檢查功能",
-        description: "在聊天輸入框中啟用或停用拼字檢查",
-      },
-    },
-    items: {
-      theme: {
-        title: "主題",
-        description: "選擇應用程式的顏色主題。",
-      },
-      "show-scrollbar": {
-        title: "顯示捲軸",
-        description: "在聊天視窗中啟用或停用捲軸。",
-      },
-      "support-email": {
-        title: "支援信箱",
-        description: "設定使用者在需要幫助時可以聯繫的支援電子信箱。",
-      },
-      "app-name": {
-        title: "應用名稱",
-        description: "設定所有使用者在登入頁面上看到的應用名稱。",
-      },
-      "chat-message-alignment": {
-        title: "聊天訊息對齊方式",
-        description: "選擇使用聊天介面時訊息的對齊模式。",
-      },
-      "display-language": {
-        title: "顯示語言",
-        description: "選擇 AnythingLLM 使用者介面的顯示語言（如有提供翻譯）。",
-      },
-      logo: {
-        title: "品牌標誌",
-        description: "上傳自訂標誌，顯示於所有頁面。",
-        add: "新增自訂標誌",
-        recommended: "建議尺寸：800 x 200",
-        remove: "移除",
-        replace: "更換",
-      },
-      "welcome-messages": {
-        title: "歡迎訊息",
-        description: "自訂顯示給使用者的歡迎訊息。只有非管理者會看到這些訊息。",
-        new: "新增",
-        system: "系統",
-        user: "使用者",
-        message: "訊息",
-        assistant: "AnythingLLM 聊天助理",
-        "double-click": "雙擊進行編輯...",
-        save: "儲存訊息",
-      },
-      "browser-appearance": {
-        title: "瀏覽器外觀",
-        description: "自訂應用程式在瀏覽器分頁上的外觀與標題。",
-        tab: {
-          title: "分頁標題",
-          description: "當應用程式在瀏覽器中開啟時設定自訂的分頁標題。",
-        },
-        favicon: {
-          title: "網站圖示 (Favicon)",
-          description: "為瀏覽器分頁設定自訂網站圖示。",
-        },
-      },
-      "sidebar-footer": {
-        title: "側邊欄底部項目",
-        description: "自訂側邊欄底部顯示的項目。",
-        icon: "圖示",
-        link: "連結",
-      },
-      "render-html": {
-        title: "將 HTML 內容轉換為聊天格式",
-        description:
-          "將 HTML 格式的回應嵌入到助理的回應中。\n這可以顯著提高回應品質，但也可能帶來潛在的安全風險。",
-      },
-    },
-  },
-  "main-page": {
-    noWorkspaceError: "請先建立工作空間才能開始對話。",
-    checklist: {
-      title: "開始使用",
-      tasksLeft: "個任務未完成",
-      completed: "你已經走在成為AnythingLLM專家的路上！",
-      dismiss: "關閉",
-      tasks: {
-        create_workspace: {
-          title: "建立工作空間",
-          description: "建立你的第一個工作空間來開始使用",
-          action: "建立",
-        },
-        send_chat: {
-          title: "發送對話",
-          description: "開始與你的AI助理對話",
-          action: "對話",
-        },
-        embed_document: {
-          title: "嵌入文件",
-          description: "將你的第一個文件添加到工作空間",
-          action: "嵌入",
-        },
-        setup_system_prompt: {
-          title: "設置系統提示",
-          description: "設定你的AI助理的行為模式",
-          action: "設置",
-        },
-        define_slash_command: {
-          title: "定義斜線命令",
-          description: "為你的助理創建自定義命令",
-          action: "定義",
-        },
-        visit_community: {
-          title: "訪問社群中心",
-          description: "探索社群資源和模板",
-          action: "瀏覽",
-        },
-      },
-    },
-    quickLinks: {
-      title: "快速連結",
-      sendChat: "發送對話",
-      embedDocument: "嵌入文件",
-      createWorkspace: "建立工作空間",
-    },
-    exploreMore: {
-      title: "探索更多功能",
-      features: {
-        customAgents: {
-          title: "自定義AI代理",
-          description: "無需編碼即可建立強大的AI代理和自動化流程。",
-          primaryAction: "使用@代理進行對話",
-          secondaryAction: "建立代理流程",
-        },
-        slashCommands: {
-          title: "斜線命令",
-          description: "節省時間並使用自定義斜線命令注入提示。",
-          primaryAction: "創建斜線命令",
-          secondaryAction: "在中心探索",
-        },
-        systemPrompts: {
-          title: "系統提示",
-          description: "修改系統提示以自定義工作空間的AI回覆。",
-          primaryAction: "修改系統提示",
-          secondaryAction: "管理提示變數",
-        },
-      },
-    },
-    announcements: {
-      title: "更新與公告",
-    },
-    resources: {
-      title: "資源",
-      links: {
-        docs: "文檔",
-        star: "在Github上加星標",
-      },
-      keyboardShortcuts: "鍵盤快捷鍵",
-    },
-    quickActions: {
-      createAgent: "建立一個代理",
-      editWorkspace: "編輯工作區",
-      uploadDocument: "上傳文件",
-    },
-    greeting: "今天我能幫您什麼？",
-  },
   "keyboard-shortcuts": {
     title: "鍵盤快捷鍵",
     shortcuts: {
@@ -927,6 +1068,125 @@ const TRANSLATIONS = {
     },
   },
   community_hub: {
+    browse: {
+      title: "Community Hub",
+      description: "Share and collaborate with the Lovora community.",
+      recently_added: "Recently Added on Lovora Community Hub",
+      latest_description:
+        "Explore the latest additions to the Lovora Community Hub",
+      explore_more: "Explore More →",
+    },
+    authentication: {
+      save_failed: "Failed to save API key",
+      save_success: "API key saved successfully",
+      disconnect_failed: "Failed to disconnect from hub",
+      disconnect_success: "Disconnected from Lovora Community Hub",
+      title: "Your Lovora Community Hub Account",
+      description:
+        "Connecting your Lovora Community Hub account allows you to access your <bold>private</bold> Lovora Community Hub items as well as upload your own items to the Lovora Community Hub.",
+      why_title: "Why connect my Lovora Community Hub account?",
+      why_description:
+        "Connecting your Lovora Community Hub account allows you to pull in your <bold>private</bold> items from the Lovora Community Hub as well as upload your own items to the Lovora Community Hub.",
+      why_note:
+        "You do not need to connect your Lovora Community Hub account to pull in public items from the Lovora Community Hub.",
+      api_key_label: "Lovora Hub API Key",
+      api_key_placeholder: "Enter your Lovora Hub API key",
+      api_key_helper:
+        "You can get your API key from your <profile>Lovora Community Hub profile page</profile>.",
+      disconnect: "Disconnect",
+    },
+    import: {
+      layout: {
+        title: "Import a Community Item",
+        description:
+          "Import items from the Lovora Community Hub to enhance your instance with community-created prompts, skills, and commands.",
+      },
+      introduction: {
+        missing_id: "Please enter an item ID",
+        title: "Import an item from the Community Hub",
+        description_1:
+          "The Community Hub is a place where you can find, share, and import agent skills, system prompts, slash commands, and more.",
+        description_2:
+          "These items are created by the Lovora team and community, and are a great way to get started with Lovora as well as extend Lovora in a way that is customized to your needs.",
+        description_3:
+          "There are both <bold>private</bold> and <bold>public</bold> items in the Community Hub. Private items are only visible to you, while public items are visible to everyone.",
+        warning:
+          "If you are pulling in a private item, make sure it is <bold>shared with a team</bold> you belong to, and you have added a <link>Connection Key</link>.",
+        item_id_label: "Community Hub Item Import ID",
+        item_id_placeholder: "allm-community-id:agent-skill:1234567890",
+        continue: "Continue with import →",
+      },
+      completed: {
+        title: "Community Hub Item Imported",
+        success:
+          'The "{{name}}" {{itemType}} has been imported successfully. It is now available in your Lovora instance.',
+        view_agent_skills: 'View "{{name}}" in Agent Skills',
+        changes_note:
+          "Any changes you make to this {{itemType}} will not be reflected in the Community Hub. You can now modify it as needed.",
+        import_another: "Import another item",
+      },
+      item: {
+        created_by: "Created by",
+        learn_more: "Learn more →",
+        file_counter: "{{name}} ({{index}} of {{count}} files)",
+        agent_skill: {
+          import_success: "Agent skill imported successfully!",
+          import_error: "Failed to import agent skill. {{error}}",
+          warning_title: "Only import agent skills you trust",
+          warning_description:
+            "Agent skills can execute code on your Lovora instance, so only import agent skills from sources you trust. You should also review the code before importing. If you are unsure about what a skill does, do not import it.",
+          review_title: 'Review Agent Skill "{{name}}"',
+          verified: "Verified code",
+          unverified: "This skill is not verified.",
+          description:
+            "Agent skills unlock new capabilities for your Lovora workspace via <code>@agent</code> skills that can do specific tasks when invoked.",
+          importing: "Importing...",
+          import_button: "Import agent skill",
+        },
+        agent_flow: {
+          import_success: "Agent flow imported successfully!",
+          import_error: "Failed to import agent flow. {{error}}",
+          title: 'Import Agent Flow "{{name}}"',
+          description:
+            "Agent flows allow you to create reusable sequences of actions that can be triggered by your agent.",
+          flow_details: "Flow Details:",
+          description_label: "Description: {{description}}",
+          steps_label: "Steps ({{count}}):",
+          importing: "Importing...",
+          import_button: "Import agent flow",
+        },
+        system_prompt: {
+          applying: "Applying system prompt to workspace...",
+          apply_error: "Failed to apply system prompt. {{error}}",
+          apply_success: "System prompt applied to workspace.",
+          review_title: 'Review System Prompt "{{name}}"',
+          description:
+            "System prompts are used to guide the behavior of AI agents and can be applied to any existing workspace.",
+          provided_prompt: "Provided system prompt:",
+          apply_to_workspace: "Apply to Workspace",
+          available_workspaces: "Available workspaces",
+          apply_button: "Apply system prompt to workspace",
+        },
+        slash_command: {
+          import_success: "Slash command {{command}} imported successfully!",
+          import_error: "Failed to import slash command. {{error}}",
+          review_title: 'Review Slash Command "{{name}}"',
+          description:
+            "Slash commands are used to prefill information into a prompt while chatting with a Lovora workspace.\n\nThe slash command will be available during chatting by simply invoking it with <code>{{command}}</code> like you would any other command.",
+          import_button: "Import slash command",
+        },
+        unknown: {
+          title: "Unsupported item",
+          description:
+            "We found an item in the Community Hub, but we do not know what it is or it is not yet supported for import into Lovora.",
+          item_id: "The item ID is: <bold>{{id}}</bold>",
+          item_type: "The item type is: <bold>{{itemType}}</bold>",
+          contact_support:
+            "Please contact support via email if you need help importing this item.",
+          try_another: "Try another item",
+        },
+      },
+    },
     publish: {
       system_prompt: {
         success_title: "成功！",
@@ -979,14 +1239,6 @@ const TRANSLATIONS = {
         privacy_note:
           "代理流程始終以上傳為私有，以保護任何敏感資料。您可以在發布後在社群中心更改可見性。請在發布前驗證您的流程不包含任何敏感或私人資訊。",
       },
-      generic: {
-        unauthenticated: {
-          title: "需要驗證",
-          description:
-            "在發布項目之前，您需要通過 AnythingLLM 社群中心進行驗證。",
-          button: "連接到社群中心",
-        },
-      },
       slash_command: {
         success_title: "成功！",
         success_description: "您的斜線指令已發佈到社群中心！",
@@ -1015,35 +1267,535 @@ const TRANSLATIONS = {
         prompt_description: "這是觸發斜線指令時將使用的提示。",
         prompt_placeholder: "在此輸入您的提示...",
       },
-    },
-  },
-  security: {
-    title: "安全性設定",
-    multiuser: {
-      title: "多使用者模式",
-      description: "透過啟用多使用者模式來設定您的系統，以支援您的團隊。",
-      enable: {
-        "is-enable": "多使用者模式已啟用",
-        enable: "啟用多使用者模式",
-        description:
-          "預設情況下，您將是唯一的管理員。身為管理員，您需要為所有新使用者或管理員建立帳號。請勿遺失您的密碼，因為只有管理員使用者可以重設密碼。",
-        username: "管理員帳號使用者名稱",
-        password: "管理員帳號密碼",
+      generic: {
+        unauthenticated: {
+          title: "需要驗證",
+          description:
+            "在發布項目之前，您需要通過 AnythingLLM 社群中心進行驗證。",
+          button: "連接到社群中心",
+        },
       },
     },
-    password: {
-      title: "密碼保護",
-      description:
-        "使用密碼保護您的 AnythingLLM 系統。如果您忘記這個密碼，將沒有復原方法，因此請務必儲存此密碼。",
-      "password-label": "實例密碼",
+    card: {
+      verified: "Verified",
+      unverified: "Unverified",
+      skill: "Skill",
+      file: "file",
+      found: "found",
+      import: "Import",
     },
   },
-  home: {
-    welcome: "歡迎",
-    chooseWorkspace: "選擇一個工作區開始聊天！",
-    notAssigned:
-      "你目前還沒有分配到任何工作區。\n請聯繫你的管理員請求訪問一個工作區。",
-    goToWorkspace: '前往 "{{workspace}}"',
+  not_found: {
+    title: "404 - Page Not Found",
+    description: "The page you're looking for doesn't exist or has been moved.",
+    go_home: "Go Home",
+  },
+  workspace_members: {
+    username: "Username",
+    role: "Role",
+    date_added: "Date Added",
+    empty: "No workspace members",
+    manage_users: "Manage Users",
+    modal: {
+      title: "Users",
+      search_placeholder: "Search for a user",
+      no_users: "No users found",
+      select_all: "Select All",
+      unselect: "Unselect",
+      save: "Save",
+      updated_successfully: "Users updated successfully.",
+    },
+  },
+  experimental_features: {
+    title: "Experimental Features",
+    select_feature: "Select an experimental feature",
+    on: "On",
+    off: "Off",
+    enabled_reload: "Experimental feature set enabled. Reloading the page.",
+    modal: {
+      title: "Terms of use for experimental features",
+      intro:
+        "Experimental features in Lovora are features that we are piloting and are <bold>opt-in</bold>. We will proactively condition or warn you about any potential concerns before you approve any feature.",
+      risks_intro:
+        "Use of any feature on this page can result in, but is not limited to, the following possibilities.",
+      data_loss: "Loss of data.",
+      quality_change: "Change in quality of results.",
+      storage: "Increased storage.",
+      resources: "Increased resource consumption.",
+      cost: "Increased cost or use of any connected LLM or embedding provider.",
+      bugs: "Potential bugs or issues using Lovora.",
+      conditions_intro:
+        "Use of an experimental feature also comes with the following non-exhaustive conditions.",
+      may_not_exist: "Feature may not exist in future updates.",
+      unstable: "The feature being used is not currently stable.",
+      future_versions:
+        "The feature may not be available in future versions, configurations, or subscriptions of Lovora.",
+      privacy_honored:
+        "Your privacy settings <bold>will be honored</bold> with use of any beta feature.",
+      conditions_change: "These conditions may change in future updates.",
+      learn_more:
+        "Access to any features requires approval of this modal. If you would like to read more you can refer to <docs>docs.anythingllm.com</docs> or email <email>team@mintplexlabs.com</email>.",
+      reject: "Reject & close",
+      accept: "I understand",
+    },
+    live_sync: {
+      update_failed: "Failed to update status of feature.",
+      enabled: "Live document content sync has been enabled.",
+      disabled: "Live document content sync has been disabled.",
+      title: "Automatic Document Content Sync",
+      description:
+        'Enable the ability to specify a document to be "watched". Watched document content will be regularly fetched and updated in Lovora.',
+      scope:
+        "Watched documents will automatically update in all workspaces they are referenced in at the same time of update.",
+      note: "This feature only applies to web-based content, such as websites, Confluence, YouTube, and GitHub files.",
+      docs: "Feature Documentation and Warnings",
+      manage: "Manage Watched Documents →",
+    },
+  },
+  embeddable_modal: {
+    create_title: "Create new embed for workspace",
+    update_title: "Update embed #{{id}}",
+    workspace_label: "Workspace",
+    workspace_description:
+      "This is the workspace your chat window will be based on. All defaults will be inherited from the workspace unless overridden by this config.",
+    chat_method_label: "Allowed chat method",
+    chat_method_description:
+      "Set how your chatbot should operate. Query means it will only respond if a document helps answer the query.\nChat opens the chat to even general questions and can answer totally unrelated queries to your workspace.",
+    chat_option: "Chat: Respond to all questions regardless of context",
+    query_option:
+      "Query: Only respond to chats related to documents in workspace",
+    domains_label: "Restrict requests from domains",
+    domains_description:
+      "This filter will block any requests that come from a domain other than the list below.\nLeaving this empty means anyone can use your embed on any site.",
+    domains_placeholder: "https://mysite.com, https://lovora.no",
+    max_chats_per_day_title: "Max chats per day",
+    max_chats_per_day_hint:
+      "Limit the amount of chats this embedded chat can process in a 24 hour period. Zero is unlimited.",
+    max_chats_per_session_title: "Max chats per session",
+    max_chats_per_session_hint:
+      "Limit the amount of chats a session user can send with this embed in a 24 hour period. Zero is unlimited.",
+    message_limit_title: "Message History Limit",
+    message_limit_hint:
+      "The number of previous messages to include in the chat context. Default is 20.",
+    model_override_title: "Enable dynamic model use",
+    model_override_hint:
+      "Allow setting of the preferred LLM model to override the workspace default.",
+    temperature_override_title: "Enable dynamic LLM temperature",
+    temperature_override_hint:
+      "Allow setting of the LLM temperature to override the workspace default.",
+    prompt_override_title: "Enable Prompt Override",
+    prompt_override_hint:
+      "Allow setting of the system prompt to override the workspace default.",
+    error: "Error: {{error}}",
+    script_help:
+      "After creating an embed you will be provided a link that you can publish on your website with a simple <code>&lt;script&gt;</code> tag.",
+    cancel: "Cancel",
+    create: "Create embed",
+    update_success: "Embed updated successfully.",
+    update: "Update embed",
+  },
+  browser_extension_api_keys: {
+    title: "Browser Extension API Keys",
+    description:
+      "Manage API keys for browser extensions connecting to your Lovora instance.",
+    fetch_failed: "Failed to fetch API keys",
+    generate: "Generate New API Key",
+    error: "Error: {{error}}",
+    table: {
+      connection_string: "Extension Connection String",
+      created_by: "Created By",
+      created_at: "Created At",
+      actions: "Actions",
+      empty: "No API keys found",
+    },
+    row: {
+      revoke_confirm:
+        "Are you sure you want to revoke this browser extension API key?\nAfter you do this it will no longer be usable.\n\nThis action is irreversible.",
+      revoked: "Browser Extension API Key permanently revoked",
+      revoke_failed: "Failed to revoke API Key",
+      copied: "Connection string copied to clipboard",
+      connecting: "Attempting to connect to browser extension...",
+      copy_tooltip: "Copy connection string",
+      connect_tooltip: "Automatically connect to extension",
+      unavailable: "N/A",
+    },
+    modal: {
+      title: "New Browser Extension API Key",
+      error: "Error: {{error}}",
+      multi_user_warning:
+        "Warning: You are in multi-user mode, this API key will allow access to all workspaces associated with your account. Please share it cautiously.",
+      auto_connect_description:
+        'After clicking "Create API Key", Lovora will attempt to connect to your browser extension automatically.',
+      success_description:
+        'If you see "Connected to Lovora" in the extension, the connection was successful. If not, please copy the connection string and paste it into the extension manually.',
+      cancel: "Cancel",
+      create: "Create API Key",
+      copied: "API Key Copied!",
+      copy: "Copy API Key",
+    },
+  },
+  mobile_connections: {
+    title: "Connected Mobile Devices",
+    description:
+      "These are the devices that are connected to your desktop application to sync chats, workspaces, and more.",
+    register: "Register New Device",
+    table: {
+      device_name: "Device Name",
+      registered: "Registered",
+      empty: "No devices found",
+    },
+    row: {
+      granted: "Device access granted",
+      denied: "Device access denied",
+      by: "by",
+      revoke: "Revoke",
+      approve: "Approve Access",
+      deny: "Deny",
+    },
+    modal: {
+      title: "Go mobile. Stay local. Lovora Mobile.",
+      description:
+        "Lovora for mobile allows you to connect to your workspace chats, threads, tools, and documents while you are on the go.\n\nRun with local models on your phone privately or relay chats directly to this instance seamlessly.",
+      qr_help:
+        "Scan the QR code with the Lovora Mobile app to enable live sync of your workspaces, chats, threads and documents.",
+      learn_more: "Learn more",
+      play_store_alt: "Get on Google Play",
+      localhost_error:
+        "Please open this page via your machine's private IP address or custom domain. Localhost URLs will not work with the mobile app.",
+    },
+  },
+  system_prompt_variables: {
+    title: "System Prompt Variables",
+    description:
+      "System prompt variables store configuration values that can be referenced in your system prompt to enable dynamic prompt content.",
+    add_variable: "Add Variable",
+    no_variables: "No variables found",
+    table: {
+      key: "Key",
+      value: "Value",
+      description: "Description",
+      type: "Type",
+    },
+    modal: {
+      add_title: "Add New Variable",
+      edit_title: "Edit {{key}}",
+      required_fields: "Key and value are required",
+      created: "Variable created successfully",
+      create_failed: "Failed to create variable",
+      updated: "Variable updated successfully",
+      update_failed: "Failed to update variable",
+      key_placeholder: "e.g., company_name",
+      key_help:
+        "Key must be unique and will be used in prompts as {key}. Only letters, numbers and underscores are allowed.",
+      value_placeholder: "e.g., Acme Corp",
+      description_placeholder: "Optional description",
+      error: "Error: {{error}}",
+      create: "Create variable",
+      update: "Update variable",
+    },
+    row: {
+      delete_confirm:
+        'Are you sure you want to delete the variable "{{key}}"?\nThis action is irreversible.',
+      deleted: "Variable deleted successfully",
+      delete_failed: "Failed to delete variable",
+    },
+  },
+  api_keys: {
+    row: {
+      delete_confirm:
+        "Are you sure you want to deactivate this API key?\nAfter you do this it will no longer be usable.\n\nThis action is irreversible.",
+      deleted: "API key permanently deleted",
+      copied: "API key copied to clipboard",
+      copy: "Copy API Key",
+    },
+    modal: {
+      title: "Create new API key",
+      error: "Error: {{error}}",
+      copied: "API key copied to clipboard",
+      description:
+        "Once created, the API key can be used to programmatically access and configure this Lovora instance.",
+      read_docs: "Read the API documentation",
+      create: "Create API Key",
+    },
+  },
+  users: {
+    title: "Users",
+    description:
+      "These are all the accounts on this instance. Removing an account will immediately remove that user's access.",
+    add: "Add user",
+    permissions: "Permissions",
+    table: {
+      username: "Username",
+      role: "Role",
+      date_added: "Date Added",
+    },
+    roles: {
+      default_label: "Default",
+      manager_label: "Manager",
+      admin_label: "Administrator",
+      default: [
+        "Can only send chats with workspaces they are added to by admins or managers.",
+        "Cannot modify any settings.",
+      ],
+      manager: [
+        "Can view, create, and delete any workspaces and modify workspace-specific settings.",
+        "Can create, update, and invite new users to the instance.",
+        "Cannot modify LLM, vector database, embedding, or other provider connections.",
+      ],
+      admin: [
+        "Highest user privilege level.",
+        "Can see and do everything across the system.",
+      ],
+    },
+    message_limit: {
+      label: "Limit messages per day",
+      description:
+        "Restrict this user to a number of successful queries or chats within a 24 hour window.",
+      input_label: "Message limit per day",
+    },
+    row: {
+      suspend_confirm:
+        "Are you sure you want to suspend {{username}}?\nAfter you do this they will be logged out and unable to log back into this Lovora instance until unsuspended by an admin.",
+      suspended: "User has been suspended.",
+      unsuspended: "User is no longer suspended.",
+      suspend: "Suspend",
+      unsuspend: "Unsuspend",
+      delete_confirm:
+        "Are you sure you want to delete {{username}}?\nAfter you do this they will be logged out and unable to use this Lovora instance.\n\nThis action is irreversible.",
+      deleted: "User deleted from system.",
+    },
+    modal: {
+      add_title: "Add user to instance",
+      edit_title: "Edit {{username}}",
+      username_placeholder: "User's username",
+      password: "Password",
+      password_placeholder: "User's initial password",
+      password_help: "Password must be at least 8 characters long",
+      new_password: "New Password",
+      new_password_placeholder: "{{username}}'s new password",
+      bio: "Bio",
+      bio_placeholder: "User's bio",
+      error: "Error: {{error}}",
+      after_create:
+        "After creating a user they will need to log in with their initial credentials to gain access.",
+      update: "Update user",
+    },
+  },
+  workspace_settings: {
+    updated: "Workspace updated!",
+    update_failed: "Error: {{error}}",
+    updating: "Updating...",
+    update_workspace: "Update Workspace",
+  },
+  agent_config: {
+    configure_skills: "Configure Agent Skills",
+    configure_skills_description:
+      "Customize the default agent's capabilities by enabling or disabling specific skills. These settings apply across all workspaces.",
+    updating: "Updating agent...",
+    update: "Update workspace agent",
+  },
+  audio_preference: {
+    provider: "Provider",
+    save_failed: "Failed to save preferences: {{error}}",
+    tts: {
+      title: "Text-to-speech Preference",
+      description:
+        "Here you can specify which text-to-speech providers you want to use in Lovora. By default, Lovora uses your browser's built-in support for these services.",
+      saved: "Text-to-speech preferences saved successfully.",
+      search_placeholder: "Search text to speech providers",
+    },
+    stt: {
+      title: "Speech-to-text Preference",
+      description:
+        "Here you can specify which speech-to-text providers you want to use in Lovora. By default, Lovora uses your browser's built-in support for these services.",
+      saved: "Speech-to-text preferences saved successfully.",
+      search_placeholder: "Search speech to text providers",
+    },
+  },
+  active_workspaces: {
+    aria_label: "Workspaces",
+    reorder_failed: "Failed to reorder workspaces",
+    general_appearance: "General appearance settings",
+    threads: {
+      aria_label: "Threads",
+      loading: "Loading threads...",
+      default: "default",
+      virtual_new: "*New Thread",
+      create_failed: "Could not create thread - {{error}}",
+      starting: "Starting Thread...",
+      new: "New Thread",
+      delete_selected: "Delete Selected",
+      deleted: "deleted thread",
+      options: "Thread options",
+      rename_prompt: "What would you like to rename this thread to?",
+      update_failed: "Thread could not be updated! {{message}}",
+      delete_confirm:
+        "Are you sure you want to delete this thread? All of its chats will be deleted. You cannot undo this.",
+      delete_failed: "Thread could not be deleted!",
+      deleted_success: "Thread deleted successfully!",
+      rename: "Rename",
+      delete: "Delete Thread",
+    },
+  },
+  model_table: {
+    available_models: "Available Models",
+    search: "Search models",
+    refresh: "Refresh Models",
+  },
+  footer_customization: {
+    url_placeholder: "https://example.com",
+  },
+  chat_embed_widgets: {
+    back: "Back",
+    widgets: "Widgets",
+    history: "History",
+    code: "Code",
+    disable: "Disable",
+    enable: "Enable",
+    delete: "Delete",
+    close: "Close",
+    all_domains: "all",
+    code_snippet: {
+      title: "Copy your embed code",
+      copied: "Snippet copied to clipboard!",
+      label: "HTML Script Tag Embed Code",
+      description:
+        "Make your workspace chat embed behave like a help desk chat bubble in the corner of your website.",
+      view_options: "View all style and configuration options",
+    },
+  },
+  agent_builder: {
+    actions: {
+      add_block: "Add Block",
+      move_up: "Move block up",
+      move_down: "Move block down",
+      delete_block: "Delete block",
+      new_flow: "New Flow",
+      publish: "Publish",
+      save: "Save",
+    },
+    header: {
+      logo_alt: "Lovora logo",
+      builder: "Builder",
+      view_docs: "View documentation",
+    },
+    toasts: {
+      load_available_flows_error: "Failed to load available flows",
+      load_flow_error: "Failed to load flow",
+      missing_name_description:
+        "Please provide both a name and description for your flow",
+      save_success: "Agent flow saved successfully!",
+      save_error: "Failed to save agent flow. {{error}}",
+    },
+    common: {
+      select_variable: "Select variable",
+      select_or_create_variable: "Select or create variable",
+    },
+    blocks: {
+      flow_info: {
+        label: "Flow Information",
+        description: "Basic flow information",
+        untitled: "Untitled Flow",
+      },
+      start: {
+        label: "Flow Variables",
+        description: "Configure agent variables and settings",
+        summary: "{{count}} variable defined",
+        summary_other: "{{count}} variables defined",
+      },
+      api_call: {
+        label: "API Call",
+        description: "Make an HTTP request",
+        no_url: "(no URL)",
+      },
+      llm_instruction: {
+        label: "LLM Instruction",
+        description: "Process data using LLM instructions",
+        no_instruction: "No instruction",
+      },
+      web_scraping: {
+        label: "Web Scraping",
+        description: "Scrape content from a webpage",
+        no_url: "No URL specified",
+      },
+      finish: {
+        label: "Flow Complete",
+        description: "End of agent flow",
+        summary: "Flow will end here",
+      },
+    },
+    direct_output: {
+      label: "Direct Output",
+      description:
+        "The output of this block will be returned directly to the chat. This will prevent any further tool calls from being executed.",
+    },
+    config_coming_soon: "Configuration options coming soon...",
+    content_summarization: {
+      label: "Content Summarization",
+      description:
+        "When enabled, long webpage content will be automatically summarized to reduce token usage.",
+      note: "Note: This may affect data quality and remove specific details from the original content.",
+    },
+    flow_info: {
+      name: "Flow Name",
+      name_help:
+        "It is important to give your flow a name that an LLM can easily understand.",
+      examples: '"SendMessageToDiscord", "CheckStockPrice", "CheckWeather"',
+      name_placeholder: "Enter flow name",
+      description: "Description",
+      description_help:
+        "It is equally important to give your flow a description that an LLM can easily understand. Be sure to include the purpose of the flow, the context it will be used in, and any other relevant information.",
+      description_placeholder: "Enter flow description",
+    },
+    start: {
+      variables: "Variables",
+      variable_name: "Variable name",
+      initial_value: "Initial value",
+      delete_variable: "Delete variable",
+      add_variable: "Add variable",
+    },
+    api_call: {
+      url: "URL",
+      url_placeholder: "https://api.example.com/endpoint",
+      insert_variable: "Insert variable",
+      select_variable_to_insert: "Select variable to insert",
+      method: "Method",
+      headers: "Headers",
+      add_header: "Add header",
+      header_name: "Header name",
+      value: "Value",
+      remove_header: "Remove header",
+      request_body: "Request Body",
+      raw_text: "Raw Text",
+      form_data: "Form Data",
+      key: "Key",
+      remove_field: "Remove field",
+      add_field: "Add Form Field",
+      raw_body_placeholder: "Raw request body...",
+      response_variable: "Store Response In",
+    },
+    llm_instruction: {
+      instruction: "Instruction",
+      placeholder: "Enter instructions for the LLM...",
+      result_variable: "Result Variable",
+    },
+    web_scraping: {
+      url: "URL to Scrape",
+      capture_as: "Capture Page Content As",
+      capture_options: {
+        text: "Text content only",
+        html: "Raw HTML",
+        selector: "CSS Query Selector",
+      },
+      query_selector: "Query Selector",
+      query_selector_help:
+        "Enter a valid CSS selector to scrape the content of the page.",
+      result_variable: "Result Variable",
+    },
+    finish: {
+      description:
+        "This is the end of your agent flow. All steps above will be executed in sequence.",
+    },
   },
 };
 

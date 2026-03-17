@@ -1,4 +1,3 @@
-// Anything with "null" requires a translation. Contribute to translation via a PR!
 const TRANSLATIONS = {
   onboarding: {
     home: {
@@ -9,6 +8,7 @@ const TRANSLATIONS = {
       title: "LLM Preferanse",
       description:
         "Lovora kan fungere med mange LLM-leverandører. Dette vil være tjenesten som håndterer chatting.",
+      search_placeholder: "Søk etter LLM-leverandører",
     },
     userSetup: {
       title: "Brukeroppsett",
@@ -24,6 +24,12 @@ const TRANSLATIONS = {
       adminUsername: "Brukernavn for administratorkontoen",
       adminPassword: "Admin konto passord",
       adminPasswordReq: "Passord må være på minst 8 tegn.",
+      admin_username_placeholder: "Ditt admin-brukernavn",
+      admin_password_placeholder: "Ditt admin-passord",
+      password_symbols_error:
+        "Passordet ditt inneholder ugyldige tegn. Tillatte symboler er _,-,!,@,$,%,^,&,*,(,),;",
+      password_set_failed: "Kunne ikke sette passord: {{error}}",
+      setup_failed: "Feil: {{error}}",
       teamHint:
         "Som standard vil du være den eneste administratoren. Når introduksjonen er fullført, kan du opprette og invitere andre til å være brukere eller administratorer. Ikke mist passordet ditt, siden bare administratorer kan tilbakestille passord.",
     },
@@ -63,10 +69,16 @@ const TRANSLATIONS = {
     save: "Lagre endringer",
     previous: "Forrige side",
     next: "Neste side",
+    cancel: "Avbryt",
+    close: "Lukk",
     optional: "Valgfritt",
     yes: "Ja",
     no: "Nei",
     search: "Søk",
+    copy: "Kopier",
+    copied: "Kopiert",
+    edit: "Rediger",
+    delete: "Slett",
     username_requirements:
       "Brukernavnet må bestå av 2-32 tegn, begynne med en liten bokstav, og kun inneholde små bokstaver, tall, understrek, bindestreker og punktum.",
   },
@@ -87,7 +99,7 @@ const TRANSLATIONS = {
     customization: "Tilpasning",
     interface: "UI-innstillinger",
     branding: "Merkevarebygging og hvitmerking",
-    chat: "Chat",
+    chat: "Samtale",
     "api-keys": "Utvikler API",
     llm: "LLM",
     transcription: "Transkripsjon",
@@ -103,12 +115,12 @@ const TRANSLATIONS = {
     "ai-providers": "AI-leverandører",
     "agent-skills": "Agentferdigheter",
     "community-hub": {
-      title: "Community Hub",
+      title: "Fellesskapshub",
       trending: "Utforsk populære",
       "your-account": "Din konto",
       "import-item": "Importer element",
     },
-    admin: "Admin",
+    admin: "Administrator",
     tools: "Verktøy",
     "system-prompt-variables": "Systempromptvariabler",
     "experimental-features": "Eksperimentelle funksjoner",
@@ -154,7 +166,7 @@ const TRANSLATIONS = {
         send_chat: {
           title: "Send en chat",
           description: "Start en samtale med AI-assistenten din",
-          action: "Chat",
+          action: "Send",
         },
         embed_document: {
           title: "Bygg inn et dokument",
@@ -290,13 +302,13 @@ const TRANSLATIONS = {
     mode: {
       title: "Chat-modus",
       automatic: {
-        title: "Auto",
+        title: "Automatisk",
         description:
           "vil automatisk bruke verktøy hvis modellen og leverandøren støtter innebygd verktøykalling. Hvis innebygd verktøykalling ikke støttes, må du bruke @agent-kommandoen for å bruke verktøy.",
       },
       chat: {
-        title: "Chat",
-        "desc-start": "vil gi svar med LLMs generelle kunnskap",
+        title: "Samtale",
+        "desc-start": "vil gi svar med LLM-ens generelle kunnskap",
         and: "og",
         "desc-end": "dokumentkontekst som er funnet.",
       },
@@ -444,6 +456,12 @@ const TRANSLATIONS = {
     description:
       "Dette er alle de innspilte chattene og meldingene som er sendt av brukere sortert etter opprettelsesdatoen.",
     export: "Eksport",
+    export_success: "Chatter ble eksportert som {{name}}.",
+    export_failed: "Kunne ikke eksportere chatter.",
+    clear: "Tøm chatter",
+    clear_confirm:
+      "Er du sikker på at du vil tømme alle chatter?\n\nDenne handlingen kan ikke angres.",
+    cleared: "Alle chatter ble tømt.",
     table: {
       id: "ID",
       by: "Sendt av",
@@ -451,6 +469,47 @@ const TRANSLATIONS = {
       prompt: "Spør",
       response: "Svar",
       at: "Sendt kl",
+    },
+    row: {
+      delete_confirm:
+        "Er du sikker på at du vil slette denne chatten?\n\nDenne handlingen kan ikke angres.",
+      viewing_text: "Viser tekst",
+    },
+  },
+  system_prompt_variables: {
+    title: "Systempromptvariabler",
+    description:
+      "Systempromptvariabler lagrer konfigurasjonsverdier som kan refereres i systemprompten for å aktivere dynamisk innhold.",
+    add_variable: "Legg til variabel",
+    no_variables: "Fant ingen variabler",
+    table: {
+      key: "Nøkkel",
+      value: "Verdi",
+      description: "Beskrivelse",
+      type: "Variabeltype",
+    },
+    modal: {
+      add_title: "Legg til ny variabel",
+      edit_title: "Rediger {{key}}",
+      required_fields: "Nøkkel og verdi er påkrevd",
+      created: "Variabelen ble opprettet",
+      create_failed: "Kunne ikke opprette variabel",
+      updated: "Variabelen ble oppdatert",
+      update_failed: "Kunne ikke oppdatere variabel",
+      key_placeholder: "f.eks. company_name",
+      key_help:
+        "Nøkkelen må være unik og brukes i prompts som {key}. Bare bokstaver, tall og understreker er tillatt.",
+      value_placeholder: "f.eks. Acme Corp",
+      description_placeholder: "Valgfri beskrivelse",
+      error: "Feil: {{error}}",
+      create: "Opprett variabel",
+      update: "Oppdater variabel",
+    },
+    row: {
+      delete_confirm:
+        'Er du sikker på at du vil slette variabelen "{{key}}"?\nDenne handlingen kan ikke angres.',
+      deleted: "Variabelen ble slettet",
+      delete_failed: "Kunne ikke slette variabel",
     },
   },
   customization: {
@@ -464,7 +523,7 @@ const TRANSLATIONS = {
         "Hvitmerk Lovora-forekomsten din med tilpasset merkevarebygging.",
     },
     chat: {
-      title: "Chat",
+      title: "Samtale",
       description: "Angi chatpreferansene dine for Lovora.",
       auto_submit: {
         title: "Auto-send taleinndata",
@@ -524,7 +583,7 @@ const TRANSLATIONS = {
         description:
           "Tilpass velkomstmeldingene som vises til brukerne dine. Bare ikke-administratorbrukere vil se disse meldingene.",
         new: "Ny",
-        system: "system",
+        system: "systemmelding",
         user: "bruker",
         message: "beskjed",
         assistant: "Lovora Chat-assistent",
@@ -550,7 +609,7 @@ const TRANSLATIONS = {
         description:
           "Tilpass bunntekstelementene som vises nederst på sidefeltet.",
         icon: "Ikon",
-        link: "Link",
+        link: "Lenke",
       },
       "render-html": {
         title: "Gjengi HTML i chat",
@@ -571,6 +630,151 @@ const TRANSLATIONS = {
       created: "Opprettet",
     },
   },
+  api_keys: {
+    row: {
+      delete_confirm:
+        "Er du sikker på at du vil deaktivere denne API-nøkkelen?\nEtter dette kan den ikke lenger brukes.\n\nDenne handlingen kan ikke angres.",
+      deleted: "API-nøkkelen ble slettet permanent",
+      copied: "API-nøkkelen ble kopiert til utklippstavlen",
+      copy: "Kopier API-nøkkel",
+    },
+    modal: {
+      title: "Opprett ny API-nøkkel",
+      error: "Feil: {{error}}",
+      copied: "API-nøkkelen ble kopiert til utklippstavlen",
+      description:
+        "Når API-nøkkelen er opprettet, kan den brukes til å få programmessig tilgang til og konfigurere denne Lovora-forekomsten.",
+      read_docs: "Les API-dokumentasjonen",
+      create: "Opprett API-nøkkel",
+    },
+  },
+  users: {
+    title: "Brukere",
+    description:
+      "Dette er alle kontoene på denne forekomsten. Hvis du fjerner en konto, mister brukeren umiddelbart tilgangen.",
+    add: "Legg til bruker",
+    permissions: "Tillatelser",
+    table: {
+      username: "Brukernavn",
+      role: "Rolle",
+      date_added: "Lagt til",
+    },
+    roles: {
+      default_label: "Standard",
+      manager_label: "Leder",
+      admin_label: "Administrator",
+      default: [
+        "Kan bare sende chatter til arbeidsområder de er lagt til i av administratorer eller ledere.",
+        "Kan ikke endre noen innstillinger.",
+      ],
+      manager: [
+        "Kan vise, opprette og slette alle arbeidsområder og endre arbeidsområdespesifikke innstillinger.",
+        "Kan opprette, oppdatere og invitere nye brukere til forekomsten.",
+        "Kan ikke endre LLM, vektordatabase, embedding eller andre leverandørtilkoblinger.",
+      ],
+      admin: [
+        "Høyeste brukertilgangsnivå.",
+        "Kan se og gjøre alt i hele systemet.",
+      ],
+    },
+    message_limit: {
+      label: "Begrens meldinger per dag",
+      description:
+        "Begrens denne brukeren til et antall vellykkede forespørsler eller chatter innenfor et døgn.",
+      input_label: "Meldingsgrense per dag",
+    },
+    row: {
+      suspend_confirm:
+        "Er du sikker på at du vil suspendere {{username}}?\nEtter dette blir brukeren logget ut og kan ikke logge inn i denne Lovora-forekomsten før en administrator opphever suspensjonen.",
+      suspended: "Brukeren er suspendert.",
+      unsuspended: "Brukeren er ikke lenger suspendert.",
+      suspend: "Suspender",
+      unsuspend: "Opphev suspensjon",
+      delete_confirm:
+        "Er du sikker på at du vil slette {{username}}?\nEtter dette blir brukeren logget ut og kan ikke bruke denne Lovora-forekomsten.\n\nDenne handlingen kan ikke angres.",
+      deleted: "Brukeren ble slettet fra systemet.",
+    },
+    modal: {
+      add_title: "Legg til bruker i forekomsten",
+      edit_title: "Rediger {{username}}",
+      username_placeholder: "Brukerens brukernavn",
+      password: "Passord",
+      password_placeholder: "Brukerens første passord",
+      password_help: "Passordet må være minst 8 tegn langt",
+      new_password: "Nytt passord",
+      new_password_placeholder: "{{username}} sitt nye passord",
+      bio: "Biografi",
+      bio_placeholder: "Brukerens bio",
+      error: "Feil: {{error}}",
+      after_create:
+        "Etter at brukeren er opprettet må vedkommende logge inn med de opprinnelige legitimasjonene for å få tilgang.",
+      update: "Oppdater bruker",
+    },
+  },
+  workspace_settings: {
+    updated: "Arbeidsområdet ble oppdatert!",
+    update_failed: "Feil: {{error}}",
+    updating: "Oppdaterer...",
+    update_workspace: "Oppdater arbeidsområde",
+  },
+  agent_config: {
+    configure_skills: "Konfigurer agentferdigheter",
+    configure_skills_description:
+      "Tilpass standardagentens egenskaper ved å aktivere eller deaktivere spesifikke ferdigheter. Disse innstillingene gjelder på tvers av alle arbeidsområder.",
+    updating: "Oppdaterer agent...",
+    update: "Oppdater arbeidsområdeagent",
+  },
+  audio_preference: {
+    provider: "Leverandør",
+    save_failed: "Kunne ikke lagre innstillingene: {{error}}",
+    tts: {
+      title: "Preferanse for tekst-til-tale",
+      description:
+        "Her kan du velge hvilke tekst-til-tale-leverandører du vil bruke i Lovora. Som standard bruker Lovora nettleserens innebygde støtte for disse tjenestene.",
+      saved: "Innstillingene for tekst-til-tale ble lagret.",
+      search_placeholder: "Søk etter tekst-til-tale-leverandører",
+    },
+    stt: {
+      title: "Preferanse for tale-til-tekst",
+      description:
+        "Her kan du velge hvilke tale-til-tekst-leverandører du vil bruke i Lovora. Som standard bruker Lovora nettleserens innebygde støtte for disse tjenestene.",
+      saved: "Innstillingene for tale-til-tekst ble lagret.",
+      search_placeholder: "Søk etter tale-til-tekst-leverandører",
+    },
+  },
+  active_workspaces: {
+    aria_label: "Arbeidsområder",
+    reorder_failed: "Kunne ikke endre rekkefølgen på arbeidsområdene",
+    general_appearance: "Generelle utseendeinnstillinger",
+    threads: {
+      aria_label: "Tråder",
+      loading: "Laster tråder...",
+      default: "standard",
+      virtual_new: "*Ny tråd",
+      create_failed: "Kunne ikke opprette tråd - {{error}}",
+      starting: "Starter tråd...",
+      new: "Ny tråd",
+      delete_selected: "Slett valgte",
+      deleted: "slettet tråd",
+      options: "Trådvalg",
+      rename_prompt: "Hva vil du gi denne tråden som nytt navn?",
+      update_failed: "Tråden kunne ikke oppdateres! {{message}}",
+      delete_confirm:
+        "Er du sikker på at du vil slette denne tråden? Alle chattene i den blir slettet. Dette kan ikke angres.",
+      delete_failed: "Tråden kunne ikke slettes!",
+      deleted_success: "Tråden ble slettet!",
+      rename: "Gi nytt navn",
+      delete: "Slett tråd",
+    },
+  },
+  model_table: {
+    available_models: "Tilgjengelige modeller",
+    search: "Søk i modeller",
+    refresh: "Oppdater modeller",
+  },
+  footer_customization: {
+    url_placeholder: "https://example.com",
+  },
   llm: {
     title: "LLM Preferanse",
     description:
@@ -581,7 +785,7 @@ const TRANSLATIONS = {
         azure_service_endpoint: "Azure Tjenesteendepunkt",
         api_key: "API Nøkkel",
         chat_deployment_name: "Navn på chatdistribusjon",
-        chat_model_token_limit: "Chat Model Token Limit",
+        chat_model_token_limit: "Token-grense for chatmodell",
         model_type: "Modelltype",
         model_type_tooltip:
           'Hvis distribusjonen din bruker en resonneringsmodell (o1, o1-mini, o3-mini, etc.), sett denne til "Reasoning". Ellers kan chat-forespørslene dine mislykkes.',
@@ -649,6 +853,15 @@ const TRANSLATIONS = {
       active: "Aktive domener",
       created: "Opprettet",
     },
+    row: {
+      disable_confirm:
+        "Er du sikker på at du vil deaktivere denne embed-en?\nNår den er deaktivert, vil embed-en ikke lenger svare på chatforespørsler.",
+      disabled: "Embed-en er deaktivert.",
+      enabled: "Embed-en er aktiv igjen.",
+      delete_confirm:
+        "Er du sikker på at du vil slette denne embed-en?\nNår den er slettet, vil den ikke lenger svare på chatter eller være aktiv.\n\nDenne handlingen kan ikke angres.",
+      deleted: "Embed-en ble slettet fra systemet.",
+    },
   },
   "embed-chats": {
     title: "Bygg inn chattehistorikk",
@@ -661,6 +874,37 @@ const TRANSLATIONS = {
       message: "Beskjed",
       response: "Svar",
       at: "Sendt kl",
+    },
+    export_success: "Embed-chatter ble eksportert som {{name}}.",
+    export_failed: "Kunne ikke eksportere embed-chatter.",
+    view_thoughts: "Vis tanker",
+    row: {
+      delete_confirm:
+        "Er du sikker på at du vil slette denne chatten?\n\nDenne handlingen kan ikke angres.",
+      viewing_text: "Viser tekst",
+      session_id: "sessionID",
+      username: "brukernavn",
+      client_ip: "klient-IP-adresse",
+      client_host: "klientvert-URL",
+    },
+  },
+  chat_embed_widgets: {
+    back: "Tilbake",
+    widgets: "Widgeter",
+    history: "Historikk",
+    code: "Kode",
+    disable: "Deaktiver",
+    enable: "Aktiver",
+    delete: "Slett",
+    close: "Lukk",
+    all_domains: "alle",
+    code_snippet: {
+      title: "Kopier embed-koden din",
+      copied: "Kodebiten ble kopiert til utklippstavlen!",
+      label: "HTML-script-tag for embed-kode",
+      description:
+        "La arbeidsområdechatten opptre som en hjelpesenterboble nederst i hjørnet på nettstedet ditt.",
+      view_options: "Se alle stil- og konfigurasjonsvalg",
     },
   },
   security: {
@@ -709,7 +953,7 @@ const TRANSLATIONS = {
     "search-placeholder": "Søk etter datakoblinger",
     "no-connectors": "Fant ingen datakoblinger.",
     obsidian: {
-      name: "Obsidian",
+      name: "Obsidian-hvelv",
       description: "Importer Obsidian hvelv med ett enkelt klikk.",
       vault_location: "Hvelvplassering",
       vault_description:
@@ -726,7 +970,7 @@ const TRANSLATIONS = {
       name: "GitHub Rep",
       description:
         "Importer et helt offentlig eller privat GitHub-lager med ett enkelt klikk.",
-      URL: "GitHub Repo URL",
+      URL: "GitHub-repo-URL",
       URL_explained: "Nettadressen til GitHub repoen du ønsker å samle inn.",
       token: "GitHub Tilgangstoken",
       optional: "valgfri",
@@ -754,7 +998,7 @@ const TRANSLATIONS = {
       name: "GitLab Rep",
       description:
         "Importer et helt offentlig eller privat GitLab-lager med ett enkelt klikk.",
-      URL: "GitLab Repo URL",
+      URL: "GitLab-repo-URL",
       URL_explained: "URL til GitLab repo du ønsker å samle inn.",
       token: "GitLab Tilgangstoken",
       optional: "valgfri",
@@ -796,7 +1040,7 @@ const TRANSLATIONS = {
       loading_languages: "-- laster tilgjengelige språk --",
     },
     "website-depth": {
-      name: "Bulk Link Scraper",
+      name: "Lenkeskraper i dybden",
       description:
         "Skrap et nettsted og dets underlenker opp til en viss dybde.",
       URL: "Nettstedets URL",
@@ -810,7 +1054,7 @@ const TRANSLATIONS = {
         "Når det er fullført, vil alt utskrapet innhold være tilgjengelig for innebygging i arbeidsområder i dokumentvelgeren.",
     },
     confluence: {
-      name: "Confluence",
+      name: "Confluence-side",
       description: "Importer en hel Confluence-side med ett enkelt klikk.",
       deployment_type: "Confluence distribusjonstype",
       deployment_type_explained:
@@ -822,7 +1066,7 @@ const TRANSLATIONS = {
         "Dette er mellomromsnøkkelen til din sammenløpsforekomst som vil bli brukt. Begynner vanligvis med ~",
       username: "Confluence Brukernavn",
       username_explained: "Ditt Confluence brukernavn",
-      auth_type: "Confluence Auth Type",
+      auth_type: "Confluence autentiseringstype",
       auth_type_explained:
         "Velg autentiseringstypen du vil bruke for å få tilgang til Confluence-sidene dine.",
       auth_type_username: "Brukernavn og tilgangstoken",
@@ -847,6 +1091,12 @@ const TRANSLATIONS = {
         "Redigering av disse innstillingene er bare tilgjengelig på en stasjonær enhet. Gå til denne siden på skrivebordet for å fortsette.",
       dismiss: "Lukk",
       editing: "Redigering",
+      workspace_updating: "Oppdaterer arbeidsområde...",
+      workspace_updating_help: "Dette kan ta litt tid for store dokumenter",
+      workspace_updated: "Arbeidsområdet ble oppdatert.",
+      workspace_update_failed:
+        "Oppdatering av arbeidsområdet mislyktes: {{error}}",
+      error_with_message: "Feil: {{error}}",
     },
     directory: {
       "my-documents": "Mine dokumenter",
@@ -861,13 +1111,42 @@ const TRANSLATIONS = {
         "Fjerner {{count}} dokumenter og {{folderCount}} mapper. Vennligst vent.",
       "move-success": "Flyttet {{count}} dokumenter.",
       date: "Dato",
-      type: "Type",
+      type: "Filtype",
       no_docs: "Ingen dokumenter",
       select_all: "Velg alle",
       deselect_all: "Fjern merket for Alle",
       remove_selected: "Fjern valgte",
       costs: "*Engangskostnad for innbygging",
       save_embed: "Lagre og bygg inn",
+      moving_message: "Flytter {{count}} dokumenter. Vennligst vent.",
+      move_error: "Feil ved flytting av filer: {{error}}",
+      create_new_folder: "Opprett ny mappe",
+      folder_name: "Mappenavn",
+      folder_name_placeholder: "Skriv inn mappenavn",
+      create_folder: "Opprett mappe",
+      new_folder_failed: "Kunne ikke opprette mappe",
+      removing_selected_from_workspace:
+        "Fjerner valgte filer fra arbeidsområdet",
+      removing_file_from_workspace: "Fjerner fil fra arbeidsområdet",
+      estimated_cost: "Estimert kostnad",
+      pin_failed: "Kunne ikke feste dokumentet.",
+      unpin_failed: "Kunne ikke løsne dokumentet.",
+      pin_success: "Dokumentet ble festet til arbeidsområdet",
+      unpin_success: "Dokumentet ble løsnet fra arbeidsområdet",
+      pin_failed_error: "Kunne ikke feste dokumentet. {{error}}",
+      pin_tooltip: "Fest til arbeidsområdet",
+      unpin_tooltip: "Løsne fra arbeidsområdet",
+      pinned: "Festet",
+      unpin: "Løsne",
+      watch_failed: "Kunne ikke overvåke dokumentet.",
+      unwatch_failed: "Kunne ikke stoppe overvåkingen av dokumentet.",
+      watch_success: "Dokumentet vil bli overvåket for endringer.",
+      unwatch_success:
+        "Dokumentet vil ikke lenger bli overvåket for endringer.",
+      watch_failed_error: "Kunne ikke overvåke dokumentet. {{error}}",
+      stop_watching: "Slutt å overvåke endringer",
+      watch_for_changes: "Overvåk dokument for endringer",
+      remove_document: "Fjern dokument fra arbeidsområdet",
     },
     upload: {
       "processor-offline": "Dokumentbehandler utilgjengelig",
@@ -881,6 +1160,34 @@ const TRANSLATIONS = {
       "fetch-website": "Hent nettsted",
       "privacy-notice":
         "Disse filene vil bli lastet opp til dokumentbehandleren som kjører på denne Lovora-forekomsten. Disse filene sendes eller deles ikke med en tredjepart.",
+      "scraping-link": "Henter inn lenke...",
+      "link-error": "Feil ved opplasting av lenke: {{error}}",
+      "link-success": "Lenken ble lastet opp",
+      "uploading-file": "Laster opp fil...",
+      "file-failed": "denne filen kunne ikke lastes opp",
+    },
+    drupalwiki: {
+      fetching:
+        "Henter alle sider for de oppgitte Drupal Wiki-områdene. Dette kan ta litt tid.",
+      success:
+        "Sider ble hentet fra Drupal Wiki-områdene {{spaceIds}}. Utdatamappen er {{destination}}.",
+      base_url: "Basis-URL for Drupal Wiki",
+      base_url_help:
+        "Dette er basis-URL-en til <link>Drupal Wiki</link>-installasjonen din.",
+      base_url_placeholder:
+        "f.eks. https://mywiki.drupal-wiki.net, https://drupalwiki.mycompany.tld, osv...",
+      space_ids: "Drupal Wiki Space-ID-er",
+      space_ids_help:
+        "Kommaseparerte Space-ID-er du vil hente ut. Se <manual>veiledningen</manual> for hvordan du finner Space-ID-ene. Sørg for at API-token-brukeren har tilgang til disse områdene.",
+      space_ids_placeholder: "f.eks. 12,34,69",
+      api_token: "Drupal Wiki API-token",
+      api_token_help:
+        "Du må oppgi et API-token for autentisering. Se Drupal Wiki-<manual>veiledningen</manual> for hvordan du genererer et API-token for brukeren din.",
+      api_token_description: "Tilgangstoken for autentisering.",
+      collecting: "Samler inn sider...",
+      submit: "Send inn",
+      loading_note:
+        "Når dette er ferdig, vil alle sider være tilgjengelige for embedding i arbeidsområder.",
     },
     pinning: {
       what_pinning: "Hva er dokumentfesting?",
@@ -917,6 +1224,7 @@ const TRANSLATIONS = {
     attach_file: "Legg ved en fil i denne chatten",
     slash: "Se alle tilgjengelige skråstrekkommandoer for chatting.",
     agents: "Se alle tilgjengelige agenter du kan bruke til å chatte.",
+    start_agent_session: "Start agentøkt",
     text_size: "Endre tekststørrelse.",
     microphone: "Si spørsmålet ditt.",
     send: "Send melding til arbeidsområdet",
@@ -964,7 +1272,7 @@ const TRANSLATIONS = {
     placeholder_description: "Svarer med et dikt om LLM-er.",
     save: "Lagre",
     small: "Liten",
-    normal: "Normal",
+    normal: "Vanlig",
     large: "Stor",
     tools: "Verktøy",
     slash_commands: "Slash-kommandoer",
@@ -1022,6 +1330,132 @@ const TRANSLATIONS = {
     },
   },
   community_hub: {
+    browse: {
+      title: "Community Hub",
+      description: "Del og samarbeid med Lovora-fellesskapet.",
+      recently_added: "Nylig lagt til i Lovora Community Hub",
+      latest_description: "Utforsk de nyeste tilleggene i Lovora Community Hub",
+      explore_more: "Utforsk mer →",
+    },
+    card: {
+      verified: "Verifisert",
+      unverified: "Ikke verifisert",
+      skill: "Ferdighet",
+      file: "fil",
+      found: "funnet",
+      import: "Importer",
+    },
+    authentication: {
+      save_failed: "Kunne ikke lagre API-nøkkelen",
+      save_success: "API-nøkkelen ble lagret",
+      disconnect_failed: "Kunne ikke koble fra huben",
+      disconnect_success: "Koblet fra Lovora Community Hub",
+      title: "Din Lovora Community Hub-konto",
+      description:
+        "Når du kobler til Lovora Community Hub-kontoen din, får du tilgang til <bold>private</bold> elementer i Lovora Community Hub og kan laste opp dine egne elementer til Lovora Community Hub.",
+      why_title: "Hvorfor koble til Lovora Community Hub-kontoen min?",
+      why_description:
+        "Når du kobler til Lovora Community Hub-kontoen din, kan du hente inn <bold>private</bold> elementer fra Lovora Community Hub og laste opp dine egne elementer til Lovora Community Hub.",
+      why_note:
+        "Du trenger ikke å koble til Lovora Community Hub-kontoen din for å hente inn offentlige elementer fra Lovora Community Hub.",
+      api_key_label: "Lovora Hub API-nøkkel",
+      api_key_placeholder: "Skriv inn Lovora Hub API-nøkkelen din",
+      api_key_helper:
+        "Du finner API-nøkkelen din på <profile>profil-siden din i Lovora Community Hub</profile>.",
+      disconnect: "Koble fra",
+    },
+    import: {
+      layout: {
+        title: "Importer et fellesskapselement",
+        description:
+          "Importer elementer fra Lovora Community Hub for å utvide forekomsten din med prompts, ferdigheter og kommandoer laget av fellesskapet.",
+      },
+      introduction: {
+        missing_id: "Skriv inn en element-ID",
+        title: "Importer et element fra Community Hub",
+        description_1:
+          "Community Hub er et sted der du kan finne, dele og importere agentferdigheter, systemmeldinger, slash-kommandoer og mer.",
+        description_2:
+          "Disse elementene lages av Lovora-teamet og fellesskapet, og er en god måte å komme i gang med Lovora på og utvide Lovora etter dine behov.",
+        description_3:
+          "Det finnes både <bold>private</bold> og <bold>offentlige</bold> elementer i Community Hub. Private elementer er bare synlige for deg, mens offentlige elementer er synlige for alle.",
+        warning:
+          "Hvis du henter inn et privat element, må du sørge for at det er <bold>delt med et team</bold> du tilhører, og at du har lagt til en <link>Tilkoblingsnøkkel</link>.",
+        item_id_label: "Import-ID for Community Hub-element",
+        item_id_placeholder: "allm-community-id:agent-skill:1234567890",
+        continue: "Fortsett med import →",
+      },
+      completed: {
+        title: "Community Hub-element importert",
+        success:
+          '"{{name}}" av typen {{itemType}} ble importert. Det er nå tilgjengelig i Lovora-forekomsten din.',
+        view_agent_skills: 'Se "{{name}}" i Agentferdigheter',
+        changes_note:
+          "Endringer du gjør i dette elementet blir ikke synkronisert tilbake til Community Hub. Du kan nå endre det etter behov.",
+        import_another: "Importer et nytt element",
+      },
+      item: {
+        created_by: "Opprettet av",
+        learn_more: "Les mer →",
+        file_counter: "{{name}} ({{index}} av {{count}} filer)",
+        agent_skill: {
+          import_success: "Agentferdigheten ble importert!",
+          import_error: "Kunne ikke importere agentferdigheten. {{error}}",
+          warning_title: "Importer bare agentferdigheter du stoler på",
+          warning_description:
+            "Agentferdigheter kan kjøre kode på Lovora-forekomsten din, så importer bare agentferdigheter fra kilder du stoler på. Du bør også gå gjennom koden før du importerer. Hvis du er usikker på hva en ferdighet gjør, bør du ikke importere den.",
+          review_title: 'Gå gjennom agentferdigheten "{{name}}"',
+          verified: "Verifisert kode",
+          unverified: "Denne ferdigheten er ikke verifisert.",
+          description:
+            "Agentferdigheter gir Lovora-arbeidsområdet ditt nye muligheter via <code>@agent</code>-ferdigheter som kan utføre bestemte oppgaver når de brukes.",
+          importing: "Importerer...",
+          import_button: "Importer agentferdighet",
+        },
+        agent_flow: {
+          import_success: "Agentflyten ble importert!",
+          import_error: "Kunne ikke importere agentflyten. {{error}}",
+          title: 'Importer agentflyten "{{name}}"',
+          description:
+            "Agentflyter lar deg lage gjenbrukbare sekvenser av handlinger som kan utløses av agenten din.",
+          flow_details: "Flytdetaljer:",
+          description_label: "Beskrivelse: {{description}}",
+          steps_label: "Trinn ({{count}}):",
+          importing: "Importerer...",
+          import_button: "Importer agentflyt",
+        },
+        system_prompt: {
+          applying: "Bruker systemmeldingen på arbeidsområdet...",
+          apply_error: "Kunne ikke bruke systemmeldingen. {{error}}",
+          apply_success: "Systemmeldingen ble brukt på arbeidsområdet.",
+          review_title: 'Gå gjennom systemmeldingen "{{name}}"',
+          description:
+            "Systemmeldinger brukes til å styre oppførselen til AI-agenter og kan brukes på alle eksisterende arbeidsområder.",
+          provided_prompt: "Levert systemmelding:",
+          apply_to_workspace: "Bruk på arbeidsområde",
+          available_workspaces: "Tilgjengelige arbeidsområder",
+          apply_button: "Bruk systemmelding på arbeidsområde",
+        },
+        slash_command: {
+          import_success: "Slash-kommandoen {{command}} ble importert!",
+          import_error: "Kunne ikke importere slash-kommandoen. {{error}}",
+          review_title: 'Gå gjennom slash-kommandoen "{{name}}"',
+          description:
+            "Slash-kommandoer brukes til å forhåndsfylle informasjon i en prompt mens du chatter med et Lovora-arbeidsområde.\n\nSlash-kommandoen vil være tilgjengelig under chat ved at du bare bruker <code>{{command}}</code>, slik du ville brukt en hvilken som helst annen kommando.",
+          import_button: "Importer slash-kommando",
+        },
+        unknown: {
+          title: "Elementet støttes ikke",
+          description:
+            "Vi fant et element i Community Hub, men vi vet ikke hva det er, eller det støttes ennå ikke for import til Lovora.",
+          item_id: "Element-ID: <bold>{{id}}</bold>",
+          item_type: "Elementtype: <bold>{{itemType}}</bold>",
+          contact_support:
+            "Kontakt kundestøtte på e-post hvis du trenger hjelp til å importere dette elementet.",
+          try_another: "Prøv et annet element",
+        },
+      },
+    },
     publish: {
       system_prompt: {
         success_title: "Suksess!",
@@ -1120,6 +1554,321 @@ const TRANSLATIONS = {
           button: "Koble til Community Hub",
         },
       },
+    },
+  },
+  not_found: {
+    title: "404 - Fant ikke siden",
+    description: "Siden du leter etter finnes ikke eller har blitt flyttet.",
+    go_home: "Gå til startsiden",
+  },
+  workspace_members: {
+    username: "Brukernavn",
+    role: "Rolle",
+    date_added: "Lagt til",
+    empty: "Ingen medlemmer i arbeidsområdet",
+    manage_users: "Administrer brukere",
+    modal: {
+      title: "Brukere",
+      search_placeholder: "Søk etter en bruker",
+      no_users: "Fant ingen brukere",
+      select_all: "Velg alle",
+      unselect: "Fjern valg",
+      save: "Lagre",
+      updated_successfully: "Brukerne ble oppdatert.",
+    },
+  },
+  experimental_features: {
+    title: "Eksperimentelle funksjoner",
+    select_feature: "Velg en eksperimentell funksjon",
+    on: "På",
+    off: "Av",
+    enabled_reload:
+      "Det eksperimentelle funksjonssettet er aktivert. Laster siden på nytt.",
+    modal: {
+      title: "Vilkår for bruk av eksperimentelle funksjoner",
+      intro:
+        "Eksperimentelle funksjoner i Lovora er funksjoner vi tester ut, og de er <bold>valgfrie</bold>. Vi vil på forhånd informere om eller advare om mulige bekymringer før du godkjenner en funksjon.",
+      risks_intro:
+        "Bruk av funksjoner på denne siden kan blant annet føre til følgende.",
+      data_loss: "Tap av data.",
+      quality_change: "Endret kvalitet på resultater.",
+      storage: "Økt lagringsbruk.",
+      resources: "Økt ressursbruk.",
+      cost: "Økte kostnader eller økt bruk av tilkoblede LLM- eller embedding-leverandører.",
+      bugs: "Mulige feil eller problemer ved bruk av Lovora.",
+      conditions_intro:
+        "Bruk av en eksperimentell funksjon innebærer også følgende, uten at listen er uttømmende.",
+      may_not_exist:
+        "Funksjonen finnes kanskje ikke i fremtidige oppdateringer.",
+      unstable: "Funksjonen som brukes er ikke stabil ennå.",
+      future_versions:
+        "Funksjonen er kanskje ikke tilgjengelig i fremtidige versjoner, konfigurasjoner eller abonnementer av Lovora.",
+      privacy_honored:
+        "Personverninnstillingene dine <bold>blir respektert</bold> ved bruk av betafunksjoner.",
+      conditions_change:
+        "Disse vilkårene kan endres i fremtidige oppdateringer.",
+      learn_more:
+        "Tilgang til funksjonene krever at du godkjenner denne dialogen. Hvis du vil lese mer, kan du se <docs>docs.anythingllm.com</docs> eller sende e-post til <email>team@mintplexlabs.com</email>.",
+      reject: "Avvis og lukk",
+      accept: "Jeg forstår",
+    },
+    live_sync: {
+      update_failed: "Kunne ikke oppdatere funksjonsstatusen.",
+      enabled: "Synkronisering av direkte dokumentinnhold er aktivert.",
+      disabled: "Synkronisering av direkte dokumentinnhold er deaktivert.",
+      title: "Automatisk synkronisering av dokumentinnhold",
+      description:
+        'Gjør det mulig å merke et dokument som "overvåket". Innholdet i overvåkede dokumenter hentes regelmessig og oppdateres i Lovora.',
+      scope:
+        "Overvåkede dokumenter oppdateres automatisk i alle arbeidsområder de er referert i samtidig som oppdateringen skjer.",
+      note: "Denne funksjonen gjelder bare nettbasert innhold, som nettsteder, Confluence, YouTube og GitHub-filer.",
+      docs: "Dokumentasjon og advarsler for funksjonen",
+      manage: "Administrer overvåkede dokumenter →",
+    },
+  },
+  embeddable_modal: {
+    create_title: "Opprett ny embed for arbeidsområde",
+    update_title: "Oppdater embed #{{id}}",
+    workspace_label: "Arbeidsområde",
+    workspace_description:
+      "Dette er arbeidsområdet chatvinduet skal baseres på. Alle standardverdier arves fra arbeidsområdet med mindre de overstyres av denne konfigurasjonen.",
+    chat_method_label: "Tillatt chatmetode",
+    chat_method_description:
+      "Bestem hvordan chatboten skal fungere. Spørring betyr at den bare svarer hvis et dokument hjelper med å besvare spørsmålet.\nChat åpner for generelle spørsmål og kan svare på spørsmål som er helt utenfor konteksten til arbeidsområdet.",
+    chat_option: "Chat: Svar på alle spørsmål uavhengig av kontekst",
+    query_option:
+      "Spørring: Svar bare på chatter som er knyttet til dokumenter i arbeidsområdet",
+    domains_label: "Begrens forespørsler fra domener",
+    domains_description:
+      "Dette filteret blokkerer forespørsler som kommer fra andre domener enn listen nedenfor.\nHvis du lar dette stå tomt, kan hvem som helst bruke embed-en på hvilket som helst nettsted.",
+    domains_placeholder: "https://mittnettsted.no, https://lovora.no",
+    max_chats_per_day_title: "Maks chatter per dag",
+    max_chats_per_day_hint:
+      "Begrens hvor mange chatter denne innebygde chatten kan behandle i løpet av 24 timer. Null betyr ubegrenset.",
+    max_chats_per_session_title: "Maks chatter per økt",
+    max_chats_per_session_hint:
+      "Begrens hvor mange chatter en bruker i samme økt kan sende til denne embed-en i løpet av 24 timer. Null betyr ubegrenset.",
+    message_limit_title: "Grense for meldingshistorikk",
+    message_limit_hint:
+      "Antall tidligere meldinger som skal inkluderes i chatkonteksten. Standard er 20.",
+    model_override_title: "Aktiver dynamisk modellbruk",
+    model_override_hint:
+      "Tillat at foretrukket LLM-modell overstyrer standardmodellen i arbeidsområdet.",
+    temperature_override_title: "Aktiver dynamisk LLM-temperatur",
+    temperature_override_hint:
+      "Tillat at LLM-temperaturen overstyrer standardverdien i arbeidsområdet.",
+    prompt_override_title: "Aktiver overstyring av prompt",
+    prompt_override_hint:
+      "Tillat at systemprompten overstyrer standardverdien i arbeidsområdet.",
+    error: "Feil: {{error}}",
+    script_help:
+      "Etter at du har opprettet en embed får du en lenke du kan publisere på nettstedet ditt med en enkel <code>&lt;script&gt;</code>-tagg.",
+    cancel: "Avbryt",
+    create: "Opprett embed",
+    update_success: "Embed-en ble oppdatert.",
+    update: "Oppdater embed",
+  },
+  browser_extension_api_keys: {
+    title: "API-nøkler for nettleserutvidelsen",
+    description:
+      "Administrer API-nøkler for nettleserutvidelser som kobler seg til Lovora-forekomsten din.",
+    fetch_failed: "Kunne ikke hente API-nøkler",
+    generate: "Generer ny API-nøkkel",
+    error: "Feil: {{error}}",
+    table: {
+      connection_string: "Tilkoblingsstreng for utvidelsen",
+      created_by: "Opprettet av",
+      created_at: "Opprettet",
+      actions: "Handlinger",
+      empty: "Fant ingen API-nøkler",
+    },
+    row: {
+      revoke_confirm:
+        "Er du sikker på at du vil tilbakekalle denne API-nøkkelen for nettleserutvidelsen?\nEtterpå kan den ikke lenger brukes.\n\nDenne handlingen kan ikke angres.",
+      revoked: "API-nøkkelen for nettleserutvidelsen ble permanent tilbakekalt",
+      revoke_failed: "Kunne ikke tilbakekalle API-nøkkelen",
+      copied: "Tilkoblingsstrengen ble kopiert til utklippstavlen",
+      connecting: "Prøver å koble til nettleserutvidelsen...",
+      copy_tooltip: "Kopier tilkoblingsstreng",
+      connect_tooltip: "Koble automatisk til utvidelsen",
+      unavailable: "Ikke tilgjengelig",
+    },
+    modal: {
+      title: "Ny API-nøkkel for nettleserutvidelsen",
+      error: "Feil: {{error}}",
+      multi_user_warning:
+        "Advarsel: Du er i flerbrukermodus. Denne API-nøkkelen vil gi tilgang til alle arbeidsområdene som er knyttet til kontoen din. Del den med varsomhet.",
+      auto_connect_description:
+        'Etter at du klikker på "Opprett API-nøkkel", vil Lovora prøve å koble seg til nettleserutvidelsen automatisk.',
+      success_description:
+        'Hvis du ser "Koblet til Lovora" i utvidelsen, var tilkoblingen vellykket. Hvis ikke, kan du kopiere tilkoblingsstrengen og lime den inn i utvidelsen manuelt.',
+      cancel: "Avbryt",
+      create: "Opprett API-nøkkel",
+      copied: "API-nøkkelen er kopiert!",
+      copy: "Kopier API-nøkkel",
+    },
+  },
+  mobile_connections: {
+    title: "Tilkoblede mobilenheter",
+    description:
+      "Dette er enhetene som er koblet til skrivebordsapplikasjonen din for å synkronisere chatter, arbeidsområder og mer.",
+    register: "Registrer ny enhet",
+    table: {
+      device_name: "Enhetsnavn",
+      registered: "Registrert",
+      empty: "Fant ingen enheter",
+    },
+    row: {
+      granted: "Enhetstilgang gitt",
+      denied: "Enhetstilgang avslått",
+      by: "av",
+      revoke: "Tilbakekall",
+      approve: "Godkjenn tilgang",
+      deny: "Avslå",
+    },
+    modal: {
+      title: "Ta Lovora med deg. Hold det lokalt. Lovora Mobile.",
+      description:
+        "Lovora for mobil lar deg koble til arbeidsområdechattene, trådene, verktøyene og dokumentene dine når du er på farten.\n\nKjør med lokale modeller på telefonen privat, eller videresend chatter direkte til denne forekomsten uten avbrudd.",
+      qr_help:
+        "Skann QR-koden med Lovora Mobile-appen for å aktivere direkte synkronisering av arbeidsområder, chatter, tråder og dokumenter.",
+      learn_more: "Les mer",
+      play_store_alt: "Skaff den på Google Play",
+      localhost_error:
+        "Åpne denne siden via maskinens private IP-adresse eller et tilpasset domene. Localhost-adresser fungerer ikke med mobilappen.",
+    },
+  },
+  agent_builder: {
+    actions: {
+      add_block: "Legg til blokk",
+      move_up: "Flytt blokk opp",
+      move_down: "Flytt blokk ned",
+      delete_block: "Slett blokk",
+      new_flow: "Ny flyt",
+      publish: "Publiser",
+      save: "Lagre",
+    },
+    header: {
+      logo_alt: "Lovora-logo",
+      builder: "Bygger",
+      view_docs: "Vis dokumentasjon",
+    },
+    toasts: {
+      load_available_flows_error: "Kunne ikke laste tilgjengelige flyter",
+      load_flow_error: "Kunne ikke laste flyten",
+      missing_name_description:
+        "Legg inn både navn og beskrivelse for flyten din",
+      save_success: "Agentflyten ble lagret!",
+      save_error: "Kunne ikke lagre agentflyten. {{error}}",
+    },
+    common: {
+      select_variable: "Velg variabel",
+      select_or_create_variable: "Velg eller opprett variabel",
+    },
+    blocks: {
+      flow_info: {
+        label: "Flytinformasjon",
+        description: "Grunnleggende flytinformasjon",
+        untitled: "Flyt uten tittel",
+      },
+      start: {
+        label: "Flytvariabler",
+        description: "Konfigurer agentvariabler og innstillinger",
+        summary: "{{count}} variabel definert",
+        summary_other: "{{count}} variabler definert",
+      },
+      api_call: {
+        label: "API-kall",
+        description: "Utfør en HTTP-forespørsel",
+        no_url: "(ingen URL)",
+      },
+      llm_instruction: {
+        label: "LLM-instruksjon",
+        description: "Behandle data ved hjelp av LLM-instruksjoner",
+        no_instruction: "Ingen instruksjon",
+      },
+      web_scraping: {
+        label: "Nettskraping",
+        description: "Hent innhold fra en nettside",
+        no_url: "Ingen URL oppgitt",
+      },
+      finish: {
+        label: "Flyt fullført",
+        description: "Slutten på agentflyten",
+        summary: "Flyten avsluttes her",
+      },
+    },
+    direct_output: {
+      label: "Direkte utdata",
+      description:
+        "Utdataene fra denne blokken returneres direkte til chatten. Dette hindrer at flere verktøykall blir utført.",
+    },
+    config_coming_soon: "Konfigurasjonsvalg kommer snart...",
+    content_summarization: {
+      label: "Innholdssammendrag",
+      description:
+        "Når dette er aktivert, blir langt nettsideinnhold automatisk oppsummert for å redusere tokenbruk.",
+      note: "Merk: Dette kan påvirke datakvaliteten og fjerne spesifikke detaljer fra det opprinnelige innholdet.",
+    },
+    flow_info: {
+      name: "Flytnavn",
+      name_help:
+        "Det er viktig å gi flyten et navn som en LLM enkelt kan forstå.",
+      examples: '"SendMessageToDiscord", "CheckStockPrice", "CheckWeather"',
+      name_placeholder: "Skriv inn flytnavn",
+      description: "Beskrivelse",
+      description_help:
+        "Det er like viktig å gi flyten en beskrivelse som en LLM enkelt kan forstå. Husk å inkludere formålet med flyten, konteksten den skal brukes i og annen relevant informasjon.",
+      description_placeholder: "Skriv inn flytbeskrivelse",
+    },
+    start: {
+      variables: "Variabler",
+      variable_name: "Variabelnavn",
+      initial_value: "Startverdi",
+      delete_variable: "Slett variabel",
+      add_variable: "Legg til variabel",
+    },
+    api_call: {
+      url: "URL",
+      url_placeholder: "https://api.example.com/endpoint",
+      insert_variable: "Sett inn variabel",
+      select_variable_to_insert: "Velg variabel som skal settes inn",
+      method: "Metode",
+      headers: "Headere",
+      add_header: "Legg til header",
+      header_name: "Headernavn",
+      value: "Verdi",
+      remove_header: "Fjern header",
+      request_body: "Forespørselskropp",
+      raw_text: "Råtekst",
+      form_data: "Skjemadata",
+      key: "Nøkkel",
+      remove_field: "Fjern felt",
+      add_field: "Legg til skjemafelt",
+      raw_body_placeholder: "Rå forespørselskropp...",
+      response_variable: "Lagre svar i",
+    },
+    llm_instruction: {
+      instruction: "Instruksjon",
+      placeholder: "Skriv inn instruksjoner for LLM-en...",
+      result_variable: "Resultatvariabel",
+    },
+    web_scraping: {
+      url: "URL som skal skrapes",
+      capture_as: "Hent sideinnhold som",
+      capture_options: {
+        text: "Kun tekstinnhold",
+        html: "Rå HTML",
+        selector: "CSS-spørringsvelger",
+      },
+      query_selector: "Spørringsvelger",
+      query_selector_help:
+        "Skriv inn en gyldig CSS-velger for å hente innholdet på siden.",
+      result_variable: "Resultatvariabel",
+    },
+    finish: {
+      description:
+        "Dette er slutten på agentflyten din. Alle trinnene over kjøres i rekkefølge.",
     },
   },
 };

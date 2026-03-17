@@ -152,13 +152,18 @@ function Directory({
       }
     }
     setLoading(true);
-    setLoadingMessage(`Moving ${toMove.length} documents. Please wait.`);
+    setLoadingMessage(
+      t("connectors.directory.moving_message", { count: toMove.length })
+    );
     const { success, message } = await Document.moveToFolder(
       toMove,
       folder.name
     );
     if (!success) {
-      showToast(`Error moving files: ${message}`, "error");
+      showToast(
+        t("connectors.directory.move_error", { error: message }),
+        "error"
+      );
       setLoading(false);
       return;
     }
@@ -231,7 +236,7 @@ function Directory({
 
           <div className="relative w-[560px] h-[310px] bg-theme-settings-input-bg rounded-2xl overflow-hidden border border-theme-modal-border">
             <div className="absolute top-0 left-0 right-0 z-10 rounded-t-2xl text-theme-text-primary text-xs grid grid-cols-12 py-2 px-8 border-b border-white/20 light:border-theme-modal-border bg-theme-settings-input-bg">
-              <p className="col-span-6">Name</p>
+              <p className="col-span-6">{t("connectors.directory.name")}</p>
             </div>
 
             <div className="overflow-y-auto h-full pt-8">
@@ -345,6 +350,7 @@ function Directory({
  * or updated so that tooltips are attached as the items are changed.
  */
 function DirectoryTooltips() {
+  const { t } = useTranslation();
   return (
     <Tooltip
       id="directory-item"
@@ -361,10 +367,10 @@ function DirectoryTooltips() {
             </p>
             <div className="flex flex-col mt-1">
               <p className="">
-                Date: <b>{data.date}</b>
+                {t("connectors.directory.date")}: <b>{data.date}</b>
               </p>
               <p className="">
-                Type: <b>{data.extension}</b>
+                {t("connectors.directory.type")}: <b>{data.extension}</b>
               </p>
             </div>
           </div>

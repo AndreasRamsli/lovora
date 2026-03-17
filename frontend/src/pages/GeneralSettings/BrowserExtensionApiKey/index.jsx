@@ -12,8 +12,10 @@ import ModalWrapper from "@/components/ModalWrapper";
 import { useModal } from "@/hooks/useModal";
 import { fullApiUrl } from "@/utils/constants";
 import { Tooltip } from "react-tooltip";
+import { useTranslation } from "react-i18next";
 
 export default function BrowserExtensionApiKeys() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [apiKeys, setApiKeys] = useState([]);
   const [error, setError] = useState(null);
@@ -30,7 +32,7 @@ export default function BrowserExtensionApiKeys() {
       setApiKeys(result.apiKeys);
       setIsMultiUser(result.apiKeys.some((key) => key.user !== null));
     } else {
-      setError(result.error || "Failed to fetch API keys");
+      setError(result.error || t("browser_extension_api_keys.fetch_failed"));
     }
     setLoading(false);
   };
@@ -50,12 +52,11 @@ export default function BrowserExtensionApiKeys() {
           <div className="w-full flex flex-col gap-y-1 pb-6 border-white/10 border-b-2">
             <div className="items-center flex gap-x-4">
               <p className="text-lg leading-6 font-bold text-theme-text-primary">
-                Browser Extension API Keys
+                {t("browser_extension_api_keys.title")}
               </p>
             </div>
             <p className="text-xs leading-[18px] font-base text-theme-text-secondary mt-2">
-              Manage API keys for browser extensions connecting to your
-              AnythingLLM instance.
+              {t("browser_extension_api_keys.description")}
             </p>
           </div>
           <div className="w-full justify-end flex">
@@ -64,7 +65,7 @@ export default function BrowserExtensionApiKeys() {
               className="mt-3 mr-0 mb-4 md:-mb-14 z-10"
             >
               <PlusCircle className="h-4 w-4" weight="bold" />
-              Generate New API Key
+              {t("browser_extension_api_keys.generate")}
             </CTAButton>
           </div>
           <div className="overflow-x-auto mt-6">
@@ -79,24 +80,26 @@ export default function BrowserExtensionApiKeys() {
                 containerClassName="flex w-full"
               />
             ) : error ? (
-              <div className="text-red-500 mt-6">Error: {error}</div>
+              <div className="text-red-500 mt-6">
+                {t("browser_extension_api_keys.error", { error })}
+              </div>
             ) : (
               <table className="w-full text-xs text-left rounded-lg min-w-[640px] border-spacing-0 md:mt-6 mt-0">
                 <thead className="text-theme-text-secondary text-xs leading-[18px] font-bold uppercase border-white/10 border-b">
                   <tr>
                     <th scope="col" className="px-6 py-2 rounded-tl-lg">
-                      Extension Connection String
+                      {t("browser_extension_api_keys.table.connection_string")}
                     </th>
                     {isMultiUser && (
                       <th scope="col" className="px-6 py-2">
-                        Created By
+                        {t("browser_extension_api_keys.table.created_by")}
                       </th>
                     )}
                     <th scope="col" className="px-6 py-2">
-                      Created At
+                      {t("browser_extension_api_keys.table.created_at")}
                     </th>
                     <th scope="col" className="px-6 py-2 rounded-tr-lg">
-                      Actions
+                      {t("browser_extension_api_keys.table.actions")}
                     </th>
                   </tr>
                 </thead>
@@ -107,7 +110,7 @@ export default function BrowserExtensionApiKeys() {
                         colSpan={isMultiUser ? "4" : "3"}
                         className="px-6 py-4 text-center"
                       >
-                        No API keys found
+                        {t("browser_extension_api_keys.table.empty")}
                       </td>
                     </tr>
                   ) : (

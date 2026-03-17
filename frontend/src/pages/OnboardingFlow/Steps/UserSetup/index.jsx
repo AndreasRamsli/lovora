@@ -125,10 +125,7 @@ const JustMe = ({
     const formData = new FormData(form);
 
     if (!PW_REGEX.test(formData.get("password"))) {
-      showToast(
-        `Your password has restricted characters in it. Allowed symbols are _,-,!,@,$,%,^,&,*,(,),;`,
-        "error"
-      );
+      showToast(t("onboarding.userSetup.password_symbols_error"), "error");
       return;
     }
 
@@ -138,7 +135,10 @@ const JustMe = ({
     });
 
     if (error) {
-      showToast(`Failed to set password: ${error}`, "error");
+      showToast(
+        t("onboarding.userSetup.password_set_failed", { error }),
+        "error"
+      );
       return;
     }
 
@@ -220,7 +220,7 @@ const JustMe = ({
               name="password"
               type="password"
               className="border-none bg-theme-settings-input-bg text-white text-sm rounded-lg block w-full p-2.5 focus:outline-primary-button active:outline-primary-button outline-none placeholder:text-theme-text-secondary"
-              placeholder="Your admin password"
+              placeholder={t("onboarding.userSetup.admin_password_placeholder")}
               minLength={6}
               required={true}
               autoComplete="off"
@@ -259,7 +259,7 @@ const MyTeam = ({ setMultiUserLoginValid, myTeamSubmitRef, navigate }) => {
     };
     const { success, error } = await System.setupMultiUser(data);
     if (!success) {
-      showToast(`Error: ${error}`, "error");
+      showToast(t("onboarding.userSetup.setup_failed", { error }), "error");
       return;
     }
 
@@ -303,7 +303,9 @@ const MyTeam = ({ setMultiUserLoginValid, myTeamSubmitRef, navigate }) => {
                   name="username"
                   type="text"
                   className="border-none bg-theme-settings-input-bg text-white text-sm rounded-lg block w-full p-2.5 focus:outline-primary-button active:outline-primary-button placeholder:text-theme-text-secondary outline-none"
-                  placeholder="Your admin username"
+                  placeholder={t(
+                    "onboarding.userSetup.admin_username_placeholder"
+                  )}
                   minLength={USERNAME_MIN_LENGTH}
                   maxLength={USERNAME_MAX_LENGTH}
                   required={true}
@@ -325,7 +327,9 @@ const MyTeam = ({ setMultiUserLoginValid, myTeamSubmitRef, navigate }) => {
                   name="password"
                   type="password"
                   className="border-none bg-theme-settings-input-bg text-white text-sm rounded-lg block w-full p-2.5 focus:outline-primary-button active:outline-primary-button placeholder:text-theme-text-secondary outline-none"
-                  placeholder="Your admin password"
+                  placeholder={t(
+                    "onboarding.userSetup.admin_password_placeholder"
+                  )}
                   minLength={8}
                   required={true}
                   autoComplete="off"

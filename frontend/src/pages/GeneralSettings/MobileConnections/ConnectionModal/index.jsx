@@ -6,11 +6,13 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import MobileConnection from "@/models/mobile";
 import PreLoader from "@/components/Preloader";
-import Logo from "@/media/logo/anything-llm-infinity.png";
+import Logo from "@/media/logo/lovora-dark.svg";
 import paths from "@/utils/paths";
 import GetOnGooglePlay from "./gplay-badge.svg";
+import { useTranslation } from "react-i18next";
 
 export default function MobileConnectModal({ isOpen, onClose }) {
+  const { t } = useTranslation();
   return (
     <ModalWrapper isOpen={isOpen}>
       <div
@@ -35,15 +37,10 @@ export default function MobileConnectModal({ isOpen, onClose }) {
           {/* left column */}
           <div className="flex flex-col w-1/2 gap-y-[16px]">
             <p className="text-[#FFF] text-xl font-bold">
-              Go mobile. Stay local. AnythingLLM Mobile.
+              {t("mobile_connections.modal.title")}
             </p>
-            <p className="text-[#FFF] text-lg">
-              AnythingLLM for mobile allows you to connect to your workspace's
-              chats, threads, tools, and documents for you to use on the go.
-              <br />
-              <br />
-              Run with local models on your phone privately or relay chats
-              directly to this instance seamlessly.
+            <p className="text-[#FFF] text-lg whitespace-pre-line">
+              {t("mobile_connections.modal.description")}
             </p>
             <Link
               to="https://play.google.com/store/apps/details?id=com.anythingllm"
@@ -51,7 +48,7 @@ export default function MobileConnectModal({ isOpen, onClose }) {
             >
               <img
                 src={GetOnGooglePlay}
-                alt="Get on Google Play"
+                alt={t("mobile_connections.modal.play_store_alt")}
                 className="w-[150px] h-auto"
               />
             </Link>
@@ -63,14 +60,13 @@ export default function MobileConnectModal({ isOpen, onClose }) {
               <ConnectionQrCode isOpen={isOpen} />
             </div>
             <p className="text-[#FFF] text-sm w-[300px] text-center">
-              Scan the QR code with the AnythingLLM Mobile app to enable live
-              sync of your workspaces, chats, threads and documents.
+              {t("mobile_connections.modal.qr_help")}
               <br />
               <Link
                 to={paths.documentation.mobileIntroduction()}
                 className="text-cta-button font-semibold"
               >
-                Learn more
+                {t("mobile_connections.modal.learn_more")}
               </Link>
             </p>
           </div>
@@ -85,7 +81,7 @@ export default function MobileConnectModal({ isOpen, onClose }) {
  * @param {string} url
  * @returns {string}
  */
-function processConnectionUrl(url) {
+function processConnectionUrl(url, t) {
   /*
    * In dev mode, the connectionURL() method uses the `ip` module
    * see server/models/mobileDevice.js `connectionURL()` method.
@@ -103,13 +99,12 @@ function processConnectionUrl(url) {
   if (url.startsWith("http")) return new URL(url);
   const connectionUrl = new URL(`${window.location.origin}${url}`);
   if (["localhost", "127.0.0.1", "0.0.0.0"].includes(connectionUrl.hostname))
-    throw new Error(
-      "Please open this page via your machines private IP address or custom domain. Localhost URLs will not work with the mobile app."
-    );
+    throw new Error(t("mobile_connections.modal.localhost_error"));
   return connectionUrl.toString();
 }
 
 const ConnectionQrCode = ({ isOpen }) => {
+  const { t } = useTranslation();
   const [connectionInfo, setConnectionInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -120,7 +115,7 @@ const ConnectionQrCode = ({ isOpen }) => {
     MobileConnection.getConnectionInfo()
       .then((res) => {
         if (res.error) throw new Error(res.error);
-        const url = processConnectionUrl(res.connectionUrl);
+        const url = processConnectionUrl(res.connectionUrl, t);
         setConnectionInfo(url);
       })
       .catch((err) => {
@@ -129,7 +124,7 @@ const ConnectionQrCode = ({ isOpen }) => {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [isOpen]);
+  }, [isOpen, t]);
 
   if (isLoading) return <PreLoader size="[100px]" />;
   if (error)

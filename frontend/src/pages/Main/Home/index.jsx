@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { isMobile } from "react-device-detect";
 import { SidebarMobileHeader } from "@/components/Sidebar";
+import AnimatedBrandLogo from "@/components/AnimatedBrandLogo";
 import PromptInput, {
   PROMPT_INPUT_EVENT,
   PROMPT_INPUT_ID,
@@ -23,9 +24,26 @@ import { safeJsonParse } from "@/utils/request";
 import QuickActions from "@/components/lib/QuickActions";
 import SuggestedMessages from "@/components/lib/SuggestedMessages";
 import useUser from "@/hooks/useUser";
+import useLogo from "@/hooks/useLogo";
 import TextSizeMenu from "@/components/WorkspaceChat/ChatContainer/TextSizeMenu";
 import WorkspaceModelPicker from "@/components/WorkspaceChat/ChatContainer/WorkspaceModelPicker";
 import { ChatTooltips } from "@/components/WorkspaceChat/ChatContainer/ChatTooltips";
+
+function shouldAnimateLandingLogoOnInitialDocumentLoad() {
+  if (typeof window === "undefined") return false;
+
+  const navigationEntry =
+    window.performance?.getEntriesByType?.("navigation")?.[0];
+  const initialPathname = navigationEntry?.name
+    ? new URL(navigationEntry.name).pathname
+    : window.location.pathname;
+  const initialNavigationType = navigationEntry?.type ?? "navigate";
+
+  return (
+    initialPathname === "/" &&
+    ["navigate", "reload"].includes(initialNavigationType)
+  );
+}
 
 async function getTargetWorkspace() {
   const lastVisited = safeJsonParse(
@@ -58,6 +76,9 @@ export default function Home() {
   const [threadSlug, setThreadSlug] = useState(null);
   const [workspaceLoading, setWorkspaceLoading] = useState(true);
   const [dragging, setDragging] = useState(false);
+  const [shouldAnimateLandingLogo] = useState(
+    shouldAnimateLandingLogoOnInitialDocumentLoad
+  );
   const pendingFilesRef = useRef([]);
 
   useEffect(() => {
@@ -144,6 +165,7 @@ export default function Home() {
     return (
       <DnDFileUploaderProvider workspace={workspace} threadSlug={threadSlug}>
         <HomeContent
+          shouldAnimateLandingLogo={shouldAnimateLandingLogo}
           workspace={workspace}
           setWorkspace={setWorkspace}
           threadSlug={threadSlug}
@@ -167,6 +189,7 @@ export default function Home() {
       }}
     >
       <HomeContent
+        shouldAnimateLandingLogo={shouldAnimateLandingLogo}
         workspace={workspace}
         setWorkspace={setWorkspace}
         threadSlug={null}
@@ -176,11 +199,18 @@ export default function Home() {
   );
 }
 
-function HomeContent({ workspace, setWorkspace, threadSlug, setThreadSlug }) {
+function HomeContent({
+  shouldAnimateLandingLogo,
+  workspace,
+  setWorkspace,
+  threadSlug,
+  setThreadSlug,
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { files, parseAttachments } = useContext(DndUploaderContext);
+  const { logo, isCustomLogo } = useLogo();
 
   useEffect(() => {
     window.dispatchEvent(
@@ -285,6 +315,18 @@ function HomeContent({ workspace, setWorkspace, threadSlug, setThreadSlug }) {
       <DnDFileUploaderWrapper>
         <div className="flex flex-col h-full w-full items-center justify-center">
           <div className="flex flex-col items-center w-full max-w-[750px]">
+            <AnimatedBrandLogo
+              staticSrc={logo}
+              isCustomLogo={isCustomLogo}
+              alt="Lovora"
+              shouldAnimate={shouldAnimateLandingLogo && !isCustomLogo}
+              animationKey="main-home-landing-logo"
+              className={`mb-5 rounded-lg object-contain ${
+                isCustomLogo
+                  ? "max-w-[320px] max-h-[120px] w-auto h-auto"
+                  : "w-[240px] h-fit"
+              }`}
+            />
             <h1 className="text-white text-xl md:text-2xl mb-11 text-center">
               {t("main-page.greeting")}
             </h1>

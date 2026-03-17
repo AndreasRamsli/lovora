@@ -8,6 +8,7 @@ import { ArrowUUpLeft, Eye, File, PushPin } from "@phosphor-icons/react";
 import Workspace from "@/models/workspace";
 import showToast from "@/utils/toast";
 import System from "@/models/system";
+import { useTranslation } from "react-i18next";
 
 export default function WorkspaceFileRow({
   item,
@@ -23,12 +24,13 @@ export default function WorkspaceFileRow({
   disableSelection,
   setSelectedItems,
 }) {
+  const { t } = useTranslation();
   const onRemoveClick = async (e) => {
     e.stopPropagation();
     setLoading(true);
 
     try {
-      setLoadingMessage(`Removing file from workspace`);
+      setLoadingMessage(t("connectors.directory.removing_file_from_workspace"));
       await Workspace.modifyEmbeddings(workspace.slug, {
         adds: [],
         deletes: [`${folderName}/${item.name}`],
@@ -121,6 +123,7 @@ export default function WorkspaceFileRow({
 }
 
 const PinItemToWorkspace = memo(({ workspace, docPath, item }) => {
+  const { t } = useTranslation();
   const [pinned, setPinned] = useState(
     item?.pinnedWorkspaces?.includes(workspace.id) || false
   );
@@ -137,22 +140,36 @@ const PinItemToWorkspace = memo(({ workspace, docPath, item }) => {
       );
 
       if (!success) {
-        showToast(`Failed to ${!pinned ? "pin" : "unpin"} document.`, "error", {
-          clear: true,
-        });
+        showToast(
+          t(
+            !pinned
+              ? "connectors.directory.pin_failed"
+              : "connectors.directory.unpin_failed"
+          ),
+          "error",
+          { clear: true }
+        );
         return;
       }
 
       showToast(
-        `Document ${!pinned ? "pinned to" : "unpinned from"} workspace`,
+        t(
+          !pinned
+            ? "connectors.directory.pin_success"
+            : "connectors.directory.unpin_success"
+        ),
         "success",
         { clear: true }
       );
       setPinned(!pinned);
     } catch (error) {
-      showToast(`Failed to pin document. ${error.message}`, "error", {
-        clear: true,
-      });
+      showToast(
+        t("connectors.directory.pin_failed_error", { error: error.message }),
+        "error",
+        {
+          clear: true,
+        }
+      );
       return;
     }
   };
@@ -165,14 +182,20 @@ const PinItemToWorkspace = memo(({ workspace, docPath, item }) => {
       className="group flex items-center ml-2 cursor-pointer"
       data-tooltip-id="pin-document"
       data-tooltip-content={
-        pinned ? "Un-pin from workspace" : "Pin to workspace"
+        pinned
+          ? t("connectors.directory.unpin_tooltip")
+          : t("connectors.directory.pin_tooltip")
       }
     >
       {pinned ? (
         <div className="bg-theme-settings-input-active group-hover:bg-red-500/20 rounded-3xl whitespace-nowrap">
           <p className="text-xs px-2 py-0.5 group-hover:text-red-500">
-            <span className="group-hover:hidden">Pinned</span>
-            <span className="hidden group-hover:inline">Un-pin</span>
+            <span className="group-hover:hidden">
+              {t("connectors.directory.pinned")}
+            </span>
+            <span className="hidden group-hover:inline">
+              {t("connectors.directory.unpin")}
+            </span>
           </p>
         </div>
       ) : (
@@ -187,6 +210,7 @@ const PinItemToWorkspace = memo(({ workspace, docPath, item }) => {
 });
 
 const WatchForChanges = memo(({ workspace, docPath, item }) => {
+  const { t } = useTranslation();
   const [watched, setWatched] = useState(item?.watched || false);
   const watchEvent = new CustomEvent("watch_document_for_changes");
 
@@ -203,7 +227,11 @@ const WatchForChanges = memo(({ workspace, docPath, item }) => {
 
       if (!success) {
         showToast(
-          `Failed to ${!watched ? "watch" : "unwatch"} document.`,
+          t(
+            !watched
+              ? "connectors.directory.watch_failed"
+              : "connectors.directory.unwatch_failed"
+          ),
           "error",
           {
             clear: true,
@@ -213,19 +241,23 @@ const WatchForChanges = memo(({ workspace, docPath, item }) => {
       }
 
       showToast(
-        `Document ${
+        t(
           !watched
-            ? "will be watched for changes"
-            : "will no longer be watched for changes"
-        }.`,
+            ? "connectors.directory.watch_success"
+            : "connectors.directory.unwatch_success"
+        ),
         "success",
         { clear: true }
       );
       setWatched(!watched);
     } catch (error) {
-      showToast(`Failed to watch document. ${error.message}`, "error", {
-        clear: true,
-      });
+      showToast(
+        t("connectors.directory.watch_failed_error", { error: error.message }),
+        "error",
+        {
+          clear: true,
+        }
+      );
       return;
     }
   };
@@ -239,7 +271,9 @@ const WatchForChanges = memo(({ workspace, docPath, item }) => {
       data-tooltip-id="watch-changes"
       data-active={watched}
       data-tooltip-content={
-        watched ? "Stop watching for changes" : "Watch document for changes"
+        watched
+          ? t("connectors.directory.stop_watching")
+          : t("connectors.directory.watch_for_changes")
       }
     >
       <Eye
@@ -257,11 +291,12 @@ const WatchForChanges = memo(({ workspace, docPath, item }) => {
 });
 
 const RemoveItemFromWorkspace = ({ item: _item, onClick }) => {
+  const { t } = useTranslation();
   return (
     <div>
       <ArrowUUpLeft
         data-tooltip-id="remove-document"
-        data-tooltip-content="Remove document from workspace"
+        data-tooltip-content={t("connectors.directory.remove_document")}
         onClick={onClick}
         className="text-base font-bold w-4 h-4 ml-2 flex-shrink-0 cursor-pointer"
       />

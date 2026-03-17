@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { isMobile } from "react-device-detect";
+import { useTranslation } from "react-i18next";
 import CommunityHubImportItemSteps, {
   CommunityHubImportItemLayout,
 } from "./Steps";
@@ -68,6 +69,7 @@ function SideBarSelection({ setStep, currentStep }) {
 }
 
 export default function CommunityHubImportItemFlow() {
+  const { t } = useTranslation();
   const [step, setStep] = useState("itemId");
 
   const StepPage = CommunityHubImportItemSteps.hasOwnProperty(step)
@@ -81,12 +83,11 @@ export default function CommunityHubImportItemFlow() {
           <div className="w-full flex flex-col gap-y-1 pb-6 border-white light:border-theme-sidebar-border border-b-2 border-opacity-10">
             <div className="items-center">
               <p className="text-lg leading-6 font-bold text-theme-text-primary">
-                Import a Community Item
+                {t("community_hub.import.layout.title")}
               </p>
             </div>
             <p className="text-xs leading-[18px] font-base text-theme-text-secondary">
-              Import items from the AnythingLLM Community Hub to enhance your
-              instance with community-created prompts, skills, and commands.
+              {t("community_hub.import.layout.description")}
             </p>
           </div>
           <div className="flex-1 flex h-full">

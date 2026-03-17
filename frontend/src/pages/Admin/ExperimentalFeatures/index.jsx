@@ -8,8 +8,10 @@ import { configurableFeatures } from "./features";
 import ModalWrapper from "@/components/ModalWrapper";
 import paths from "@/utils/paths";
 import showToast from "@/utils/toast";
+import { Trans, useTranslation } from "react-i18next";
 
 export default function ExperimentalFeatures() {
+  const { t } = useTranslation();
   const [featureFlags, setFeatureFlags] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedFeature, setSelectedFeature] = useState(
@@ -53,7 +55,9 @@ export default function ExperimentalFeatures() {
         <div className="flex flex-col gap-y-[18px]">
           <div className="text-white flex items-center gap-x-2">
             <Flask size={24} />
-            <p className="text-lg font-medium">Experimental Features</p>
+            <p className="text-lg font-medium">
+              {t("experimental_features.title")}
+            </p>
           </div>
           {/* Feature list */}
           <div className="bg-theme-bg-secondary text-white rounded-xl min-w-[360px] w-fit">
@@ -93,7 +97,9 @@ export default function ExperimentalFeatures() {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-white/60">
                   <Flask size={40} />
-                  <p className="font-medium">Select an experimental feature</p>
+                  <p className="font-medium">
+                    {t("experimental_features.select_feature")}
+                  </p>
                 </div>
               )}
             </div>
@@ -128,6 +134,7 @@ function FeatureItem({
   handleClick = () => {},
   borderClass = "border-b border-white/10",
 }) {
+  const { t } = useTranslation();
   return (
     <div
       key={feature.key}
@@ -139,19 +146,23 @@ function FeatureItem({
         else handleClick?.(feature.key);
       }}
     >
-      <div className="text-sm font-light">{feature.title}</div>
+      <div className="text-sm font-light">
+        {feature.titleKey ? t(feature.titleKey) : feature.title}
+      </div>
       <div className="flex items-center gap-x-2">
         {feature.autoEnabled ? (
           <>
             <div className="text-sm text-theme-text-secondary font-medium">
-              On
+              {t("experimental_features.on")}
             </div>
             <div className="w-[14px]" />
           </>
         ) : (
           <>
             <div className="text-sm text-theme-text-secondary font-medium">
-              {isActive ? "On" : "Off"}
+              {isActive
+                ? t("experimental_features.on")
+                : t("experimental_features.off")}
             </div>
             <CaretRight
               size={14}
@@ -177,6 +188,7 @@ function SelectedFeatureComponent({ feature, settings, refresh }) {
 }
 
 function FeatureVerification({ children }) {
+  const { t } = useTranslation();
   if (
     !window.localStorage.getItem("anythingllm_tos_experimental_feature_set")
   ) {
@@ -187,10 +199,7 @@ function FeatureVerification({ children }) {
         "anythingllm_tos_experimental_feature_set",
         "accepted"
       );
-      showToast(
-        "Experimental Feature set enabled. Reloading the page.",
-        "success"
-      );
+      showToast(t("experimental_features.enabled_reload"), "success");
       setTimeout(() => {
         window.location.reload();
       }, 2_500);
@@ -205,7 +214,7 @@ function FeatureVerification({ children }) {
               <div className="flex items-center gap-2">
                 <Flask size={24} className="text-theme-text-primary" />
                 <h3 className="text-xl font-semibold text-white">
-                  Terms of use for experimental features
+                  {t("experimental_features.modal.title")}
                 </h3>
               </div>
             </div>
@@ -213,66 +222,62 @@ function FeatureVerification({ children }) {
               <div className="py-7 px-9 space-y-4 flex-col">
                 <div className="w-full text-white text-md flex flex-col gap-y-4">
                   <p>
-                    Experimental features of AnythingLLM are features that we
-                    are piloting and are <b>opt-in</b>. We proactively will
-                    condition or warn you on any potential concerns should any
-                    exist prior to approval of any feature.
+                    <Trans
+                      i18nKey="experimental_features.modal.intro"
+                      components={{ bold: <b /> }}
+                    />
                   </p>
 
                   <div>
-                    <p>
-                      Use of any feature on this page can result in, but not
-                      limited to, the following possibilities.
-                    </p>
+                    <p>{t("experimental_features.modal.risks_intro")}</p>
                     <ul className="list-disc ml-6 text-sm font-mono mt-2">
-                      <li>Loss of data.</li>
-                      <li>Change in quality of results.</li>
-                      <li>Increased storage.</li>
-                      <li>Increased resource consumption.</li>
-                      <li>
-                        Increased cost or use of any connected LLM or embedding
-                        provider.
-                      </li>
-                      <li>Potential bugs or issues using AnythingLLM.</li>
+                      <li>{t("experimental_features.modal.data_loss")}</li>
+                      <li>{t("experimental_features.modal.quality_change")}</li>
+                      <li>{t("experimental_features.modal.storage")}</li>
+                      <li>{t("experimental_features.modal.resources")}</li>
+                      <li>{t("experimental_features.modal.cost")}</li>
+                      <li>{t("experimental_features.modal.bugs")}</li>
                     </ul>
                   </div>
 
                   <div>
-                    <p>
-                      Use of an experimental feature also comes with the
-                      following list of non-exhaustive conditions.
-                    </p>
+                    <p>{t("experimental_features.modal.conditions_intro")}</p>
                     <ul className="list-disc ml-6 text-sm font-mono mt-2">
-                      <li>Feature may not exist in future updates.</li>
-                      <li>The feature being used is not currently stable.</li>
+                      <li>{t("experimental_features.modal.may_not_exist")}</li>
+                      <li>{t("experimental_features.modal.unstable")}</li>
                       <li>
-                        The feature may not be available in future versions,
-                        configurations, or subscriptions of AnythingLLM.
+                        {t("experimental_features.modal.future_versions")}
                       </li>
                       <li>
-                        Your privacy settings <b>will be honored</b> with use of
-                        any beta feature.
+                        <Trans
+                          i18nKey="experimental_features.modal.privacy_honored"
+                          components={{ bold: <b /> }}
+                        />
                       </li>
-                      <li>These conditions may change in future updates.</li>
+                      <li>
+                        {t("experimental_features.modal.conditions_change")}
+                      </li>
                     </ul>
                   </div>
 
                   <p>
-                    Access to any features requires approval of this modal. If
-                    you would like to read more you can refer to{" "}
-                    <a
-                      href="https://docs.anythingllm.com/beta-preview/overview"
-                      className="underline text-blue-500"
-                    >
-                      docs.anythingllm.com
-                    </a>{" "}
-                    or email{" "}
-                    <a
-                      href="mailto:team@mintplexlabs.com"
-                      className="underline text-blue-500"
-                    >
-                      team@mintplexlabs.com
-                    </a>
+                    <Trans
+                      i18nKey="experimental_features.modal.learn_more"
+                      components={{
+                        docs: (
+                          <a
+                            href="https://docs.anythingllm.com/beta-preview/overview"
+                            className="underline text-blue-500"
+                          />
+                        ),
+                        email: (
+                          <a
+                            href="mailto:team@mintplexlabs.com"
+                            className="underline text-blue-500"
+                          />
+                        ),
+                      }}
+                    />
                   </p>
                 </div>
               </div>
@@ -281,13 +286,13 @@ function FeatureVerification({ children }) {
                   href={paths.home()}
                   className="transition-all duration-300 bg-transparent text-white hover:bg-red-500/50 light:hover:bg-red-300/50 px-4 py-2 rounded-lg text-sm border border-theme-modal-border"
                 >
-                  Reject & close
+                  {t("experimental_features.modal.reject")}
                 </a>
                 <button
                   type="submit"
                   className="transition-all duration-300 bg-white text-black hover:opacity-60 px-4 py-2 rounded-lg text-sm border border-theme-modal-border"
                 >
-                  I understand
+                  {t("experimental_features.modal.accept")}
                 </button>
               </div>
             </form>

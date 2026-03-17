@@ -4,6 +4,7 @@ import { isMobile } from "react-device-detect";
 import useUser from "@/hooks/useUser";
 import Appearance from "@/models/appearance";
 import useLogo from "@/hooks/useLogo";
+import AnimatedBrandLogo from "@/components/AnimatedBrandLogo";
 import Workspace from "@/models/workspace";
 import { NavLink } from "react-router-dom";
 import { LAST_VISITED_WORKSPACE } from "@/utils/constants";
@@ -74,9 +75,11 @@ export default function DefaultChatContainer() {
   return (
     <Layout>
       <div className="w-full h-full flex flex-col items-center justify-center overflow-y-auto no-scroll">
-        <img
-          src={logo}
+        <AnimatedBrandLogo
+          staticSrc={logo}
+          isCustomLogo={isCustomLogo}
           alt="Custom Logo"
+          shouldAnimate={false}
           className={`mb-5 rounded-lg object-contain ${
             isCustomLogo
               ? "max-w-[320px] max-h-[120px] w-auto h-auto"

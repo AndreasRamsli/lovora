@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Tooltip } from "react-tooltip";
+import { useTranslation } from "react-i18next";
 
 import BlockList, { BLOCK_TYPES, BLOCK_INFO } from "./BlockList";
 import AddBlockMenu from "./AddBlockMenu";
@@ -38,6 +39,7 @@ const DEFAULT_BLOCKS = [
 ];
 
 export default function AgentBuilder() {
+  const { t } = useTranslation();
   const { flowId } = useParams();
   const { resolvedTheme: theme } = useThemeContext();
   const navigate = useNavigate();
@@ -77,7 +79,9 @@ export default function AgentBuilder() {
       setAvailableFlows(flows);
     } catch (error) {
       console.error(error);
-      showToast("Failed to load available flows", "error", { clear: true });
+      showToast(t("agent_builder.toasts.load_available_flows_error"), "error", {
+        clear: true,
+      });
     }
   };
 
@@ -122,7 +126,9 @@ export default function AgentBuilder() {
       setBlocks(flowBlocks);
     } catch (error) {
       console.error(error);
-      showToast("Failed to load flow", "error", { clear: true });
+      showToast(t("agent_builder.toasts.load_flow_error"), "error", {
+        clear: true,
+      });
     }
   };
 
@@ -184,13 +190,9 @@ export default function AgentBuilder() {
       } else if (!description?.trim()) {
         descriptionRef.current?.focus();
       }
-      showToast(
-        "Please provide both a name and description for your flow",
-        "error",
-        {
-          clear: true,
-        }
-      );
+      showToast(t("agent_builder.toasts.missing_name_description"), "error", {
+        clear: true,
+      });
       return;
     }
 
@@ -219,13 +221,19 @@ export default function AgentBuilder() {
       if (!success) throw new Error(error);
 
       setCurrentFlowUuid(flow.uuid);
-      showToast("Agent flow saved successfully!", "success", { clear: true });
+      showToast(t("agent_builder.toasts.save_success"), "success", {
+        clear: true,
+      });
       await loadAvailableFlows();
     } catch (error) {
       console.error("Save error details:", error);
-      showToast(`Failed to save agent flow. ${error.message}`, "error", {
-        clear: true,
-      });
+      showToast(
+        t("agent_builder.toasts.save_error", { error: error.message }),
+        "error",
+        {
+          clear: true,
+        }
+      );
     }
   };
 
@@ -248,7 +256,7 @@ export default function AgentBuilder() {
   const renderVariableSelect = (
     value,
     onChange,
-    placeholder = "Select variable"
+    placeholder = t("agent_builder.common.select_variable")
   ) => (
     <select
       value={value || ""}
@@ -380,12 +388,10 @@ export default function AgentBuilder() {
         className="tooltip !text-xs z-99"
       >
         <p className="text-sm">
-          When enabled, long webpage content will be automatically summarized to
-          reduce token usage.
+          {t("agent_builder.content_summarization.description")}
           <br />
           <br />
-          Note: This may affect data quality and remove specific details from
-          the original content.
+          {t("agent_builder.content_summarization.note")}
         </p>
       </Tooltip>
     </div>

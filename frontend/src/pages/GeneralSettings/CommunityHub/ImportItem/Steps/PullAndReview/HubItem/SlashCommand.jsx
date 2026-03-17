@@ -3,20 +3,29 @@ import CommunityHubImportItemSteps from "../..";
 import showToast from "@/utils/toast";
 import paths from "@/utils/paths";
 import CommunityHub from "@/models/communityHub";
+import { Trans, useTranslation } from "react-i18next";
 
 export default function SlashCommand({ item, setStep }) {
+  const { t } = useTranslation();
   async function handleSubmit() {
     try {
       const { error } = await CommunityHub.applyItem(item.importId);
       if (error) throw new Error(error);
       showToast(
-        `Slash command ${item.command} imported successfully!`,
+        t("community_hub.import.item.slash_command.import_success", {
+          command: item.command,
+        }),
         "success"
       );
       setStep(CommunityHubImportItemSteps.completed.key);
     } catch (e) {
       console.error(e);
-      showToast(`Failed to import slash command. ${e.message}`, "error");
+      showToast(
+        t("community_hub.import.item.slash_command.import_error", {
+          error: e.message,
+        }),
+        "error"
+      );
     }
   }
 
@@ -24,11 +33,13 @@ export default function SlashCommand({ item, setStep }) {
     <div className="flex flex-col mt-4 gap-y-4">
       <div className="flex flex-col gap-y-1">
         <h2 className="text-base text-theme-text-primary font-semibold">
-          Review Slash Command "{item.name}"
+          {t("community_hub.import.item.slash_command.review_title", {
+            name: item.name,
+          })}
         </h2>
         {item.creatorUsername && (
           <p className="text-white/60 text-xs font-mono">
-            Created by{" "}
+            {t("community_hub.import.item.created_by")}{" "}
             <a
               href={paths.communityHub.profile(item.creatorUsername)}
               target="_blank"
@@ -41,17 +52,16 @@ export default function SlashCommand({ item, setStep }) {
         )}
       </div>
       <div className="flex flex-col gap-y-[25px] text-white/80 light:text-theme-text-secondary text-sm">
-        <p>
-          Slash commands are used to prefill information into a prompt while
-          chatting with a AnythingLLM workspace.
-          <br />
-          <br />
-          The slash command will be available during chatting by simply invoking
-          it with{" "}
-          <code className="font-mono bg-zinc-900 light:bg-divine-pleasure px-1 py-0.5 rounded-md text-sm">
-            {item.command}
-          </code>{" "}
-          like you would any other command.
+        <p className="whitespace-pre-line">
+          <Trans
+            i18nKey="community_hub.import.item.slash_command.description"
+            values={{ command: item.command }}
+            components={{
+              code: (
+                <code className="font-mono bg-zinc-900 light:bg-divine-pleasure px-1 py-0.5 rounded-md text-sm" />
+              ),
+            }}
+          />
         </p>
 
         <div className="flex flex-col gap-y-2 mt-2">
@@ -72,7 +82,7 @@ export default function SlashCommand({ item, setStep }) {
         className="text-dark-text w-full mt-[18px] h-[34px] hover:bg-accent"
         onClick={handleSubmit}
       >
-        Import slash command
+        {t("community_hub.import.item.slash_command.import_button")}
       </CTAButton>
     </div>
   );

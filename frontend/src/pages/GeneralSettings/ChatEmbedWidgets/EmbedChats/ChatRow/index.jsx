@@ -1,5 +1,6 @@
 import truncate from "truncate";
 import { X } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 import ModalWrapper from "@/components/ModalWrapper";
 import { useModal } from "@/hooks/useModal";
 import paths from "@/utils/paths";
@@ -9,6 +10,7 @@ import { safeJsonParse } from "@/utils/request";
 import { getWorkspaceDisplayName } from "@/utils/workspaceDisplay";
 
 export default function ChatRow({ chat, onDelete }) {
+  const { t } = useTranslation();
   const {
     isOpen: isPromptOpen,
     openModal: openPromptModal,
@@ -26,12 +28,7 @@ export default function ChatRow({ chat, onDelete }) {
   } = useModal();
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete this chat?\n\nThis action is irreversible.`
-      )
-    )
-      return false;
+    if (!window.confirm(t("embed-chats.row.delete_confirm"))) return false;
     await Embed.deleteChat(chat.id);
     onDelete(chat.id);
   };
@@ -76,7 +73,7 @@ export default function ChatRow({ chat, onDelete }) {
             className="group text-xs font-medium text-theme-text-secondary px-2 py-1 rounded-lg hover:bg-theme-button-delete-hover-bg"
           >
             <span className="group-hover:text-theme-button-delete-hover-text">
-              Delete
+              {t("chat_embed_widgets.delete")}
             </span>
           </button>
         </td>
@@ -111,11 +108,14 @@ export default function ChatRow({ chat, onDelete }) {
 }
 
 const TextPreview = ({ text, closeModal }) => {
+  const { t } = useTranslation();
   return (
     <div className="relative w-full md:max-w-2xl max-h-full">
       <div className="w-full max-w-2xl bg-theme-bg-secondary rounded-lg shadow border-2 border-theme-modal-border overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b rounded-t border-theme-modal-border">
-          <h3 className="text-xl font-semibold text-white">Viewing Text</h3>
+          <h3 className="text-xl font-semibold text-white">
+            {t("embed-chats.row.viewing_text")}
+          </h3>
           <button
             onClick={closeModal}
             type="button"
@@ -139,6 +139,7 @@ const ConnectionDetails = ({
   verbose = false,
   connection_information,
 }) => {
+  const { t } = useTranslation();
   const details = safeJsonParse(connection_information, {});
   if (Object.keys(details).length === 0) return null;
 
@@ -146,21 +147,21 @@ const ConnectionDetails = ({
     return (
       <>
         <p className="text-xs text-theme-text-secondary">
-          sessionID: {sessionId}
+          {t("embed-chats.row.session_id")}: {sessionId}
         </p>
         {details.username && (
           <p className="text-xs text-theme-text-secondary">
-            username: {details.username}
+            {t("embed-chats.row.username")}: {details.username}
           </p>
         )}
         {details.ip && (
           <p className="text-xs text-theme-text-secondary">
-            client ip address: {details.ip}
+            {t("embed-chats.row.client_ip")}: {details.ip}
           </p>
         )}
         {details.host && (
           <p className="text-xs text-theme-text-secondary">
-            client host URL: {details.host}
+            {t("embed-chats.row.client_host")}: {details.host}
           </p>
         )}
       </>
