@@ -167,7 +167,7 @@ export default function AgentSkillsTab({
         />
       ))}
       <Link to={paths.settings.agentSkills()}>
-        <button className="flex items-center gap-1.5 px-2 h-6 rounded cursor-pointer hover:bg-zinc-700/50 light:hover:bg-slate-100 text-theme-text-primary">
+        <button className="ui-btn-ghost flex items-center gap-1.5 px-2 h-6 rounded cursor-pointer text-theme-text-primary">
           <Wrench size={12} className="text-theme-text-primary" />
           <span className="text-xs text-theme-text-primary">
             {t("chat_window.manage_agent_skills")}

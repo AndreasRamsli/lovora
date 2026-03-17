@@ -58,7 +58,9 @@ function WorkspaceDirectory({
 
   const removeSelectedItems = async () => {
     setLoading(true);
-    setLoadingMessage("Removing selected files from workspace");
+    setLoadingMessage(
+      t("connectors.directory.removing_selected_from_workspace")
+    );
 
     const itemsToRemove = Object.keys(selectedItems).map((itemId) => {
       const folder = files.items.find((f) =>
@@ -100,7 +102,9 @@ function WorkspaceDirectory({
           <div className="text-white/80 text-xs grid grid-cols-12 py-2 px-3.5 border-b border-white/20 light:border-theme-modal-border bg-theme-settings-input-bg sticky top-0 z-10 rounded-t-2xl">
             <div className="col-span-10 flex items-center gap-x-[4px]">
               <div className="shrink-0 w-3 h-3" />
-              <p className="ml-[7px] text-theme-text-primary">Name</p>
+              <p className="ml-[7px] text-theme-text-primary">
+                {t("connectors.directory.name")}
+              </p>
             </div>
             <p className="col-span-2" />
           </div>
@@ -156,7 +160,9 @@ function WorkspaceDirectory({
                 ) : (
                   <div className="shrink-0 w-3 h-3" />
                 )}
-                <p className="ml-[7px] text-theme-text-primary">Name</p>
+                <p className="ml-[7px] text-theme-text-primary">
+                  {t("connectors.directory.name")}
+                </p>
               </div>
               <p className="col-span-2" />
             </div>
@@ -229,7 +235,7 @@ function WorkspaceDirectory({
               <p className="text-sm font-semibold">
                 {embeddingCosts === 0
                   ? ""
-                  : `Estimated Cost: ${
+                  : `${t("connectors.directory.estimated_cost")}: ${
                       embeddingCosts < 0.01
                         ? `< $0.01`
                         : dollarFormat(embeddingCosts)
@@ -242,7 +248,7 @@ function WorkspaceDirectory({
 
             <button
               onClick={(e) => handleSaveChanges(e)}
-              className="border border-slate-200 px-5 py-2.5 rounded-lg text-white text-sm items-center flex gap-x-2 hover:bg-slate-200 hover:text-slate-800 focus:ring-gray-800"
+              className="ui-btn-outline border border-slate-200 px-5 py-2.5 rounded-lg text-sm items-center flex gap-x-2 focus:ring-gray-800"
             >
               {t("connectors.directory.save_embed")}
             </button>
@@ -419,6 +425,7 @@ function RenderFileRows({ files, movedItems, children, workspace }) {
  * or updated so that tooltips are attached as the items are changed.
  */
 function WorkspaceDocumentTooltips() {
+  const { t } = useTranslation();
   return (
     <>
       <Tooltip
@@ -436,10 +443,10 @@ function WorkspaceDocumentTooltips() {
               </p>
               <div className="flex mt-1 gap-x-2">
                 <p className="">
-                  Date: <b>{data.date}</b>
+                  {t("connectors.directory.date")}: <b>{data.date}</b>
                 </p>
                 <p className="">
-                  Type: <b>{data.extension}</b>
+                  {t("connectors.directory.type")}: <b>{data.extension}</b>
                 </p>
               </div>
             </div>

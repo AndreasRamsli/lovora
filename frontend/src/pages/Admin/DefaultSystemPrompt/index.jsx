@@ -254,7 +254,7 @@ export default function DefaultSystemPrompt() {
                     disabled={
                       !systemPromptForm.isDirty || systemPromptForm.isSubmitting
                     }
-                    className={`enabled:hover:bg-secondary enabled:hover:text-white rounded-lg bg-primary-button w-fit py-2 px-4 font-semibold text-xs disabled:opacity-20 disabled:cursor-not-allowed`}
+                    className={`ui-btn-primary rounded-lg bg-primary-button w-fit py-2 px-4 font-semibold text-xs disabled:opacity-20 disabled:cursor-not-allowed`}
                     type="submit"
                   >
                     Save Changes

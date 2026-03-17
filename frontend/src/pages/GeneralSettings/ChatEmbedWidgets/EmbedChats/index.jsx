@@ -16,7 +16,7 @@ const exportOptions = {
     mimeType: "text/csv",
     fileExtension: "csv",
     filenameFunc: () => {
-      return `anythingllm-embed-chats-${new Date().toLocaleDateString()}`;
+      return `lovora-embed-chats-${new Date().toLocaleDateString()}`;
     },
   },
   json: {
@@ -24,7 +24,7 @@ const exportOptions = {
     mimeType: "application/json",
     fileExtension: "json",
     filenameFunc: () => {
-      return `anythingllm-embed-chats-${new Date().toLocaleDateString()}`;
+      return `lovora-embed-chats-${new Date().toLocaleDateString()}`;
     },
   },
   jsonl: {
@@ -32,7 +32,7 @@ const exportOptions = {
     mimeType: "application/jsonl",
     fileExtension: "jsonl",
     filenameFunc: () => {
-      return `anythingllm-embed-chats-${new Date().toLocaleDateString()}-lines`;
+      return `lovora-embed-chats-${new Date().toLocaleDateString()}-lines`;
     },
   },
   jsonAlpaca: {
@@ -40,7 +40,7 @@ const exportOptions = {
     mimeType: "application/json",
     fileExtension: "json",
     filenameFunc: () => {
-      return `anythingllm-embed-chats-${new Date().toLocaleDateString()}-alpaca`;
+      return `lovora-embed-chats-${new Date().toLocaleDateString()}-alpaca`;
     },
   },
 };
@@ -63,9 +63,9 @@ export default function EmbedChatsView() {
         exportOptions[exportType];
       const blob = new Blob([chats], { type: mimeType });
       saveAs(blob, `${filenameFunc()}.${fileExtension}`);
-      showToast(`Embed chats exported successfully as ${name}.`, "success");
+      showToast(t("embed-chats.export_success", { name }), "success");
     } else {
-      showToast("Failed to export embed chats.", "error");
+      showToast(t("embed-chats.export_failed"), "error");
     }
   };
 
@@ -142,7 +142,7 @@ export default function EmbedChatsView() {
             <button
               ref={openMenuButton}
               onClick={toggleMenu}
-              className="flex items-center gap-x-2 px-4 py-1 rounded-lg text-theme-bg-chat bg-primary-button hover:bg-secondary hover:text-white text-xs font-semibold h-[34px] w-fit"
+              className="ui-btn-primary flex items-center gap-x-2 px-4 py-1 rounded-lg text-theme-bg-chat bg-primary-button text-xs font-semibold h-[34px] w-fit"
             >
               <Download size={18} weight="bold" />
               {t("embed-chats.export")}

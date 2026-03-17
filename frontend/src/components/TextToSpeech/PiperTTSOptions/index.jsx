@@ -122,7 +122,7 @@ function PiperTTSModelSelection({ settings }) {
         <button
           type="button"
           onClick={flushVoices}
-          className="w-fit border-none hover:text-white hover:underline text-white/40 text-sm my-4"
+          className="ui-btn-text-subtle w-fit border-none hover:underline text-white/40 text-sm my-4"
         >
           Flush voice cache
         </button>

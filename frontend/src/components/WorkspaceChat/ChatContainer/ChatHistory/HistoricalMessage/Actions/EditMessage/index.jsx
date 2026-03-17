@@ -53,7 +53,7 @@ export function EditMessageAction({ chatId = null, role, isEditing }) {
             ? t("chat_window.edit_prompt")
             : t("chat_window.edit_response")
         } `}
-        className="border-none text-doctor/75 light:text-infinite-night/55"
+        className="border-none text-theme-text-secondary hover:text-theme-text-primary"
         aria-label={`Edit ${role === "user" ? t("chat_window.edit_prompt") : t("chat_window.edit_response")}`}
       >
         <Pencil size={21} className="mb-1" />
@@ -118,7 +118,7 @@ export function EditMessageForm({
           ref={formRef}
           name="editedMessage"
           spellCheck={Appearance.get("enableSpellCheck")}
-          className="text-white light:text-slate-900 w-full rounded-2xl bg-theme-bg-chat-input light:bg-white border border-sky-300 focus:border-sky-300 active:outline-none focus:outline-none focus:ring-0 px-4 py-3 resize-none overflow-hidden"
+          className="text-theme-text-primary w-full rounded-2xl bg-theme-bg-chat-input light:bg-theme-bg-sidebar light:border light:border-theme-sidebar-border border border-theme-highlight-border active:outline-none focus:outline-none focus:ring-0 px-4 py-3 resize-none overflow-hidden"
           defaultValue={message}
           onChange={adjustTextArea}
         />
@@ -140,7 +140,7 @@ export function EditMessageForm({
         ref={formRef}
         name="editedMessage"
         spellCheck={Appearance.get("enableSpellCheck")}
-        className="text-white light:text-slate-900 w-full rounded-2xl bg-theme-bg-chat-input light:bg-white border border-sky-300 focus:border-sky-300 active:outline-none focus:outline-none focus:ring-0 px-4 py-3 resize-none overflow-hidden"
+        className="text-theme-text-primary w-full rounded-2xl bg-theme-bg-chat-input border border-theme-highlight-border active:outline-none focus:outline-none focus:ring-0 px-4 py-3 resize-none overflow-hidden"
         defaultValue={message}
         onChange={adjustTextArea}
       />
@@ -152,13 +152,10 @@ export function EditMessageForm({
 function EditActionBar({ onCancel, onSave, isUserMessage = false }) {
   const { t } = useTranslation();
   return (
-    <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2 bg-theme-bg-chat-input light:bg-white rounded-lg p-2">
+    <div className="mt-2 flex flex-col md:flex-row md:items-center justify-between gap-2 bg-theme-bg-chat-input light:bg-theme-bg-sidebar light:border light:border-theme-sidebar-border rounded-lg p-2">
       <div className="flex items-start gap-2">
-        <Info
-          size={12}
-          className="shrink-0 mt-0.5 text-zinc-200 light:text-infinite-night"
-        />
-        <span className="text-zinc-200 light:text-infinite-night text-xs leading-4">
+        <Info size={12} className="shrink-0 mt-0.5 text-theme-text-secondary" />
+        <span className="text-theme-text-secondary text-xs leading-4">
           {isUserMessage
             ? t("chat_window.edit_info_user")
             : t("chat_window.edit_info_assistant")}
@@ -168,7 +165,7 @@ function EditActionBar({ onCancel, onSave, isUserMessage = false }) {
         <button
           type="button"
           onClick={onCancel}
-          className="border-none text-white light:text-slate-900 text-sm font-medium w-[70px] h-9 rounded-lg hover:bg-white/5 light:hover:bg-[#E5DFC9]"
+          className="border-none text-theme-text-primary text-sm font-medium w-[70px] h-9 rounded-lg hover:bg-theme-action-menu-item-hover"
         >
           {t("chat_window.cancel")}
         </button>
@@ -176,14 +173,14 @@ function EditActionBar({ onCancel, onSave, isUserMessage = false }) {
           <button
             type="button"
             onClick={onSave}
-            className="border border-zinc-600 light:border-slate-600 text-white light:text-slate-900 text-sm font-medium w-[70px] h-9 rounded-lg hover:bg-white/5 light:hover:bg-[#E5DFC9]"
+            className="border border-theme-modal-border text-theme-text-primary text-sm font-medium w-[70px] h-9 rounded-lg hover:bg-theme-action-menu-item-hover"
           >
             {t("chat_window.save")}
           </button>
         )}
         <button
           type="submit"
-          className="border-none bg-zinc-50 light:bg-slate-800 text-zinc-800 light:text-white text-sm font-medium w-[70px] h-9 rounded-lg hover:bg-zinc-200 light:hover:bg-slate-800"
+          className="border-none bg-primary-button text-[var(--theme-button-primary-text)] text-sm font-medium w-[70px] h-9 rounded-lg hover:bg-[var(--theme-button-primary-hover-solid)]"
         >
           {isUserMessage ? t("chat_window.submit") : t("chat_window.save")}
         </button>

@@ -10,7 +10,7 @@ export default function LLMSelectorSidePanel({
   const { t } = useTranslation();
 
   return (
-    <div className="w-[40%] h-full flex flex-col gap-4 p-2 border-r border-zinc-700 light:border-slate-300">
+    <div className="w-[40%] h-full flex flex-col gap-4 p-2 border-r border-theme-modal-border">
       <div className="relative shrink-0 mx-2">
         <MagnifyingGlass
           size={14}
@@ -22,7 +22,7 @@ export default function LLMSelectorSidePanel({
           type="search"
           placeholder={t("chat_window.workspace_llm_manager.search")}
           onChange={onSearchChange}
-          className="bg-zinc-900 light:bg-white text-white light:text-slate-900 placeholder:text-zinc-500 light:placeholder:text-infinite-night/40 text-sm rounded-lg pl-8 pr-2.5 h-8 w-full outline-none border border-zinc-900 light:border-infinite-night/20"
+          className="bg-theme-settings-input-bg text-theme-text-primary placeholder:text-theme-settings-input-placeholder text-sm rounded-lg pl-8 pr-2.5 h-8 w-full outline-none border border-transparent"
         />
       </div>
       <div className="flex flex-col gap-0 overflow-y-auto min-h-0 flex-1">
@@ -33,8 +33,8 @@ export default function LLMSelectorSidePanel({
             data-llm-value={llm.value}
             className={`border-none cursor-pointer flex gap-2 items-center px-2.5 py-1.5 rounded-md transition-colors ${
               selectedLLMProvider === llm.value
-                ? "bg-zinc-700 light:bg-divine-pleasure"
-                : "hover:bg-zinc-700/50 light:hover:bg-slate-100 bg-transparent"
+                ? "bg-theme-action-menu-item-hover"
+                : "hover:bg-theme-action-menu-item-hover bg-transparent"
             }`}
             onClick={() => onProviderClick(llm.value)}
           >
@@ -43,9 +43,7 @@ export default function LLMSelectorSidePanel({
               alt={`${llm.name} logo`}
               className="w-6 h-6 rounded"
             />
-            <span className="text-sm text-white light:text-slate-900">
-              {llm.name}
-            </span>
+            <span className="text-sm text-theme-text-primary">{llm.name}</span>
           </button>
         ))}
       </div>

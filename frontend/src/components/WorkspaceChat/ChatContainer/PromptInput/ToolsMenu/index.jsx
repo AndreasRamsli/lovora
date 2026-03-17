@@ -114,7 +114,7 @@ export default function ToolsMenu({
         onMouseDown={(e) => {
           if (e.currentTarget.contains(e.target)) e.preventDefault();
         }}
-        className={`absolute left-2 right-2 md:left-14 md:right-auto md:w-[400px] z-50 bg-zinc-800 light:bg-white border border-zinc-700 light:border-slate-300 rounded-lg p-3 flex flex-col gap-2.5 shadow-lg overflow-hidden ${
+        className={`absolute left-2 right-2 md:left-14 md:right-auto md:w-[400px] z-50 bg-theme-bg-popup-menu border border-theme-modal-border rounded-lg p-3 flex flex-col gap-2.5 shadow-lg overflow-hidden ${
           centered
             ? "top-full mt-2 max-h-[min(360px,calc(100dvh-25rem))]"
             : "bottom-full mb-2 max-h-[min(360px,calc(100dvh-11rem))]"
@@ -151,10 +151,10 @@ function TabButton({ active, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`border-none cursor-pointer hover:bg-zinc-700/50 light:hover:bg-slate-100 px-1.5 py-0.5 rounded text-[10px] font-medium text-center whitespace-nowrap ${
+      className={`border-none cursor-pointer hover:bg-theme-action-menu-item-hover px-1.5 py-0.5 rounded text-[10px] font-medium text-center whitespace-nowrap ${
         active
-          ? "bg-zinc-700 text-white light:bg-divine-pleasure light:text-infinite-night"
-          : "text-doctor/55 light:text-infinite-night"
+          ? "bg-theme-sidebar-item-hover text-theme-text-primary"
+          : "text-theme-text-secondary"
       }`}
     >
       {children}

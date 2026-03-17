@@ -18,7 +18,7 @@ const exportOptions = {
     mimeType: "text/csv",
     fileExtension: "csv",
     filenameFunc: () => {
-      return `anythingllm-chats-${new Date().toLocaleDateString()}`;
+      return `lovora-chats-${new Date().toLocaleDateString()}`;
     },
   },
   json: {
@@ -26,7 +26,7 @@ const exportOptions = {
     mimeType: "application/json",
     fileExtension: "json",
     filenameFunc: () => {
-      return `anythingllm-chats-${new Date().toLocaleDateString()}`;
+      return `lovora-chats-${new Date().toLocaleDateString()}`;
     },
   },
   jsonl: {
@@ -34,7 +34,7 @@ const exportOptions = {
     mimeType: "application/jsonl",
     fileExtension: "jsonl",
     filenameFunc: () => {
-      return `anythingllm-chats-${new Date().toLocaleDateString()}-lines`;
+      return `lovora-chats-${new Date().toLocaleDateString()}-lines`;
     },
   },
   jsonAlpaca: {
@@ -42,7 +42,7 @@ const exportOptions = {
     mimeType: "application/json",
     fileExtension: "json",
     filenameFunc: () => {
-      return `anythingllm-chats-${new Date().toLocaleDateString()}-alpaca`;
+      return `lovora-chats-${new Date().toLocaleDateString()}-alpaca`;
     },
   },
 };
@@ -65,22 +65,17 @@ export default function WorkspaceChats() {
         exportOptions[exportType];
       const blob = new Blob([chats], { type: mimeType });
       saveAs(blob, `${filenameFunc()}.${fileExtension}`);
-      showToast(`Chats exported successfully as ${name}.`, "success");
+      showToast(t("recorded.export_success", { name }), "success");
     } else {
-      showToast("Failed to export chats.", "error");
+      showToast(t("recorded.export_failed"), "error");
     }
   };
 
   const handleClearAllChats = async () => {
-    if (
-      !window.confirm(
-        `Are you sure you want to clear all chats?\n\nThis action is irreversible.`
-      )
-    )
-      return false;
+    if (!window.confirm(t("recorded.clear_confirm"))) return false;
     await System.deleteChat(-1);
     setChats([]);
-    showToast("Cleared all chats.", "success");
+    showToast(t("recorded.cleared"), "success");
   };
 
   const toggleMenu = () => {
@@ -133,7 +128,7 @@ export default function WorkspaceChats() {
                   <button
                     ref={openMenuButton}
                     onClick={toggleMenu}
-                    className="flex items-center gap-x-2 px-4 py-1 rounded-lg bg-primary-button hover:light:bg-theme-bg-primary hover:text-theme-text-primary text-xs font-semibold hover:bg-secondary shadow-[0_4px_14px_rgba(0,0,0,0.25)] h-[34px] w-fit"
+                    className="flex items-center gap-x-2 px-4 py-1 rounded-lg bg-primary-button text-[var(--theme-button-primary-text)] text-xs font-semibold hover:bg-[var(--theme-button-primary-hover-solid)] shadow-[0_4px_14px_rgba(0,0,0,0.25)] h-[34px] w-fit"
                   >
                     <Download size={18} weight="bold" />
                     {t("recorded.export")}
@@ -143,7 +138,7 @@ export default function WorkspaceChats() {
                     ref={menuRef}
                     className={`${
                       showMenu ? "slide-down" : "slide-up hidden"
-                    } z-20 w-fit rounded-lg absolute top-full right-0 bg-secondary light:bg-theme-bg-secondary mt-2 shadow-md`}
+                    } z-20 w-fit rounded-lg absolute top-full right-0 bg-theme-bg-popup-menu border border-theme-modal-border mt-2 shadow-md`}
                   >
                     <div className="py-2">
                       {Object.entries(exportOptions).map(([key, data]) => (
@@ -153,7 +148,7 @@ export default function WorkspaceChats() {
                             handleDumpChats(key);
                             setShowMenu(false);
                           }}
-                          className="w-full text-left px-4 py-2 text-white text-sm hover:bg-[#3D4147] light:hover:bg-theme-sidebar-item-hover"
+                          className="w-full text-left px-4 py-2 text-theme-text-primary text-sm hover:bg-theme-action-menu-item-hover"
                         >
                           {data.name}
                         </button>
@@ -167,7 +162,7 @@ export default function WorkspaceChats() {
                     className="flex items-center gap-x-2 px-4 py-1 border hover:border-transparent light:border-theme-sidebar-border border-white/40 text-white/40 light:text-theme-text-secondary rounded-lg bg-transparent hover:light:text-theme-bg-primary hover:text-theme-text-primary text-xs font-semibold hover:bg-red-500 shadow-[0_4px_14px_rgba(0,0,0,0.25)] h-[34px] w-fit"
                   >
                     <Trash size={18} weight="bold" />
-                    Clear Chats
+                    {t("recorded.clear")}
                   </button>
                 )}
               </div>
@@ -274,7 +269,7 @@ function ChatsContainer({
         </button>
         <button
           onClick={handleNext}
-          className="px-4 py-2 rounded-lg border border-slate-200 text-slate-200 light:text-theme-text-secondary light:border-theme-sidebar-border text-sm items-center flex gap-x-2 hover:bg-slate-200 hover:text-slate-800 disabled:invisible"
+          className="px-4 py-2 rounded-lg border border-theme-text-secondary text-theme-text-secondary text-sm items-center flex gap-x-2 hover:bg-theme-text-secondary hover:text-theme-bg-secondary disabled:invisible"
           disabled={!canNext}
         >
           Next Page

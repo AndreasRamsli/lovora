@@ -270,7 +270,7 @@ function ModelRow({
           <>
             <button
               type="button"
-              className="border-none hover:bg-white/20 rounded-lg p-1"
+              className="ui-btn-ghost border-none rounded-lg p-1"
               onClick={() => setShowOptions(!showOptions)}
             >
               <DotsThreeVertical
@@ -301,7 +301,7 @@ function ModelRow({
             data-tooltip-place="top"
             data-tooltip-delay-show={300}
             data-tooltip-content={`Install ${model.organization}:${model.name}`}
-            className="border-none hover:bg-white/20 light:hover:bg-black/5 rounded-lg p-2 flex items-center gap-x-1 cursor-pointer"
+            className="ui-btn-ghost border-none rounded-lg p-2 flex items-center gap-x-1 cursor-pointer"
             onClick={handleSetActiveModel}
           >
             <CloudArrowDown

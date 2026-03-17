@@ -131,7 +131,7 @@ export default function ParsedFilesMenu({
         </div>
       </div>
       {contextWindowLimitExceeded && canEmbed && (
-        <div className="flex flex-col gap-2 p-2 bg-theme-bg-secondary light:bg-theme-bg-primary rounded">
+        <div className="flex flex-col gap-2 p-2 bg-theme-bg-secondary rounded">
           <div className="flex items-start gap-2">
             <Warning
               className="flex-shrink-0 mt-1 text-yellow-500 light:text-yellow-600"
@@ -146,7 +146,7 @@ export default function ParsedFilesMenu({
           <button
             onClick={handleEmbed}
             disabled={isEmbedding}
-            className="border-none disabled:opacity-50 flex items-center justify-center gap-2 px-3 py-2 text-xs bg-primary-button hover:bg-theme-button-primary-hover text-white font-medium rounded transition-colors shadow-sm"
+            className="border-none disabled:opacity-50 flex items-center justify-center gap-2 px-3 py-2 text-xs bg-primary-button text-[var(--theme-button-primary-text)] hover:bg-[var(--theme-button-primary-hover-solid)] font-medium rounded transition-colors shadow-sm"
           >
             {isEmbedding ? (
               <>

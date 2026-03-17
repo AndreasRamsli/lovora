@@ -207,7 +207,7 @@ export default function AccountModal({ user, hideModal }) {
               <button
                 onClick={hideModal}
                 type="button"
-                className="transition-all duration-300 text-white hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm"
+                className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm"
               >
                 {t("profile_settings.cancel")}
               </button>

@@ -4,6 +4,7 @@ import {
   CircleNotch,
   MagnifyingGlass,
 } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 
 export default function ModelTableLayout({
   children,
@@ -12,6 +13,7 @@ export default function ModelTableLayout({
   setSearchQuery = () => {},
   loading = false,
 }) {
+  const { t } = useTranslation();
   const [isRefreshing, setIsRefreshing] = useState(false);
   async function refreshModels() {
     setIsRefreshing(true);
@@ -27,7 +29,7 @@ export default function ModelTableLayout({
     <div className="flex flex-col w-full">
       <div className="flex gap-x-2 items-center pb-[8px]">
         <label className="text-theme-text-primary text-base font-semibold">
-          Available Models
+          {t("model_table.available_models")}
         </label>
       </div>
       <div className="flex w-full items-center gap-x-[16px]">
@@ -40,7 +42,7 @@ export default function ModelTableLayout({
           />
           <input
             type="search"
-            placeholder="Search models"
+            placeholder={t("model_table.search")}
             value={searchQuery}
             disabled={loading}
             className="min-h-[32px] border-none bg-theme-settings-input-bg text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5 pl-[30px] py-2 search-input disabled:opacity-50 disabled:cursor-not-allowed"
@@ -56,7 +58,7 @@ export default function ModelTableLayout({
             type="button"
             onClick={refreshModels}
             disabled={isRefreshing || loading}
-            className="border-none text-theme-text-secondary text-sm font-medium hover:bg-white/10 light:hover:bg-black/5 rounded-lg px-2 h-full flex items-center gap-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="ui-btn-ghost border-none text-theme-text-secondary text-sm font-medium rounded-lg px-2 h-full flex items-center gap-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isRefreshing ? (
               <CircleNotch className="w-4 h-4 text-theme-text-secondary animate-spin" />
@@ -69,7 +71,7 @@ export default function ModelTableLayout({
             <span
               className={`text-sm font-medium ${isRefreshing ? "hidden" : "text-theme-text-secondary"}`}
             >
-              Refresh Models
+              {t("model_table.refresh")}
             </span>
           </button>
         )}

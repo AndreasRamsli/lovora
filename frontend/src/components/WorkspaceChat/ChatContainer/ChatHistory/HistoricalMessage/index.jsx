@@ -93,7 +93,7 @@ const HistoricalMessage = ({
         className={`${isDeleted ? "animate-remove" : ""} flex justify-end w-full group`}
       >
         <div className="py-4 px-4 flex flex-col items-end">
-          <div className="bg-theme-bg-chat-input light:bg-white rounded-[20px] rounded-br-none px-4 py-3.5 max-w-[600px] [&_p]:m-0">
+          <div className="bg-theme-bg-chat-input light:bg-theme-bg-sidebar light:border light:border-theme-sidebar-border rounded-[20px] rounded-br-none px-4 py-3.5 max-w-[600px] [&_p]:m-0">
             <TruncatableContent>
               <RenderChatContent
                 role={role}
@@ -247,14 +247,14 @@ function TruncatableContent({ children }) {
               className="absolute bottom-0 left-0 right-0 h-[36px] light:hidden pointer-events-none"
               style={{
                 background:
-                  "linear-gradient(180deg, rgba(39, 39, 42, 0.00) 0%, rgba(39, 39, 42, 0.65) 50%, #27272A 100%)",
+                  "linear-gradient(180deg, rgba(27, 47, 111, 0.00) 0%, rgba(27, 47, 111, 0.65) 50%, #1B2F6F 100%)",
               }}
             />
             <div
               className="absolute bottom-0 left-0 right-0 h-[36px] hidden light:block pointer-events-none"
               style={{
                 background:
-                  "linear-gradient(180deg, rgba(241, 245, 249, 0.00) 0%, rgba(241, 245, 249, 0.65) 50%, #F1F5F9 100%)",
+                  "linear-gradient(180deg, rgba(244, 239, 225, 0.00) 0%, rgba(244, 239, 225, 0.72) 50%, #F4EFE1 100%)",
               }}
             />
           </>
@@ -263,7 +263,7 @@ function TruncatableContent({ children }) {
       {isOverflowing && (
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-doctor/75 light:text-slate-700 hover:text-white light:hover:text-slate-900 text-xs font-medium leading-4 mt-2"
+          className="text-theme-text-secondary hover:text-theme-text-primary text-xs font-medium leading-4 mt-2"
         >
           {isExpanded ? t("chat_window.see_less") : t("chat_window.see_more")}
         </button>
@@ -279,7 +279,7 @@ const RenderChatContent = memo(
     if (role !== "assistant")
       return (
         <span
-          className="flex flex-col gap-y-1 text-white light:text-slate-900"
+          className="flex flex-col gap-y-1 text-theme-text-primary"
           dangerouslySetInnerHTML={{
             __html: DOMPurify.sanitize(renderMarkdown(message)),
           }}
@@ -313,7 +313,7 @@ const RenderChatContent = memo(
           <ThoughtChainComponent content={thoughtChain} messageId={messageId} />
         )}
         <span
-          className="flex flex-col gap-y-1 text-white light:text-slate-900"
+          className="flex flex-col gap-y-1 text-theme-text-primary"
           dangerouslySetInnerHTML={{
             __html: DOMPurify.sanitize(renderMarkdown(msgToRender)),
           }}

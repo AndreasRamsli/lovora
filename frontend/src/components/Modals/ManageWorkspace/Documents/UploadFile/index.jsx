@@ -23,7 +23,7 @@ export default function UploadFile({
   const handleSendLink = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setLoadingMessage("Scraping link...");
+    setLoadingMessage(t("connectors.upload.scraping_link"));
     setFetchingUrl(true);
     const formEl = e.target;
     const form = new FormData(formEl);
@@ -32,10 +32,13 @@ export default function UploadFile({
       form.get("link")
     );
     if (!response.ok) {
-      showToast(`Error uploading link: ${data.error}`, "error");
+      showToast(
+        t("connectors.upload.link_error", { error: data.error }),
+        "error"
+      );
     } else {
       fetchKeys(true);
-      showToast("Link uploaded successfully", "success");
+      showToast(t("connectors.upload.link_success"), "success");
       formEl.reset();
     }
     setLoading(false);
@@ -145,7 +148,7 @@ export default function UploadFile({
         <button
           disabled={fetchingUrl}
           type="submit"
-          className="disabled:bg-white/20 disabled:text-slate-300 disabled:border-slate-400 disabled:cursor-wait bg bg-transparent hover:bg-slate-200 hover:text-slate-800 w-auto border border-white light:border-theme-modal-border text-sm text-white p-2.5 rounded-lg"
+          className="ui-btn-outline disabled:bg-white/20 disabled:text-slate-300 disabled:border-slate-400 disabled:cursor-wait bg bg-transparent w-auto border border-white light:border-theme-modal-border text-sm p-2.5 rounded-lg"
         >
           {fetchingUrl
             ? t("connectors.upload.fetching")

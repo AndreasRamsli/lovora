@@ -55,11 +55,7 @@ export default function TextSizeMenu() {
         ref={buttonRef}
         type="button"
         onClick={() => setShowMenu(!showMenu)}
-        className={`group border-none cursor-pointer flex items-center justify-center w-[35px] h-[35px] rounded-full transition-all ${
-          showMenu
-            ? "bg-zinc-700 light:bg-divine-pleasure"
-            : "hover:bg-zinc-700 light:hover:bg-divine-pleasure"
-        }`}
+        className={`group border-none cursor-pointer flex items-center justify-center w-[35px] h-[35px] rounded-full transition-all ${showMenu ? "bg-zinc-700 light:bg-divine-pleasure" : "ui-btn-ghost"}`}
       >
         <SlidersHorizontal
           size={18}

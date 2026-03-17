@@ -136,7 +136,7 @@ export default function AgentLLMSelection({
           />
         )}
         {searchMenuOpen ? (
-          <div className="absolute top-0 left-0 w-full max-w-[640px] max-h-[310px] min-h-[64px] bg-theme-settings-input-bg rounded-lg flex flex-col justify-between cursor-pointer border-2 border-primary-button z-20">
+          <div className="absolute top-0 left-0 w-full max-w-[640px] max-h-[310px] min-h-[64px] bg-theme-settings-input-bg rounded-lg flex flex-col justify-between cursor-pointer border-2 border-theme-highlight-border z-20">
             <div className="w-full flex flex-col gap-y-1">
               <div className="flex items-center sticky top-0 z-10 border-b border-[#9CA3AF] mx-4 bg-theme-settings-input-bg">
                 <MagnifyingGlass
@@ -181,7 +181,7 @@ export default function AgentLLMSelection({
           </div>
         ) : (
           <button
-            className="w-full max-w-[640px] h-[64px] bg-theme-settings-input-bg rounded-lg flex items-center p-[14px] justify-between cursor-pointer border-2 border-transparent hover:border-primary-button transition-all duration-300"
+            className="w-full max-w-[640px] h-[64px] bg-theme-settings-input-bg rounded-lg flex items-center p-[14px] justify-between cursor-pointer border-2 border-transparent hover:border-theme-highlight-border transition-all duration-300"
             type="button"
             onClick={() => setSearchMenuOpen(true)}
           >

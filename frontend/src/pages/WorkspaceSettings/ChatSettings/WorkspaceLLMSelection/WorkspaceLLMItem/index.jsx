@@ -165,7 +165,7 @@ function SetupProvider({
               <button
                 type="button"
                 onClick={closeModal}
-                className="transition-all duration-300 text-white hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm"
+                className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm"
               >
                 Cancel
               </button>

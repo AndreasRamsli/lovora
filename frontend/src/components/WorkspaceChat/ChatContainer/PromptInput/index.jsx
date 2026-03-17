@@ -336,7 +336,7 @@ export default function PromptInput({
               centered={centered}
               highlightedIndexRef={toolsHighlightRef}
             />
-            <div className="bg-theme-bg-chat-input border border-theme-chat-input-border light:bg-white light:border-slate-300 rounded-[20px] pwa:rounded-3xl flex flex-col px-5 overflow-hidden">
+            <div className="bg-theme-bg-chat-input border border-theme-chat-input-border rounded-[20px] pwa:rounded-3xl flex flex-col px-5 overflow-hidden">
               <AttachmentManager attachments={attachments} />
               <div className="flex items-center">
                 <textarea
@@ -356,7 +356,7 @@ export default function PromptInput({
                   }}
                   value={promptInput}
                   spellCheck={Appearance.get("enableSpellCheck")}
-                  className={`border-none cursor-text max-h-[50vh] md:max-h-[350px] md:min-h-[40px] pt-[20px] w-full leading-5 text-white light:text-infinite-night/55 bg-transparent placeholder:text-white/60 light:placeholder:text-infinite-night/40 resize-none active:outline-none focus:outline-none flex-grow pwa:!text-[16px] ${textSizeClass}`}
+                  className={`border-none cursor-text max-h-[50vh] md:max-h-[350px] md:min-h-[40px] pt-[20px] w-full leading-5 text-theme-text-primary bg-transparent placeholder:text-theme-text-secondary resize-none active:outline-none focus:outline-none flex-grow pwa:!text-[16px] ${textSizeClass}`}
                   placeholder={t("chat_window.send_message")}
                 />
               </div>
@@ -428,11 +428,11 @@ function AgentSessionButton({
         data-tooltip-id="agent-session"
         data-tooltip-content={t("chat_window.start_agent_session")}
         aria-label={t("chat_window.start_agent_session")}
-        className="group border-none relative flex justify-center items-center cursor-pointer w-6 h-6 rounded-full hover:bg-theme-action-menu-item-hover light:hover:bg-slate-200"
+        className="group border-none relative flex justify-center items-center cursor-pointer w-6 h-6 rounded-full hover:bg-theme-action-menu-item-hover"
       >
         <At
           size={18}
-          className="pointer-events-none text-white/70 light:text-slate-600 group-hover:text-white light:group-hover:text-slate-600 shrink-0"
+          className="pointer-events-none text-theme-button-text group-hover:text-theme-text-primary shrink-0"
         />
       </button>
       <Tooltip
@@ -464,15 +464,15 @@ function ToolsButton({
       }}
       className={`group border-none cursor-pointer flex items-center justify-center h-6 px-2 rounded-full ${
         showTools
-          ? "bg-theme-action-menu-item-hover light:bg-slate-200"
-          : "hover:bg-theme-action-menu-item-hover light:hover:bg-slate-200"
+          ? "bg-theme-action-menu-item-hover"
+          : "hover:bg-theme-action-menu-item-hover"
       }`}
     >
       <span
         className={`text-sm font-medium ${
           showTools
-            ? "text-white light:text-slate-800"
-            : "text-white/70 light:text-slate-600 group-hover:text-white light:group-hover:text-slate-800"
+            ? "text-theme-text-primary"
+            : "text-theme-button-text group-hover:text-theme-text-primary"
         }`}
       >
         {t("chat_window.tools")}
@@ -492,8 +492,8 @@ function SendPromptButton({ formRef, promptInput, isDisabled }) {
         disabled={isDisabled || !promptInput.trim().length}
         className={`border-none flex justify-center items-center rounded-full w-8 h-8 transition-all ${
           promptInput.trim().length && !isDisabled
-            ? "cursor-pointer bg-white hover:bg-slate-200 light:bg-slate-800 light:hover:bg-slate-600"
-            : "cursor-not-allowed bg-white/25 light:bg-slate-400"
+            ? "cursor-pointer bg-primary-button text-[var(--theme-button-primary-text)] hover:bg-[var(--theme-button-primary-hover-solid)]"
+            : "cursor-not-allowed bg-[var(--theme-button-primary-disabled-bg)] text-[var(--theme-button-primary-disabled-text)]"
         }`}
         data-tooltip-id="send-prompt"
         data-tooltip-content={
@@ -504,7 +504,7 @@ function SendPromptButton({ formRef, promptInput, isDisabled }) {
         aria-label={t("chat_window.send")}
       >
         <ArrowUp
-          className="w-[18px] h-[18px] pointer-events-none text-zinc-800 light:text-white"
+          className="w-[18px] h-[18px] pointer-events-none text-current"
           weight="bold"
         />
         <span className="sr-only">{t("chat_window.send")}</span>

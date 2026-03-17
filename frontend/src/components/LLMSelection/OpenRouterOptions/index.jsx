@@ -38,7 +38,7 @@ function AdvancedControls({ settings }) {
       <button
         type="button"
         onClick={() => setShowAdvancedControls(!showAdvancedControls)}
-        className="border-none text-white hover:text-white/70 flex items-center text-sm"
+        className="ui-btn-text-subtle border-none text-white flex items-center text-sm"
       >
         {showAdvancedControls ? "Hide" : "Show"} advanced controls
         {showAdvancedControls ? (

@@ -192,14 +192,10 @@ export default function SlashCommandsTab({
       {!isActiveAgentSession && (
         <div
           onClick={openAddModal}
-          className="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer hover:bg-zinc-700/50 light:hover:bg-slate-100"
+          className="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer hover:bg-theme-action-menu-item-hover"
         >
-          <Plus
-            size={12}
-            weight="bold"
-            className="text-white light:text-slate-900"
-          />
-          <span className="text-xs text-white light:text-slate-900">
+          <Plus size={12} weight="bold" className="text-theme-text-primary" />
+          <span className="text-xs text-theme-text-primary">
             {t("chat_window.add_new")}
           </span>
         </div>

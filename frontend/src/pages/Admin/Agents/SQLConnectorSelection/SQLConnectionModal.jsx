@@ -456,7 +456,7 @@ export default function SQLConnectionModal({
               <button
                 type="button"
                 onClick={handleClose}
-                className="transition-all duration-300 text-white hover:bg-zinc-700 light:hover:bg-theme-bg-primary px-4 py-2 rounded-lg text-sm"
+                className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm"
               >
                 Cancel
               </button>
@@ -492,7 +492,7 @@ function DBEngine({ provider, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col p-4 border border-white/40 bg-zinc-800 light:bg-theme-settings-input-bg rounded-lg w-fit hover:bg-zinc-700 ${
+      className={`ui-btn-ghost flex flex-col p-4 border border-white/40 bg-zinc-800 light:bg-theme-settings-input-bg rounded-lg w-fit ${
         active ? "!bg-blue-500/50" : ""
       }`}
     >

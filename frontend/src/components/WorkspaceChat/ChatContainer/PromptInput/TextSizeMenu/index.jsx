@@ -28,7 +28,7 @@ export default function TextSizeButton() {
         <TextT
           color="var(--theme-sidebar-footer-icon-fill)"
           weight="fill"
-          className="w-[20px] h-[20px] pointer-events-none text-white"
+          className="w-[20px] h-[20px] pointer-events-none text-theme-text-primary"
         />
       </div>
       <Tooltip
@@ -44,7 +44,7 @@ export default function TextSizeButton() {
             ? "var(--theme-modal-border)"
             : "var(--theme-bg-primary)"
         }
-        className="z-99 !w-[140px] !bg-theme-bg-primary !px-[5px] !rounded-lg !pointer-events-auto light:border-2 light:border-theme-modal-border"
+        className="z-99 !w-[140px] !bg-theme-bg-popup-menu !border !border-theme-modal-border !px-[5px] !rounded-lg !pointer-events-auto"
       >
         <TextSizeMenu tooltipRef={tooltipRef} />
       </Tooltip>

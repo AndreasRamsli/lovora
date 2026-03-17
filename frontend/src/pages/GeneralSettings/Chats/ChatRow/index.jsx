@@ -6,8 +6,10 @@ import { useModal } from "@/hooks/useModal";
 import MarkdownRenderer from "../MarkdownRenderer";
 import { safeJsonParse } from "@/utils/request";
 import { getWorkspaceDisplayName } from "@/utils/workspaceDisplay";
+import { useTranslation } from "react-i18next";
 
 export default function ChatRow({ chat, onDelete }) {
+  const { t } = useTranslation();
   const {
     isOpen: isPromptOpen,
     openModal: openPromptModal,
@@ -20,23 +22,18 @@ export default function ChatRow({ chat, onDelete }) {
   } = useModal();
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete this chat?\n\nThis action is irreversible.`
-      )
-    )
-      return false;
+    if (!window.confirm(t("recorded.row.delete_confirm"))) return false;
     await System.deleteChat(chat.id);
     onDelete(chat.id);
   };
 
   return (
     <>
-      <tr className="bg-transparent text-white text-opacity-80 text-xs font-medium border-b border-white/10 h-10">
-        <td className="px-6 font-medium whitespace-nowrap text-white">
+      <tr className="bg-transparent text-theme-text-primary text-opacity-80 text-xs font-medium border-b border-white/10 h-10">
+        <td className="px-6 font-medium whitespace-nowrap text-theme-text-primary">
           {chat.id}
         </td>
-        <td className="px-6 font-medium whitespace-nowrap text-white">
+        <td className="px-6 font-medium whitespace-nowrap text-theme-text-primary">
           {chat.user?.username}
         </td>
         <td className="px-6">{getWorkspaceDisplayName(chat.workspace)}</td>
@@ -56,7 +53,7 @@ export default function ChatRow({ chat, onDelete }) {
         <td className="px-6 flex items-center gap-x-6 h-full mt-1">
           <button
             onClick={handleDelete}
-            className="text-xs font-medium text-white/80 light:text-black/80 hover:light:text-red-500 hover:text-red-300 rounded-lg px-2 py-1 hover:bg-white hover:light:bg-red-50 hover:bg-opacity-10"
+            className="text-xs font-medium text-theme-text-secondary hover:text-red-300 rounded-lg px-2 py-1 hover:bg-theme-action-menu-item-hover"
           >
             <Trash className="h-5 w-5" />
           </button>
@@ -79,21 +76,24 @@ export default function ChatRow({ chat, onDelete }) {
   );
 }
 const TextPreview = ({ text, closeModal }) => {
+  const { t } = useTranslation();
   return (
     <div className="relative w-full md:max-w-2xl max-h-full">
       <div className="w-full max-w-2xl bg-theme-bg-secondary rounded-lg shadow border-2 border-theme-modal-border overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b rounded-t border-theme-modal-border">
-          <h3 className="text-xl font-semibold text-white">Viewing Text</h3>
+          <h3 className="text-xl font-semibold text-theme-text-primary">
+            {t("recorded.row.viewing_text")}
+          </h3>
           <button
             onClick={closeModal}
             type="button"
             className="bg-transparent rounded-lg text-sm p-1.5 ml-auto inline-flex items-center bg-sidebar-button hover:bg-theme-modal-border hover:border-theme-modal-border hover:border-opacity-50 border-transparent border"
           >
-            <X className="text-white text-lg" />
+            <X className="text-theme-text-primary text-lg" />
           </button>
         </div>
         <div className="w-full p-6">
-          <pre className="w-full h-[200px] py-2 px-4 whitespace-pre-line overflow-auto rounded-lg bg-zinc-900 light:bg-theme-bg-secondary border border-gray-500 text-white text-sm">
+          <pre className="w-full h-[200px] py-2 px-4 whitespace-pre-line overflow-auto rounded-lg bg-theme-bg-popup-menu border border-theme-modal-border text-theme-text-primary text-sm">
             {text}
           </pre>
         </div>

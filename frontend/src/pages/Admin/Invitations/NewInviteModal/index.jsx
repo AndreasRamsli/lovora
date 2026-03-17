@@ -159,7 +159,7 @@ export default function NewInviteModal({ closeModal, onSuccess }) {
                   <button
                     onClick={closeModal}
                     type="button"
-                    className="transition-all duration-300 text-white hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm mr-2"
+                    className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm mr-2"
                   >
                     Cancel
                   </button>
@@ -174,7 +174,7 @@ export default function NewInviteModal({ closeModal, onSuccess }) {
                 <button
                   onClick={closeModal}
                   type="button"
-                  className="transition-all duration-300 text-white hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm"
+                  className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm"
                 >
                   Close
                 </button>

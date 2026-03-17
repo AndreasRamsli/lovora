@@ -5,12 +5,14 @@ import { Plus, CircleNotch, Trash } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import ThreadItem from "./ThreadItem";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 export const THREAD_RENAME_EVENT = "renameThread";
 
 export default function ThreadContainer({
   workspace,
   isVirtualThread = false,
 }) {
+  const { t } = useTranslation();
   const { threadSlug = null } = useParams();
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +123,9 @@ export default function ThreadContainer({
   if (loading) {
     return (
       <div className="flex flex-col bg-pulse w-full h-10 items-center justify-center">
-        <p className="text-xs text-white animate-pulse">loading threads....</p>
+        <p className="text-xs text-white animate-pulse">
+          {t("active_workspaces.threads.loading")}
+        </p>
       </div>
     );
   }
@@ -129,13 +133,17 @@ export default function ThreadContainer({
   const activeThreadIdx = getActiveThreadIdx();
 
   return (
-    <div className="flex flex-col" role="list" aria-label="Threads">
+    <div
+      className="flex flex-col"
+      role="list"
+      aria-label={t("active_workspaces.threads.aria_label")}
+    >
       <ThreadItem
         idx={0}
         activeIdx={activeThreadIdx}
         isActive={activeThreadIdx === 0}
         workspace={workspace}
-        thread={{ slug: null, name: "default" }}
+        thread={{ slug: null, name: t("active_workspaces.threads.default") }}
         hasNext={threads.length > 0 || isVirtualThread}
       />
       {threads.map((thread, i) => (
@@ -158,7 +166,11 @@ export default function ThreadContainer({
           activeIdx={activeThreadIdx}
           isActive={true}
           workspace={workspace}
-          thread={{ slug: null, name: "*New Thread", virtual: true }}
+          thread={{
+            slug: null,
+            name: t("active_workspaces.threads.virtual_new"),
+            virtual: true,
+          }}
           hasNext={false}
         />
       )}
@@ -173,12 +185,19 @@ export default function ThreadContainer({
 }
 
 function NewThreadButton({ workspace }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const onClick = async () => {
     setLoading(true);
     const { thread, error } = await Workspace.threads.new(workspace.slug);
     if (!!error) {
-      showToast(`Could not create thread - ${error}`, "error", { clear: true });
+      showToast(
+        t("active_workspaces.threads.create_failed", { error }),
+        "error",
+        {
+          clear: true,
+        }
+      );
       setLoading(false);
       return;
     }
@@ -193,29 +212,29 @@ function NewThreadButton({ workspace }) {
       className="w-full relative flex h-[40px] items-center border-none hover:bg-[var(--theme-sidebar-thread-selected)] light:hover:bg-[#E5DFC9] hover:light:bg-theme-sidebar-subitem-hover rounded-lg"
     >
       <div className="flex w-full gap-x-2 items-center pl-4">
-        <div className="bg-zinc-800 light:bg-doctor p-2 rounded-lg h-[24px] w-[24px] flex items-center justify-center">
+        <div className="bg-primary-button p-2 rounded-lg h-[24px] w-[24px] flex items-center justify-center">
           {loading ? (
             <CircleNotch
               weight="bold"
               size={14}
-              className="shrink-0 animate-spin text-white light:text-theme-text-primary"
+              className="shrink-0 animate-spin text-[var(--theme-button-primary-text)]"
             />
           ) : (
             <Plus
               weight="bold"
               size={14}
-              className="shrink-0 text-white light:text-theme-text-primary"
+              className="shrink-0 text-[var(--theme-button-primary-text)]"
             />
           )}
         </div>
 
         {loading ? (
           <p className="text-left text-white light:text-theme-text-primary text-sm">
-            Starting Thread...
+            {t("active_workspaces.threads.starting")}
           </p>
         ) : (
           <p className="text-left text-white light:text-theme-text-primary text-sm font-semibold">
-            New Thread
+            {t("active_workspaces.threads.new")}
           </p>
         )}
       </div>
@@ -224,6 +243,7 @@ function NewThreadButton({ workspace }) {
 }
 
 function DeleteAllThreadButton({ ctrlPressed, threads, onDelete }) {
+  const { t } = useTranslation();
   if (!ctrlPressed || threads.filter((t) => t.deleted).length === 0)
     return null;
   return (
@@ -241,7 +261,7 @@ function DeleteAllThreadButton({ ctrlPressed, threads, onDelete }) {
           />
         </div>
         <p className="text-white light:text-theme-text-secondary text-left text-sm group-hover:text-red-400">
-          Delete Selected
+          {t("active_workspaces.threads.delete_selected")}
         </p>
       </div>
     </button>

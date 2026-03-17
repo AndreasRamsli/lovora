@@ -165,7 +165,7 @@ export default function ChatPromptSettings({
           <button
             ref={historyButtonRef}
             type="button"
-            className="text-theme-text-secondary hover:text-white light:hover:text-black text-xs font-medium"
+            className="ui-btn-text-promote text-theme-text-secondary text-xs font-medium"
             onClick={(e) => {
               e.preventDefault();
               setShowPromptHistory(!showPromptHistory);
@@ -229,7 +229,7 @@ export default function ChatPromptSettings({
               <button
                 type="button"
                 onClick={handleRestoreToDefaultSystemPrompt}
-                className="text-theme-text-primary hover:text-white light:hover:text-black text-xs font-medium"
+                className="ui-btn-text-promote text-theme-text-primary text-xs font-medium"
               >
                 Restore to Default
               </button>
@@ -257,7 +257,7 @@ function PublishPromptCTA({ hidden = false, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="border-none text-primary-button hover:text-white light:hover:text-black text-xs font-medium"
+      className="ui-btn-text-accent border-none text-primary-button text-xs font-medium"
     >
       Publish to Community Hub
     </button>

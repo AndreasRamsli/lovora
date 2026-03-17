@@ -169,15 +169,15 @@ export default function AttachItem({
         onPointerLeave={() => {
           setIsAnchorHovered(false);
         }}
-        className="group border-none relative flex justify-center items-center cursor-pointer w-8 h-8 rounded-full hover:bg-zinc-700 light:hover:bg-divine-pleasure"
+        className="group border-none relative flex justify-center items-center cursor-pointer w-8 h-8 rounded-full hover:bg-theme-action-menu-item-hover"
       >
         <div className="relative">
           <Plus
-            className="w-[16px] h-[16px] pointer-events-none text-doctor/75 light:text-infinite-night/55 group-hover:text-white light:group-hover:text-slate-600"
+            className="w-[16px] h-[16px] pointer-events-none text-theme-button-text group-hover:text-theme-text-primary"
             weight="bold"
           />
           {hasParsedFiles && (
-            <div className="absolute -top-2.5 -right-2 bg-white text-black light:invert text-[8px] rounded-full px-1 flex items-center justify-center">
+            <div className="absolute -top-2.5 -right-2 bg-primary-button text-[var(--theme-button-primary-text)] text-[8px] rounded-full px-1 flex items-center justify-center">
               {files.length}
             </div>
           )}
@@ -196,7 +196,7 @@ export default function AttachItem({
           delayShow={0}
           delayHide={0}
           noArrow
-          className="z-[99] !w-[400px] !bg-theme-bg-primary !px-[5px] !rounded-lg !pointer-events-auto light:!border-2 light:!border-theme-modal-border shadow-xl"
+          className="z-[99] !w-[400px] !bg-theme-bg-popup-menu !border !border-theme-modal-border !px-[5px] !rounded-lg !pointer-events-auto shadow-xl"
           positionStrategy="fixed"
           afterShow={() => clearCloseTimer()}
           afterHide={() => {

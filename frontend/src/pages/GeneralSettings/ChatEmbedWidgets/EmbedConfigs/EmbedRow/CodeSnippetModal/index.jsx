@@ -1,18 +1,20 @@
 import React, { useState } from "react";
 import { CheckCircle, CopySimple, X } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 import showToast from "@/utils/toast";
 import hljs from "highlight.js";
 import "@/utils/chat/themes/github-dark.css";
 import "@/utils/chat/themes/github.css";
 
 export default function CodeSnippetModal({ embed, closeModal }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
       <div className="relative w-full max-w-2xl bg-theme-bg-secondary rounded-lg shadow border-2 border-theme-modal-border">
         <div className="relative p-6 border-b rounded-t border-theme-modal-border">
           <div className="w-full flex gap-x-2 items-center">
             <h3 className="text-xl font-semibold text-white overflow-hidden overflow-ellipsis whitespace-nowrap">
-              Copy your embed code
+              {t("chat_embed_widgets.code_snippet.title")}
             </h3>
           </div>
           <button
@@ -31,9 +33,9 @@ export default function CodeSnippetModal({ embed, closeModal }) {
             <button
               onClick={closeModal}
               type="button"
-              className="transition-all duration-300 text-white hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm"
+              className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm"
             >
-              Close
+              {t("chat_embed_widgets.close")}
             </button>
             <div hidden={true} />
           </div>
@@ -54,11 +56,12 @@ https://github.com/Mintplex-Labs/anythingllm-embed/blob/main/README.md
   data-base-api-url="${serverHost}/api/embed"
   src="${scriptHost}/embed/anythingllm-chat-widget.min.js">
 </script>
-<!-- AnythingLLM (https://anythingllm.com) -->
+<!-- Lovora (https://lovora.no) -->
 `;
 }
 
 const ScriptTag = ({ embed }) => {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const scriptHost = import.meta.env.DEV
     ? "http://localhost:3000"
@@ -76,18 +79,19 @@ const ScriptTag = ({ embed }) => {
     setTimeout(() => {
       setCopied(false);
     }, 2500);
-    showToast("Snippet copied to clipboard!", "success", { clear: true });
+    showToast(t("chat_embed_widgets.code_snippet.copied"), "success", {
+      clear: true,
+    });
   };
 
   return (
     <div>
       <div className="flex flex-col mb-2">
         <label className="block text-sm font-medium text-white">
-          HTML Script Tag Embed Code
+          {t("chat_embed_widgets.code_snippet.label")}
         </label>
         <p className="text-theme-text-secondary text-xs">
-          Have your workspace chat embed function like a help desk chat bottom
-          in the corner of your website.
+          {t("chat_embed_widgets.code_snippet.description")}
         </p>
         <a
           href="https://github.com/Mintplex-Labs/anythingllm-embed/blob/main/README.md"
@@ -95,7 +99,7 @@ const ScriptTag = ({ embed }) => {
           rel="noreferrer"
           className="text-blue-300 light:text-blue-500 hover:underline"
         >
-          View all style and configuration options &rarr;
+          {t("chat_embed_widgets.code_snippet.view_options")} &rarr;
         </a>
       </div>
       <button

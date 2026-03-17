@@ -40,7 +40,7 @@ export default function NewUserModal({ closeModal }) {
         <div className="relative p-6 border-b rounded-t border-theme-modal-border">
           <div className="w-full flex gap-x-2 items-center">
             <h3 className="text-xl font-semibold text-white overflow-hidden overflow-ellipsis whitespace-nowrap">
-              Add user to instance
+              {t("users.modal.add_title")}
             </h3>
           </div>
           <button
@@ -59,13 +59,13 @@ export default function NewUserModal({ closeModal }) {
                   htmlFor="username"
                   className="block mb-2 text-sm font-medium text-white"
                 >
-                  Username
+                  {t("users.table.username")}
                 </label>
                 <input
                   name="username"
                   type="text"
                   className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
-                  placeholder="User's username"
+                  placeholder={t("users.modal.username_placeholder")}
                   minLength={USERNAME_MIN_LENGTH}
                   maxLength={USERNAME_MAX_LENGTH}
                   pattern={USERNAME_PATTERN}
@@ -81,19 +81,19 @@ export default function NewUserModal({ closeModal }) {
                   htmlFor="password"
                   className="block mb-2 text-sm font-medium text-white"
                 >
-                  Password
+                  {t("users.modal.password")}
                 </label>
                 <input
                   name="password"
                   type="text"
                   className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
-                  placeholder="User's initial password"
+                  placeholder={t("users.modal.password_placeholder")}
                   required={true}
                   autoComplete="off"
                   minLength={8}
                 />
                 <p className="mt-2 text-xs text-white/60">
-                  Password must be at least 8 characters long
+                  {t("users.modal.password_help")}
                 </p>
               </div>
               <div>
@@ -101,12 +101,12 @@ export default function NewUserModal({ closeModal }) {
                   htmlFor="bio"
                   className="block mb-2 text-sm font-medium text-white"
                 >
-                  Bio
+                  {t("users.modal.bio")}
                 </label>
                 <textarea
                   name="bio"
                   className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
-                  placeholder="User's bio"
+                  placeholder={t("users.modal.bio_placeholder")}
                   autoComplete="off"
                   rows={3}
                 />
@@ -116,7 +116,7 @@ export default function NewUserModal({ closeModal }) {
                   htmlFor="role"
                   className="block mb-2 text-sm font-medium text-white"
                 >
-                  Role
+                  {t("users.table.role")}
                 </label>
                 <select
                   name="role"
@@ -125,10 +125,16 @@ export default function NewUserModal({ closeModal }) {
                   onChange={(e) => setRole(e.target.value)}
                   className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
                 >
-                  <option value="default">Default</option>
-                  <option value="manager">Manager</option>
+                  <option value="default">
+                    {t("users.roles.default_label")}
+                  </option>
+                  <option value="manager">
+                    {t("users.roles.manager_label")}
+                  </option>
                   {user?.role === "admin" && (
-                    <option value="admin">Administrator</option>
+                    <option value="admin">
+                      {t("users.roles.admin_label")}
+                    </option>
                   )}
                 </select>
                 <RoleHintDisplay role={role} />
@@ -139,25 +145,28 @@ export default function NewUserModal({ closeModal }) {
                 limit={messageLimit.limit}
                 updateState={setMessageLimit}
               />
-              {error && <p className="text-red-400 text-sm">Error: {error}</p>}
+              {error && (
+                <p className="text-red-400 text-sm">
+                  {t("users.modal.error", { error })}
+                </p>
+              )}
               <p className="text-white text-xs md:text-sm">
-                After creating a user they will need to login with their initial
-                login to get access.
+                {t("users.modal.after_create")}
               </p>
             </div>
             <div className="flex justify-between items-center mt-6 pt-6 border-t border-theme-modal-border">
               <button
                 onClick={closeModal}
                 type="button"
-                className="transition-all duration-300 text-white hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm"
+                className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="transition-all duration-300 bg-white text-black hover:opacity-60 px-4 py-2 rounded-lg text-sm"
               >
-                Add user
+                {t("users.add")}
               </button>
             </div>
           </form>

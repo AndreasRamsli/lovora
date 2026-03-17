@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const THREAD_CALLOUT_DETAIL_WIDTH = 26;
 export default function ThreadItem({
@@ -24,6 +25,7 @@ export default function ThreadItem({
   hasNext,
   ctrlPressed = false,
 }) {
+  const { t } = useTranslation();
   const { slug: urlSlug, threadSlug = null } = useParams();
   const workspaceSlug = workspace?.slug ?? urlSlug;
   const optionsContainer = useRef(null);
@@ -49,7 +51,7 @@ export default function ThreadItem({
         style={{ width: THREAD_CALLOUT_DETAIL_WIDTH / 2 }}
         className={`${
           isActive
-            ? "border-l-2 border-b-2 border-white light:border-infinite-night z-[2]"
+            ? "border-l-2 border-b-2 border-theme-text-primary z-[2]"
             : "border-l border-b border-zinc-500 light:border-infinite-night/20 z-[1]"
         } h-[50%] absolute top-0 left-3 rounded-bl-lg`}
       ></div>
@@ -59,7 +61,7 @@ export default function ThreadItem({
           style={{ width: THREAD_CALLOUT_DETAIL_WIDTH / 2 }}
           className={`${
             idx <= activeIdx && !isActive
-              ? "border-l-2 border-white light:border-infinite-night z-[2]"
+              ? "border-l-2 border-theme-text-primary z-[2]"
               : "border-l border-zinc-500 light:border-infinite-night/20 z-[1]"
           } h-[100%] absolute top-0 left-3`}
         ></div>
@@ -79,7 +81,7 @@ export default function ThreadItem({
               <p
                 className={`text-left text-sm text-slate-400/50 light:text-infinite-night/55 italic`}
               >
-                deleted thread
+                {t("active_workspaces.threads.deleted")}
               </p>
             </div>
             {ctrlPressed && (
@@ -139,7 +141,7 @@ export default function ThreadItem({
                   type="button"
                   className="border-none"
                   onClick={() => setShowOptions(!showOptions)}
-                  aria-label="Thread options"
+                  aria-label={t("active_workspaces.threads.options")}
                 >
                   <DotsThree
                     className="text-doctor/75 light:text-theme-text-secondary hover:text-white hover:light:text-theme-text-primary"
@@ -173,6 +175,7 @@ function OptionsMenu({
   close,
   currentThreadSlug,
 }) {
+  const { t } = useTranslation();
   const menuRef = useRef(null);
 
   // Ref menu options
@@ -209,7 +212,7 @@ function OptionsMenu({
 
   const renameThread = async () => {
     const name = window
-      .prompt("What would you like to rename this thread to?")
+      .prompt(t("active_workspaces.threads.rename_prompt"))
       ?.trim();
     if (!name || name.length === 0) {
       close();
@@ -222,9 +225,13 @@ function OptionsMenu({
       { name }
     );
     if (!!message) {
-      showToast(`Thread could not be updated! ${message}`, "error", {
-        clear: true,
-      });
+      showToast(
+        t("active_workspaces.threads.update_failed", { message }),
+        "error",
+        {
+          clear: true,
+        }
+      );
       close();
       return;
     }
@@ -234,19 +241,18 @@ function OptionsMenu({
   };
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this thread? All of its chats will be deleted. You cannot undo this."
-      )
-    )
-      return;
+    if (!window.confirm(t("active_workspaces.threads.delete_confirm"))) return;
     const success = await Workspace.threads.delete(workspace.slug, thread.slug);
     if (!success) {
-      showToast("Thread could not be deleted!", "error", { clear: true });
+      showToast(t("active_workspaces.threads.delete_failed"), "error", {
+        clear: true,
+      });
       return;
     }
     if (success) {
-      showToast("Thread deleted successfully!", "success", { clear: true });
+      showToast(t("active_workspaces.threads.deleted_success"), "success", {
+        clear: true,
+      });
       onRemove(thread.id);
       // Redirect if deleting the active thread
       if (currentThreadSlug === thread.slug) {
@@ -259,23 +265,23 @@ function OptionsMenu({
   return (
     <div
       ref={menuRef}
-      className="absolute w-fit z-[20] top-[25px] right-[10px] bg-zinc-900 light:bg-theme-bg-sidebar light:border-[1px] light:border-theme-sidebar-border rounded-lg p-1"
+      className="absolute w-fit z-[20] top-[25px] right-[10px] bg-theme-bg-popup-menu border border-theme-modal-border rounded-lg p-1 shadow-lg"
     >
       <button
         onClick={renameThread}
         type="button"
-        className="w-full rounded-md flex items-center p-2 gap-x-2 hover:bg-doctor/8 text-doctor/75 light:text-theme-text-primary"
+        className="w-full rounded-md flex items-center p-2 gap-x-2 hover:bg-theme-action-menu-item-hover text-theme-text-primary"
       >
         <PencilSimple size={18} />
-        <p className="text-sm">Rename</p>
+        <p className="text-sm">{t("active_workspaces.threads.rename")}</p>
       </button>
       <button
         onClick={handleDelete}
         type="button"
-        className="w-full rounded-md flex items-center p-2 gap-x-2 hover:bg-red-500/20 text-doctor/75 light:text-theme-text-primary hover:text-red-100"
+        className="w-full rounded-md flex items-center p-2 gap-x-2 hover:bg-red-500/20 text-theme-text-primary hover:text-red-100"
       >
         <Trash size={18} />
-        <p className="text-sm">Delete Thread</p>
+        <p className="text-sm">{t("active_workspaces.threads.delete")}</p>
       </button>
     </div>
   );

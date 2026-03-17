@@ -55,7 +55,7 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
         <div className="relative p-6 border-b rounded-t border-theme-modal-border">
           <div className="w-full flex gap-x-2 items-center">
             <h3 className="text-xl font-semibold text-white overflow-hidden overflow-ellipsis whitespace-nowrap">
-              Edit {user.username}
+              {t("users.modal.edit_title", { username: user.username })}
             </h3>
           </div>
           <button
@@ -74,13 +74,13 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
                   htmlFor="username"
                   className="block mb-2 text-sm font-medium text-white"
                 >
-                  Username
+                  {t("users.table.username")}
                 </label>
                 <input
                   name="username"
                   type="text"
                   className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
-                  placeholder="User's username"
+                  placeholder={t("users.modal.username_placeholder")}
                   defaultValue={user.username}
                   minLength={USERNAME_MIN_LENGTH}
                   maxLength={USERNAME_MAX_LENGTH}
@@ -97,18 +97,20 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
                   htmlFor="password"
                   className="block mb-2 text-sm font-medium text-white"
                 >
-                  New Password
+                  {t("users.modal.new_password")}
                 </label>
                 <input
                   name="password"
                   type="text"
                   className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
-                  placeholder={`${user.username}'s new password`}
+                  placeholder={t("users.modal.new_password_placeholder", {
+                    username: user.username,
+                  })}
                   autoComplete="off"
                   minLength={8}
                 />
                 <p className="mt-2 text-xs text-white/60">
-                  Password must be at least 8 characters long
+                  {t("users.modal.password_help")}
                 </p>
               </div>
               <div>
@@ -116,12 +118,12 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
                   htmlFor="bio"
                   className="block mb-2 text-sm font-medium text-white"
                 >
-                  Bio
+                  {t("users.modal.bio")}
                 </label>
                 <textarea
                   name="bio"
                   className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
-                  placeholder="User's bio"
+                  placeholder={t("users.modal.bio_placeholder")}
                   defaultValue={user.bio}
                   autoComplete="off"
                   rows={3}
@@ -132,7 +134,7 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
                   htmlFor="role"
                   className="block mb-2 text-sm font-medium text-white"
                 >
-                  Role
+                  {t("users.table.role")}
                 </label>
                 <select
                   name="role"
@@ -141,10 +143,16 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
                   onChange={(e) => setRole(e.target.value)}
                   className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
                 >
-                  <option value="default">Default</option>
-                  <option value="manager">Manager</option>
+                  <option value="default">
+                    {t("users.roles.default_label")}
+                  </option>
+                  <option value="manager">
+                    {t("users.roles.manager_label")}
+                  </option>
                   {currentUser?.role === "admin" && (
-                    <option value="admin">Administrator</option>
+                    <option value="admin">
+                      {t("users.roles.admin_label")}
+                    </option>
                   )}
                 </select>
                 <RoleHintDisplay role={role} />
@@ -155,21 +163,25 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
                 limit={messageLimit.limit}
                 updateState={setMessageLimit}
               />
-              {error && <p className="text-red-400 text-sm">Error: {error}</p>}
+              {error && (
+                <p className="text-red-400 text-sm">
+                  {t("users.modal.error", { error })}
+                </p>
+              )}
             </div>
             <div className="flex justify-between items-center mt-6 pt-6 border-t border-theme-modal-border">
               <button
                 onClick={closeModal}
                 type="button"
-                className="transition-all duration-300 text-white hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm"
+                className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="transition-all duration-300 bg-white text-black hover:opacity-60 px-4 py-2 rounded-lg text-sm"
               >
-                Update user
+                {t("users.modal.update")}
               </button>
             </div>
           </form>

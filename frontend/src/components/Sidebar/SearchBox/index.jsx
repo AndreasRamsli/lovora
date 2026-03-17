@@ -62,7 +62,7 @@ export default function SearchBox({ user, showNewWsModal }) {
           onChange={handleSearch}
           onReset={handleReset}
           onFocus={(e) => e.target.select()}
-          className="border-none w-full h-full rounded-lg bg-theme-sidebar-item-default pl-9 focus:pl-4 pr-1 placeholder:text-white/50 light:placeholder:text-slate-500 placeholder:font-semibold outline-none text-theme-text-primary search-input peer text-sm"
+          className="border-none w-full h-full rounded-lg bg-theme-sidebar-item-default pl-9 focus:pl-4 pr-1 placeholder:text-theme-text-secondary placeholder:font-semibold outline-none text-theme-text-primary search-input peer text-sm"
         />
         <MagnifyingGlass
           size={14}
@@ -86,7 +86,7 @@ export default function SearchBox({ user, showNewWsModal }) {
 
 function SearchResultWrapper({ children }) {
   return (
-    <div className="absolute right-0 top-[6.2%] w-full flex flex-col gap-y-[24px] h-auto bg-theme-modal-border light:bg-theme-bg-primary light:border-2 light:border-theme-modal-border rounded-lg p-[16px] z-10 max-h-[calc(100%-24px)] overflow-y-scroll no-scroll">
+    <div className="absolute right-0 top-[6.2%] w-full flex flex-col gap-y-[24px] h-auto bg-theme-bg-popup-menu border border-theme-modal-border rounded-lg p-[16px] z-10 max-h-[calc(100%-24px)] overflow-y-scroll no-scroll shadow-lg">
       {children}
     </div>
   );
@@ -175,7 +175,7 @@ function SearchResultItem({ to, name, hint }) {
       to={to}
       reloadDocument={true}
       onClick={() => window.dispatchEvent(new Event(SEARCH_RESULT_SELECTED))}
-      className="hover:bg-[#FFF]/10 light:hover:bg-[#000]/10 transition-all duration-300 rounded-sm px-[8px] py-[2px]"
+      className="hover:bg-theme-action-menu-item-hover transition-all duration-300 rounded-sm px-[8px] py-[2px]"
     >
       <p className="text-theme-text-primary text-sm truncate w-[80%]">
         {name}
@@ -199,12 +199,12 @@ function ShortWidthNewWorkspaceButton({ user, showNewWsModal }) {
         data-tooltip-id="new-workspace-tooltip"
         data-tooltip-content={t("new-workspace.title")}
         onClick={showNewWsModal}
-        className="border-none flex items-center justify-center bg-white  rounded-lg p-[8px] hover:bg-white/80 light:hover:bg-[#E5DFC9] transition-all duration-300"
+        className="border-none flex items-center justify-center bg-primary-button rounded-lg p-[8px] hover:bg-[var(--theme-button-primary-hover-solid)] transition-all duration-300"
       >
         <Plus
           size={16}
           weight="bold"
-          className="text-black light:text-infinite-night/55"
+          className="text-[var(--theme-button-primary-text)]"
         />
       </button>
       <Tooltip

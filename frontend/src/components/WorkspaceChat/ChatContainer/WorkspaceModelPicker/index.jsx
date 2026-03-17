@@ -82,7 +82,7 @@ export default function WorkspaceModelPicker({ workspaceSlug = null }) {
           className={`group border-none cursor-pointer px-2.5 py-1 flex items-center rounded-full transition-all ${
             showSelector
               ? "bg-zinc-700 light:bg-divine-pleasure"
-              : "hover:bg-zinc-700 light:hover:bg-divine-pleasure"
+              : "ui-btn-ghost"
           }`}
         >
           <span

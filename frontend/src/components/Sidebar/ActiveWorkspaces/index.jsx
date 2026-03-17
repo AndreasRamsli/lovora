@@ -15,8 +15,10 @@ import showToast from "@/utils/toast";
 import { LAST_VISITED_WORKSPACE } from "@/utils/constants";
 import { safeJsonParse } from "@/utils/request";
 import { getWorkspaceDisplayName } from "@/utils/workspaceDisplay";
+import { useTranslation } from "react-i18next";
 
 export default function ActiveWorkspaces() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { slug } = useParams();
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export default function ActiveWorkspaces() {
       reorderedWorkspaces.map((w) => w.id)
     );
     if (!success) {
-      showToast("Failed to reorder workspaces", "error");
+      showToast(t("active_workspaces.reorder_failed"), "error");
       Workspace.all().then((workspaces) => setWorkspaces(workspaces));
     }
   }
@@ -94,7 +96,7 @@ export default function ActiveWorkspaces() {
         {(provided) => (
           <div
             role="list"
-            aria-label="Workspaces"
+            aria-label={t("active_workspaces.aria_label")}
             className="flex flex-col gap-y-2"
             ref={provided.innerRef}
             {...provided.droppableProps}
@@ -131,7 +133,7 @@ export default function ActiveWorkspaces() {
                           aria-current={isActive ? "page" : ""}
                           className={`
                             transition-all duration-[200ms]
-                            flex flex-grow w-[75%] gap-x-2 py-[6px] pl-[4px] pr-[6px] rounded-[4px] text-white justify-start items-center
+                            flex flex-grow w-[75%] gap-x-2 py-[6px] pl-[4px] pr-[6px] rounded-[4px] text-theme-text-primary justify-start items-center
                             bg-theme-sidebar-item-default
                             ${isActive ? "light:bg-[#EDE8D8] font-bold" : "hover:bg-theme-sidebar-subitem-hover light:hover:bg-[#E5DFC9]"}
                           `}
@@ -143,7 +145,7 @@ export default function ActiveWorkspaces() {
                             >
                               <DotsSixVertical
                                 size={20}
-                                className={`${isActive ? "text-white light:text-infinite-night" : ""}`}
+                                className={`${isActive ? "text-theme-text-primary" : "text-theme-text-secondary"}`}
                                 weight="bold"
                               />
                             </div>
@@ -152,7 +154,7 @@ export default function ActiveWorkspaces() {
                                 <p
                                   className={`
                                   text-[14px] leading-loose whitespace-nowrap overflow-hidden
-                                  ${isActive ? "font-bold text-white light:text-infinite-night" : "font-medium "} truncate
+                                  ${isActive ? "font-bold text-theme-text-primary" : "font-medium text-theme-text-primary"} truncate
                                   w-full group-hover:w-[130px] group-hover:duration-200
                                 `}
                                 >
@@ -171,10 +173,10 @@ export default function ActiveWorkspaces() {
                                     setSelectedWs(workspace);
                                     showModal();
                                   }}
-                                  className={`group/upload border-none rounded-md flex items-center justify-center ml-auto p-[2px] ${isActive ? "hover:bg-zinc-500 light:hover:bg-sky-800/30" : "hover:bg-zinc-500 light:hover:bg-slate-400"}`}
+                                  className="group/upload border-none rounded-md flex items-center justify-center ml-auto p-[2px] hover:bg-theme-action-menu-item-hover"
                                 >
                                   <UploadSimple
-                                    className={`h-[20px] w-[20px] ${isActive ? "text-doctor/55 hover:text-white light:text-infinite-night/80 light:group-hover/upload:text-infinite-night" : "text-doctor/55 hover:text-white light:text-infinite-night/55 light:group-hover/upload:text-infinite-night"}`}
+                                    className={`h-[20px] w-[20px] ${isActive ? "text-theme-text-secondary group-hover/upload:text-theme-text-primary" : "text-theme-text-secondary group-hover/upload:text-theme-text-primary"}`}
                                   />
                                 </button>
                                 <button
@@ -189,8 +191,10 @@ export default function ActiveWorkspaces() {
                                           )
                                     );
                                   }}
-                                  className={`group/gear rounded-md flex items-center justify-center ml-auto p-[2px] ${isActive ? "hover:bg-zinc-500 light:hover:bg-sky-800/30" : "hover:bg-zinc-500 light:hover:bg-slate-400"}`}
-                                  aria-label="General appearance settings"
+                                  className="group/gear rounded-md flex items-center justify-center ml-auto p-[2px] hover:bg-theme-action-menu-item-hover"
+                                  aria-label={t(
+                                    "active_workspaces.general_appearance"
+                                  )}
                                 >
                                   <GearSix
                                     color={
@@ -199,7 +203,7 @@ export default function ActiveWorkspaces() {
                                         ? "#46C8FF"
                                         : undefined
                                     }
-                                    className={`h-[20px] w-[20px] ${isActive ? "text-doctor/55 hover:text-white light:text-infinite-night/80 light:group-hover/gear:text-infinite-night" : "text-doctor/55 hover:text-white light:text-infinite-night/55 light:group-hover/gear:text-infinite-night"}`}
+                                    className={`h-[20px] w-[20px] ${isActive ? "text-theme-text-secondary group-hover/gear:text-theme-text-primary" : "text-theme-text-secondary group-hover/gear:text-theme-text-primary"}`}
                                   />
                                 </button>
                               </div>

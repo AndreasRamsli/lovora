@@ -5,8 +5,10 @@ import paths from "@/utils/paths";
 import { userFromStorage } from "@/utils/request";
 import System from "@/models/system";
 import showToast from "@/utils/toast";
+import { useTranslation } from "react-i18next";
 
 export default function NewApiKeyModal({ closeModal, onSuccess }) {
+  const { t } = useTranslation();
   const [apiKey, setApiKey] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -29,7 +31,7 @@ export default function NewApiKeyModal({ closeModal, onSuccess }) {
     if (!apiKey) return false;
     window.navigator.clipboard.writeText(apiKey.secret);
     setCopied(true);
-    showToast("API key copied to clipboard", "success", {
+    showToast(t("api_keys.modal.copied"), "success", {
       clear: true,
     });
   };
@@ -50,7 +52,7 @@ export default function NewApiKeyModal({ closeModal, onSuccess }) {
         <div className="relative p-6 border-b rounded-t border-theme-modal-border">
           <div className="w-full flex gap-x-2 items-center">
             <h3 className="text-xl font-semibold text-white overflow-hidden overflow-ellipsis whitespace-nowrap">
-              Create new API key
+              {t("api_keys.modal.title")}
             </h3>
           </div>
           <button
@@ -64,7 +66,11 @@ export default function NewApiKeyModal({ closeModal, onSuccess }) {
         <div className="px-7 py-6">
           <form onSubmit={handleCreate}>
             <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-              {error && <p className="text-red-400 text-sm">Error: {error}</p>}
+              {error && (
+                <p className="text-red-400 text-sm">
+                  {t("api_keys.modal.error", { error })}
+                </p>
+              )}
               {apiKey && (
                 <div className="relative">
                   <input
@@ -92,8 +98,7 @@ export default function NewApiKeyModal({ closeModal, onSuccess }) {
                 </div>
               )}
               <p className="text-white text-opacity-60 text-xs md:text-sm">
-                Once created the API key can be used to programmatically access
-                and configure this AnythingLLM instance.
+                {t("api_keys.modal.description")}
               </p>
               <a
                 href={paths.apiDocs()}
@@ -101,7 +106,7 @@ export default function NewApiKeyModal({ closeModal, onSuccess }) {
                 rel="noreferrer"
                 className="text-blue-400 hover:underline"
               >
-                Read the API documentation &rarr;
+                {t("api_keys.modal.read_docs")} &rarr;
               </a>
             </div>
             <div className="flex justify-end items-center mt-6 pt-6 border-t border-theme-modal-border">
@@ -110,24 +115,24 @@ export default function NewApiKeyModal({ closeModal, onSuccess }) {
                   <button
                     onClick={closeModal}
                     type="button"
-                    className="transition-all duration-300 text-white hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm mr-2"
+                    className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm mr-2"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
                     className="transition-all duration-300 bg-white text-black hover:opacity-60 px-4 py-2 rounded-lg text-sm"
                   >
-                    Create API Key
+                    {t("api_keys.modal.create")}
                   </button>
                 </>
               ) : (
                 <button
                   onClick={closeModal}
                   type="button"
-                  className="transition-all duration-300 text-white hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm"
+                  className="ui-btn-ghost transition-all duration-300 text-white px-4 py-2 rounded-lg text-sm"
                 >
-                  Close
+                  {t("common.close")}
                 </button>
               )}
             </div>

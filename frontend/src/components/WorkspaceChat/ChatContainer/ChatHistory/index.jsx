@@ -227,7 +227,7 @@ export default forwardRef(function (
         <div className="absolute bottom-40 right-10 z-50 cursor-pointer animate-pulse">
           <div className="flex flex-col items-center">
             <div
-              className="p-1 rounded-full border border-white/10 bg-white/10 hover:bg-white/20 hover:text-white"
+              className="ui-btn-ghost p-1 rounded-full border border-white/10 bg-white/10"
               onClick={() => {
                 scrollToBottom(isStreaming ? false : true);
                 setIsUserScrolling(false);
