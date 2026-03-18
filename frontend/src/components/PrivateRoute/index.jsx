@@ -20,7 +20,15 @@ function useIsAuthenticated() {
   useEffect(() => {
     const validateSession = async () => {
       const onboardingComplete = await System.isOnboardingComplete();
-      const { MultiUserMode, RequiresAuth } = await System.keys();
+      const settings = await System.keys();
+      const MultiUserMode = Boolean(settings?.MultiUserMode);
+      const RequiresAuth = Boolean(settings?.RequiresAuth);
+
+      if (settings === null) {
+        setIsAuthed(false);
+        return;
+      }
+
       setMultiUserMode(MultiUserMode);
 
       // Check for the onboarding redirect condition

@@ -10,8 +10,10 @@
     "node": ">=18.12.1"
   },
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon --ignore documents --ignore vector-cache --ignore storage --ignore swagger --trace-warnings index.js",
-    "start": "cross-env NODE_ENV=production node index.js",
+    "dev": "node ./scripts/run-with-migrations.js dev",
+    "start": "node ./scripts/run-with-migrations.js start",
+    "migrate:deploy": "node ./scripts/run-with-migrations.js migrate-only",
+    "migrate:deploy:dev": "node ./scripts/run-with-migrations.js migrate-only-dev",
     "lint": "eslint --fix .",
     "lint:check": "eslint .",
     "swagger": "node ./swagger/init.js"

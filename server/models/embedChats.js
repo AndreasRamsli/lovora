@@ -1,6 +1,17 @@
 const { safeJsonParse } = require("../utils/http");
 const prisma = require("../utils/prisma");
 
+function responseMetadata(response = "{}") {
+  const parsed = safeJsonParse(response, {});
+  return {
+    provider: parsed?.metrics?.provider || null,
+    model: parsed?.metrics?.model || null,
+    attachmentCount: Array.isArray(parsed?.attachments)
+      ? parsed.attachments.length
+      : 0,
+  };
+}
+
 /**
  * @typedef {Object} EmbedChat
  * @property {number} id
@@ -177,6 +188,62 @@ const EmbedChats = {
         ...(orderBy !== null ? { orderBy } : {}),
       });
       return chats;
+    } catch (error) {
+      console.error(error.message);
+      return [];
+    }
+  },
+
+  listMetadata: async function (
+    clause = {},
+    limit = null,
+    orderBy = null,
+    offset = null
+  ) {
+    try {
+      const chats = await prisma.embed_chats.findMany({
+        where: clause,
+        include: {
+          embed_config: {
+            select: {
+              id: true,
+              uuid: true,
+              workspace: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
+        },
+        ...(limit !== null ? { take: limit } : {}),
+        ...(offset !== null ? { skip: offset } : {}),
+        ...(orderBy !== null ? { orderBy } : {}),
+      });
+
+      return chats.map((chat) => {
+        const { provider, model, attachmentCount } = responseMetadata(
+          chat.response
+        );
+
+        return {
+          id: chat.id,
+          sessionId: chat.session_id,
+          createdAt: chat.createdAt,
+          provider,
+          model,
+          attachmentCount,
+          embed: chat.embed_config
+            ? {
+                id: chat.embed_config.id,
+                uuid: chat.embed_config.uuid,
+              }
+            : null,
+          workspace: chat.embed_config?.workspace || null,
+        };
+      });
     } catch (error) {
       console.error(error.message);
       return [];

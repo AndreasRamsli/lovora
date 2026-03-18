@@ -1,9 +1,12 @@
 const { v4: uuidv4 } = require("uuid");
 const { DocumentManager } = require("../DocumentManager");
-const { WorkspaceChats } = require("../../models/workspaceChats");
 const { WorkspaceParsedFiles } = require("../../models/workspaceParsedFiles");
 const { getVectorDbClass, getLLMProvider } = require("../helpers");
 const { writeResponseChunk } = require("../helpers/chat/responses");
+const {
+  buildProviderSessionId,
+  persistAndModerateConversation,
+} = require("./persistence");
 const { grepAgents } = require("./agents");
 const {
   grepCommand,
@@ -26,6 +29,11 @@ async function streamChatWithWorkspace(
 ) {
   const uuid = uuidv4();
   const updatedMessage = await grepCommand(message, user);
+  const providerSessionId = buildProviderSessionId({
+    workspace,
+    user,
+    thread,
+  });
 
   if (Object.keys(VALID_COMMANDS).includes(updatedMessage)) {
     const data = await VALID_COMMANDS[updatedMessage](
@@ -76,8 +84,8 @@ async function streamChatWithWorkspace(
       close: true,
       error: null,
     });
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: message,
       response: {
         text: textResponse,
@@ -85,9 +93,10 @@ async function streamChatWithWorkspace(
         type: chatMode,
         attachments,
       },
-      threadId: thread?.id || null,
+      thread,
       include: false,
       user,
+      moderationMessage: updatedMessage,
     });
     return;
   }
@@ -211,8 +220,8 @@ async function streamChatWithWorkspace(
       error: null,
     });
 
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: message,
       response: {
         text: textResponse,
@@ -220,9 +229,10 @@ async function streamChatWithWorkspace(
         type: chatMode,
         attachments,
       },
-      threadId: thread?.id || null,
+      thread,
       include: false,
       user,
+      moderationMessage: updatedMessage,
     });
     return;
   }
@@ -250,6 +260,7 @@ async function streamChatWithWorkspace(
       await LLMConnector.getChatCompletion(messages, {
         temperature: workspace?.openAiTemp ?? LLMConnector.defaultTemp,
         user: user,
+        sessionId: providerSessionId,
       });
 
     completeText = textResponse;
@@ -267,6 +278,7 @@ async function streamChatWithWorkspace(
     const stream = await LLMConnector.streamGetChatCompletion(messages, {
       temperature: workspace?.openAiTemp ?? LLMConnector.defaultTemp,
       user: user,
+      sessionId: providerSessionId,
     });
     completeText = await LLMConnector.handleStream(response, stream, {
       uuid,
@@ -276,8 +288,8 @@ async function streamChatWithWorkspace(
   }
 
   if (completeText?.length > 0) {
-    const { chat } = await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    const { chat } = await persistAndModerateConversation({
+      workspace,
       prompt: message,
       response: {
         text: completeText,
@@ -286,8 +298,9 @@ async function streamChatWithWorkspace(
         attachments,
         metrics,
       },
-      threadId: thread?.id || null,
+      thread,
       user,
+      moderationMessage: updatedMessage,
     });
 
     writeResponseChunk(response, {

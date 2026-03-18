@@ -32,6 +32,7 @@ const { Telemetry } = require("../models/telemetry");
 const { ApiKey } = require("../models/apiKeys");
 const { getCustomModels } = require("../utils/helpers/customModels");
 const { WorkspaceChats } = require("../models/workspaceChats");
+const { ConversationFlags } = require("../models/conversationFlags");
 const {
   flexUserRoleValid,
   ROLES,
@@ -42,7 +43,6 @@ const {
   determinePfpFilepath,
   getPfpBasePath,
 } = require("../utils/files/pfp");
-const { exportChatsAsType } = require("../utils/helpers/chat/convertTo");
 const { EventLogs } = require("../models/eventLogs");
 const { CollectorApi } = require("../utils/collectorApi");
 const {
@@ -54,21 +54,27 @@ const { SlashCommandPresets } = require("../models/slashCommandsPresets");
 const { EncryptionManager } = require("../utils/EncryptionManager");
 const { BrowserExtensionApiKey } = require("../models/browserExtensionApiKey");
 const {
-  chatHistoryViewable,
-} = require("../utils/middleware/chatHistoryViewable");
-const {
   simpleSSOEnabled,
   simpleSSOLoginDisabled,
 } = require("../utils/middleware/simpleSSOEnabled");
 const { TemporaryAuthToken } = require("../models/temporaryAuthToken");
 const { SystemPromptVariables } = require("../models/systemPromptVariables");
 const { VALID_COMMANDS } = require("../utils/chats");
+const {
+  guardModerationSchema,
+  handleModerationSchemaRouteError,
+  sendReadinessResponse,
+} = require("../utils/moderation/schemaReadiness");
 
 function systemEndpoints(app) {
   if (!app) return;
 
   app.get("/ping", (_, response) => {
     response.status(200).json({ online: true });
+  });
+
+  app.get("/health", async (_, response) => {
+    await sendReadinessResponse(response, { force: true });
   });
 
   app.get("/migrate", async (_, response) => {
@@ -1106,25 +1112,122 @@ function systemEndpoints(app) {
 
   app.post(
     "/system/workspace-chats",
-    [
-      chatHistoryViewable,
-      validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
-    ],
+    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
     async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/system/workspace-chats"
+      );
+      if (!guard.ok) return;
+
       try {
         const { offset = 0, limit = 20 } = reqBody(request);
-        const chats = await WorkspaceChats.whereWithData(
-          {},
+        const chats = await ConversationFlags.listMetadata({
           limit,
-          offset * limit,
-          { id: "desc" }
-        );
+          offset: offset * limit,
+        });
         const totalChats = await WorkspaceChats.count();
         const hasPages = totalChats > (offset + 1) * limit;
 
         response.status(200).json({ chats: chats, hasPages, totalChats });
       } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/system/workspace-chats"
+          )
+        ) {
+          return;
+        }
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/system/conversation-flags",
+    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/system/conversation-flags"
+      );
+      if (!guard.ok) return;
+
+      try {
+        const { offset = 0, limit = 20, status = "open" } = reqBody(request);
+        const flags = await ConversationFlags.listReviewCases({
+          status,
+          limit,
+          offset: offset * limit,
+        });
+        const totalFlags = await ConversationFlags.count(
+          status === "all" ? {} : { status }
+        );
+        const hasPages = totalFlags > (offset + 1) * limit;
+
+        response.status(200).json({ flags, hasPages, totalFlags });
+      } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/system/conversation-flags"
+          )
+        ) {
+          return;
+        }
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/system/conversation-flags/:id/dismiss",
+    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/system/conversation-flags/:id/dismiss"
+      );
+      if (!guard.ok) return;
+
+      try {
+        const user = await userFromSession(request, response);
+        const { id } = request.params;
+        const { reviewNote = "" } = reqBody(request);
+        const flag = await ConversationFlags.dismiss(id, user?.id, reviewNote);
+
+        if (!flag) {
+          return response
+            .status(404)
+            .json({ success: false, error: "Flag not found." });
+        }
+
+        await EventLogs.logEvent(
+          "conversation_flag_dismissed",
+          {
+            caseId: flag.id,
+            chatId: flag.chatId,
+            reviewNote,
+          },
+          user?.id
+        );
+
+        response.status(200).json({ success: true, error: null });
+      } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/system/conversation-flags/:id/dismiss"
+          )
+        ) {
+          return;
+        }
         console.error(e);
         response.sendStatus(500).end();
       }
@@ -1133,15 +1236,174 @@ function systemEndpoints(app) {
 
   app.delete(
     "/system/workspace-chats/:id",
+    [validatedRequest, flexUserRoleValid([ROLES.admin])],
+    async (_, response) => {
+      response
+        .status(403)
+        .json({ success: false, error: "Raw chat deletion is disabled." });
+    }
+  );
+
+  app.post(
+    "/system/conversation-flags/:id/suspend-user",
     [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
     async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/system/conversation-flags/:id/suspend-user"
+      );
+      if (!guard.ok) return;
+
       try {
+        const user = await userFromSession(request, response);
         const { id } = request.params;
-        Number(id) === -1
-          ? await WorkspaceChats.delete({}, true)
-          : await WorkspaceChats.delete({ id: Number(id) });
+        const { reviewNote = "" } = reqBody(request);
+        const flag = await ConversationFlags.suspendUser(
+          id,
+          user?.id,
+          reviewNote
+        );
+
+        if (!flag) {
+          return response
+            .status(404)
+            .json({ success: false, error: "Flag or user not found." });
+        }
+
+        await EventLogs.logEvent(
+          "user_suspended_from_flag",
+          {
+            caseId: flag.id,
+            chatId: flag.chatId,
+            reviewNote,
+          },
+          user?.id
+        );
+
         response.json({ success: true, error: null });
       } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/system/conversation-flags/:id/suspend-user"
+          )
+        ) {
+          return;
+        }
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/system/conversation-flags/:id/unsuspend-user",
+    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/system/conversation-flags/:id/unsuspend-user"
+      );
+      if (!guard.ok) return;
+
+      try {
+        const user = await userFromSession(request, response);
+        const { id } = request.params;
+        const { reviewNote = "" } = reqBody(request);
+        const flag = await ConversationFlags.unsuspendUser(
+          id,
+          user?.id,
+          reviewNote
+        );
+
+        if (!flag) {
+          return response
+            .status(404)
+            .json({ success: false, error: "Flag or user not found." });
+        }
+
+        await EventLogs.logEvent(
+          "user_unsuspended",
+          {
+            caseId: flag.id,
+            chatId: flag.chatId,
+            reviewNote,
+          },
+          user?.id
+        );
+
+        response.json({ success: true, error: null });
+      } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/system/conversation-flags/:id/unsuspend-user"
+          )
+        ) {
+          return;
+        }
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.get(
+    "/system/conversation-flags/:id/review",
+    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/system/conversation-flags/:id/review"
+      );
+      if (!guard.ok) return;
+
+      try {
+        const actor = await userFromSession(request, response);
+        const review = await ConversationFlags.getReviewConversation(
+          request.params.id
+        );
+
+        if (
+          !review ||
+          !ConversationFlags.canViewFlaggedConversation(actor, review.flag)
+        ) {
+          return response.status(404).json({
+            success: false,
+            error: "Flagged conversation not available.",
+          });
+        }
+
+        await EventLogs.logEvent(
+          "flagged_conversation_viewed",
+          {
+            caseId: review.caseId,
+            sourceType: review.flag.sourceType,
+            chatId: review.flag.chatId,
+            workspaceId: review.flag.workspaceId,
+            threadId: review.flag.threadId,
+            actorRole: actor?.role || null,
+          },
+          actor?.id
+        );
+
+        return response.status(200).json({
+          success: true,
+          review,
+          error: null,
+        });
+      } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/system/conversation-flags/:id/review"
+          )
+        ) {
+          return;
+        }
         console.error(e);
         response.sendStatus(500).end();
       }
@@ -1150,29 +1412,11 @@ function systemEndpoints(app) {
 
   app.get(
     "/system/export-chats",
-    [
-      chatHistoryViewable,
-      validatedRequest,
-      flexUserRoleValid([ROLES.manager, ROLES.admin]),
-    ],
-    async (request, response) => {
-      try {
-        const { type = "jsonl", chatType = "workspace" } = request.query;
-        const { contentType, data } = await exportChatsAsType(type, chatType);
-        await EventLogs.logEvent(
-          "exported_chats",
-          {
-            type,
-            chatType,
-          },
-          response.locals.user?.id
-        );
-        response.setHeader("Content-Type", contentType);
-        response.status(200).send(data);
-      } catch (e) {
-        console.error(e);
-        response.sendStatus(500).end();
-      }
+    [validatedRequest, flexUserRoleValid([ROLES.admin])],
+    async (_, response) => {
+      response
+        .status(403)
+        .json({ success: false, error: "Raw chat export is disabled." });
     }
   );
 

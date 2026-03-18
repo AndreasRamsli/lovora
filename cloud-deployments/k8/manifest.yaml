@@ -114,9 +114,7 @@ spec:
             echo "STORAGE_DIR: $STORAGE_DIR"
             {
               cd /app/server/ &&
-                npx prisma generate --schema=./prisma/schema.prisma &&
-                npx prisma migrate deploy --schema=./prisma/schema.prisma &&
-                node /app/server/index.js
+                node /app/server/scripts/run-with-migrations.js start
               echo "Server process exited with status $?"
             } &
             { 
@@ -127,15 +125,15 @@ spec:
             exit $?
         readinessProbe:
           httpGet:
-            path: /v1/api/health
-            port: 8888
+            path: /api/health
+            port: 3001
           initialDelaySeconds: 15
           periodSeconds: 5
           successThreshold: 2
         livenessProbe:
           httpGet:
-            path: /v1/api/health
-            port: 8888
+            path: /api/health
+            port: 3001
           initialDelaySeconds: 15
           periodSeconds: 5
           failureThreshold: 3

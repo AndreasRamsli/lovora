@@ -3,11 +3,23 @@ const { Invite } = require("../../../models/invite");
 const { SystemSettings } = require("../../../models/systemSettings");
 const { User } = require("../../../models/user");
 const { Workspace } = require("../../../models/workspace");
+const { ConversationFlags } = require("../../../models/conversationFlags");
 const { WorkspaceChats } = require("../../../models/workspaceChats");
 const { WorkspaceUser } = require("../../../models/workspaceUsers");
 const { canModifyAdmin } = require("../../../utils/helpers/admin");
 const { multiUserMode, reqBody } = require("../../../utils/http");
 const { validApiKey } = require("../../../utils/middleware/validApiKey");
+const {
+  guardModerationSchema,
+  handleModerationSchemaRouteError,
+} = require("../../../utils/moderation/schemaReadiness");
+
+function apiKeyAuditContext(response) {
+  return {
+    apiKeyId: response.locals.apiKey?.id || null,
+    createdBy: response.locals.apiKey?.createdBy || null,
+  };
+}
 
 function apiAdminEndpoints(app) {
   if (!app) return;
@@ -696,19 +708,199 @@ function apiAdminEndpoints(app) {
       }
     }
     */
+      const guard = await guardModerationSchema(
+        response,
+        "/v1/admin/workspace-chats"
+      );
+      if (!guard.ok) return;
+
       try {
         const pgSize = 20;
         const { offset = 0 } = reqBody(request);
-        const chats = await WorkspaceChats.whereWithData(
-          {},
-          pgSize,
-          offset * pgSize,
-          { id: "desc" }
-        );
+        const chats = await ConversationFlags.listMetadata({
+          limit: pgSize,
+          offset: offset * pgSize,
+        });
 
         const hasPages = (await WorkspaceChats.count()) > (offset + 1) * pgSize;
         response.status(200).json({ chats: chats, hasPages });
       } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/v1/admin/workspace-chats"
+          )
+        ) {
+          return;
+        }
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/v1/admin/conversation-flags",
+    [validApiKey],
+    async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/v1/admin/conversation-flags"
+      );
+      if (!guard.ok) return;
+
+      try {
+        const pgSize = 20;
+        const { offset = 0, status = "open" } = reqBody(request);
+        const flags = await ConversationFlags.listReviewCases({
+          status,
+          limit: pgSize,
+          offset: offset * pgSize,
+        });
+
+        const hasPages =
+          (await ConversationFlags.count(status === "all" ? {} : { status })) >
+          (offset + 1) * pgSize;
+
+        response.status(200).json({ flags, hasPages });
+      } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/v1/admin/conversation-flags"
+          )
+        ) {
+          return;
+        }
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/v1/admin/conversation-flags/:id/dismiss",
+    [validApiKey],
+    async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/v1/admin/conversation-flags/:id/dismiss"
+      );
+      if (!guard.ok) return;
+
+      try {
+        const { id } = request.params;
+        const { reviewNote = "" } = reqBody(request);
+        const flag = await ConversationFlags.dismiss(id, null, reviewNote);
+        if (!flag)
+          return response
+            .status(404)
+            .json({ success: false, error: "Flag not found." });
+        await EventLogs.logEvent("conversation_flag_dismissed", {
+          caseId: flag.id,
+          chatId: flag.chatId,
+          reviewNote,
+          ...apiKeyAuditContext(response),
+        });
+        response.status(200).json({ success: true, error: null });
+      } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/v1/admin/conversation-flags/:id/dismiss"
+          )
+        ) {
+          return;
+        }
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/v1/admin/conversation-flags/:id/suspend-user",
+    [validApiKey],
+    async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/v1/admin/conversation-flags/:id/suspend-user"
+      );
+      if (!guard.ok) return;
+
+      try {
+        const { id } = request.params;
+        const { reviewNote = "" } = reqBody(request);
+        const flag = await ConversationFlags.suspendUser(id, null, reviewNote);
+        if (!flag)
+          return response
+            .status(404)
+            .json({ success: false, error: "Flag or user not found." });
+        await EventLogs.logEvent("user_suspended_from_flag", {
+          caseId: flag.id,
+          chatId: flag.chatId,
+          reviewNote,
+          ...apiKeyAuditContext(response),
+        });
+        response.status(200).json({ success: true, error: null });
+      } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/v1/admin/conversation-flags/:id/suspend-user"
+          )
+        ) {
+          return;
+        }
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/v1/admin/conversation-flags/:id/unsuspend-user",
+    [validApiKey],
+    async (request, response) => {
+      const guard = await guardModerationSchema(
+        response,
+        "/v1/admin/conversation-flags/:id/unsuspend-user"
+      );
+      if (!guard.ok) return;
+
+      try {
+        const { id } = request.params;
+        const { reviewNote = "" } = reqBody(request);
+        const flag = await ConversationFlags.unsuspendUser(
+          id,
+          null,
+          reviewNote
+        );
+        if (!flag)
+          return response
+            .status(404)
+            .json({ success: false, error: "Flag or user not found." });
+        await EventLogs.logEvent("user_unsuspended", {
+          caseId: flag.id,
+          chatId: flag.chatId,
+          reviewNote,
+          ...apiKeyAuditContext(response),
+        });
+        response.status(200).json({ success: true, error: null });
+      } catch (e) {
+        if (
+          handleModerationSchemaRouteError(
+            response,
+            e,
+            "/v1/admin/conversation-flags/:id/unsuspend-user"
+          )
+        ) {
+          return;
+        }
         console.error(e);
         response.sendStatus(500).end();
       }

@@ -303,6 +303,41 @@ const Workspace = {
     }
   },
 
+  getWithUserMembership: async function (user = null, clause = {}) {
+    if (!user?.id) return null;
+
+    try {
+      const workspace = await prisma.workspaces.findFirst({
+        where: {
+          ...clause,
+          workspace_users: {
+            some: {
+              user_id: user.id,
+            },
+          },
+        },
+        include: {
+          workspace_users: true,
+          documents: true,
+        },
+      });
+
+      if (!workspace) return null;
+
+      return {
+        ...workspace,
+        documents: await Document.forWorkspace(workspace.id),
+        contextWindow: this._getContextWindow(workspace),
+        currentContextTokenCount: await this._getCurrentContextTokenCount(
+          workspace.id
+        ),
+      };
+    } catch (error) {
+      console.error(error.message);
+      return null;
+    }
+  },
+
   /**
    * Get the total token count of all parsed files in a workspace/thread
    * @param {number} workspaceId - The ID of the workspace

@@ -5,6 +5,37 @@ import LiveDocumentSync from "./experimental/liveSync";
 import AgentPlugins from "./experimental/agentPlugins";
 import SystemPromptVariable from "./systemPromptVariable";
 
+const requestCache = new Map();
+
+async function withRequestCache(key, fetcher, ttlMs = 5000) {
+  const now = Date.now();
+  const cached = requestCache.get(key);
+
+  if (cached?.value !== undefined && cached.expiresAt > now) {
+    return cached.value;
+  }
+
+  if (cached?.promise) {
+    return cached.promise;
+  }
+
+  const promise = Promise.resolve(fetcher())
+    .then((value) => {
+      requestCache.set(key, {
+        value,
+        expiresAt: Date.now() + ttlMs,
+      });
+      return value;
+    })
+    .catch((error) => {
+      requestCache.delete(key);
+      throw error;
+    });
+
+  requestCache.set(key, { promise });
+  return promise;
+}
+
 const System = {
   cacheKeys: {
     footerIcons: "anythingllm_footer_links",
@@ -38,13 +69,19 @@ const System = {
    * @returns {Promise<boolean>}
    */
   isOnboardingComplete: async function () {
-    return await fetch(`${API_BASE}/onboarding`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Could not find onboarding information.");
-        return res.json();
-      })
-      .then((res) => res.onboardingComplete)
-      .catch(() => false);
+    return withRequestCache(
+      "system:onboarding",
+      async () =>
+        await fetch(`${API_BASE}/onboarding`)
+          .then((res) => {
+            if (!res.ok)
+              throw new Error("Could not find onboarding information.");
+            return res.json();
+          })
+          .then((res) => res.onboardingComplete)
+          .catch(() => null),
+      5000
+    );
   },
   /**
    * Marks the onboarding as complete.
@@ -59,13 +96,18 @@ const System = {
       .catch(() => false);
   },
   keys: async function () {
-    return await fetch(`${API_BASE}/setup-complete`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Could not find setup information.");
-        return res.json();
-      })
-      .then((res) => res.results)
-      .catch(() => null);
+    return withRequestCache(
+      "system:setup-complete",
+      async () =>
+        await fetch(`${API_BASE}/setup-complete`)
+          .then((res) => {
+            if (!res.ok) throw new Error("Could not find setup information.");
+            return res.json();
+          })
+          .then((res) => res.results)
+          .catch(() => null),
+      5000
+    );
   },
   localFiles: async function () {
     return await fetch(`${API_BASE}/system/local-files`, {
@@ -427,23 +469,29 @@ const System = {
       document.documentElement.getAttribute("data-theme") || "dark";
     url.searchParams.append("theme", resolvedTheme);
 
-    return await fetch(url, {
-      method: "GET",
-      cache: "no-cache",
-    })
-      .then(async (res) => {
-        if (res.ok && res.status !== 204) {
-          const isCustomLogo = res.headers.get("X-Is-Custom-Logo") === "true";
-          const blob = await res.blob();
-          const logoURL = URL.createObjectURL(blob);
-          return { isCustomLogo, logoURL };
-        }
-        throw new Error("Failed to fetch logo!");
-      })
-      .catch((e) => {
-        console.log(e);
-        return { isCustomLogo: false, logoURL: null };
-      });
+    return withRequestCache(
+      `system:logo:${resolvedTheme}`,
+      async () =>
+        await fetch(url, {
+          method: "GET",
+          cache: "no-cache",
+        })
+          .then(async (res) => {
+            if (res.ok && res.status !== 204) {
+              const isCustomLogo =
+                res.headers.get("X-Is-Custom-Logo") === "true";
+              const blob = await res.blob();
+              const logoURL = URL.createObjectURL(blob);
+              return { isCustomLogo, logoURL };
+            }
+            throw new Error("Failed to fetch logo!");
+          })
+          .catch((e) => {
+            console.log(e);
+            return { isCustomLogo: false, logoURL: null };
+          }),
+      5000
+    );
   },
   fetchPfp: async function (id) {
     return await fetch(`${API_BASE}/system/pfp/${id}`, {
@@ -586,10 +634,139 @@ const System = {
       headers: baseHeaders(),
       body: JSON.stringify({ offset }),
     })
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          return (
+            data || {
+              success: false,
+              chats: [],
+              hasPages: false,
+              totalChats: 0,
+              error: "Unable to load conversation metadata.",
+            }
+          );
+        }
+        return data;
+      })
+      .catch((e) => {
+        console.error(e);
+        return {
+          success: false,
+          chats: [],
+          hasPages: false,
+          totalChats: 0,
+          error: e.message,
+          code: "request_failed",
+        };
+      });
+  },
+  conversationFlags: async function ({
+    offset = 0,
+    limit = 20,
+    status = "open",
+  } = {}) {
+    return await fetch(`${API_BASE}/system/conversation-flags`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify({ offset, limit, status }),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          return (
+            data || {
+              success: false,
+              flags: [],
+              hasPages: false,
+              totalFlags: 0,
+              error: "Unable to load review queue.",
+            }
+          );
+        }
+        return data;
+      })
+      .catch((e) => {
+        console.error(e);
+        return {
+          success: false,
+          flags: [],
+          hasPages: false,
+          totalFlags: 0,
+          error: e.message,
+          code: "request_failed",
+        };
+      });
+  },
+  flaggedConversationReview: async function (flagId) {
+    return await fetch(
+      `${API_BASE}/system/conversation-flags/${flagId}/review`,
+      {
+        method: "GET",
+        headers: baseHeaders(),
+      }
+    )
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          return (
+            data || {
+              success: false,
+              review: null,
+              error: "Unable to load the flagged conversation.",
+            }
+          );
+        }
+        return data;
+      })
+      .catch((e) => {
+        console.error(e);
+        return { success: false, review: null, error: e.message };
+      });
+  },
+  dismissConversationFlag: async function (flagId, reviewNote = "") {
+    return await fetch(
+      `${API_BASE}/system/conversation-flags/${flagId}/dismiss`,
+      {
+        method: "POST",
+        headers: baseHeaders(),
+        body: JSON.stringify({ reviewNote }),
+      }
+    )
       .then((res) => res.json())
       .catch((e) => {
         console.error(e);
-        return [];
+        return { success: false, error: e.message };
+      });
+  },
+  suspendUserFromConversationFlag: async function (flagId, reviewNote = "") {
+    return await fetch(
+      `${API_BASE}/system/conversation-flags/${flagId}/suspend-user`,
+      {
+        method: "POST",
+        headers: baseHeaders(),
+        body: JSON.stringify({ reviewNote }),
+      }
+    )
+      .then((res) => res.json())
+      .catch((e) => {
+        console.error(e);
+        return { success: false, error: e.message };
+      });
+  },
+  unsuspendUserFromConversationFlag: async function (flagId, reviewNote = "") {
+    return await fetch(
+      `${API_BASE}/system/conversation-flags/${flagId}/unsuspend-user`,
+      {
+        method: "POST",
+        headers: baseHeaders(),
+        body: JSON.stringify({ reviewNote }),
+      }
+    )
+      .then((res) => res.json())
+      .catch((e) => {
+        console.error(e);
+        return { success: false, error: e.message };
       });
   },
   eventLogs: async (offset = 0) => {

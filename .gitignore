@@ -16,3 +16,5 @@ frontend/.env
 server/.env.development
 collector/.env.development
 .gstack/
+playwright-report/
+test-results/

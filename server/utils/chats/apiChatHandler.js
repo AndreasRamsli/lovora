@@ -13,6 +13,10 @@ const {
   EphemeralAgentHandler,
   EphemeralEventListener,
 } = require("../agents/ephemeral");
+const {
+  buildProviderSessionId,
+  persistAndModerateConversation,
+} = require("./persistence");
 const { Telemetry } = require("../../models/telemetry");
 const { CollectorApi } = require("../collectorApi");
 const fs = require("fs");
@@ -149,6 +153,12 @@ async function chatSync({
   // Since preset commands are not supported in API calls, we can just process the message here
   const processedMessage = await grepAllSlashCommands(message);
   message = processedMessage;
+  const providerSessionId = buildProviderSessionId({
+    workspace,
+    user,
+    thread,
+    apiSessionId: sessionId,
+  });
 
   if (EphemeralAgentHandler.isAgentInvocation({ message })) {
     await Telemetry.sendTelemetry("agent_chat_started");
@@ -178,8 +188,8 @@ async function chatSync({
     return await eventListener
       .waitForClose()
       .then(async ({ thoughts, textResponse }) => {
-        await WorkspaceChats.new({
-          workspaceId: workspace.id,
+        await persistAndModerateConversation({
+          workspace,
           prompt: String(message),
           response: {
             text: textResponse,
@@ -190,6 +200,7 @@ async function chatSync({
           },
           include: false,
           apiSessionId: sessionId,
+          moderationMessage: message,
         });
         return {
           id: uuid,
@@ -219,18 +230,19 @@ async function chatSync({
       workspace?.queryRefusalResponse ??
       "There is no relevant information in this workspace to answer your query.";
 
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: String(message),
       response: {
         text: textResponse,
         sources: [],
-        attachments: attachments,
+        attachments,
         type: chatMode,
         metrics: {},
       },
       include: false,
       apiSessionId: sessionId,
+      moderationMessage: message,
     });
 
     return {
@@ -347,20 +359,21 @@ async function chatSync({
       workspace?.queryRefusalResponse ??
       "There is no relevant information in this workspace to answer your query.";
 
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: message,
       response: {
         text: textResponse,
         sources: [],
-        attachments: attachments,
+        attachments,
         type: chatMode,
         metrics: {},
       },
-      threadId: thread?.id || null,
+      thread,
       include: false,
       apiSessionId: sessionId,
       user,
+      moderationMessage: message,
     });
 
     return {
@@ -392,6 +405,7 @@ async function chatSync({
     await LLMConnector.getChatCompletion(messages, {
       temperature: workspace?.openAiTemp ?? LLMConnector.defaultTemp,
       user: user,
+      sessionId: providerSessionId,
     });
 
   if (!textResponse) {
@@ -406,8 +420,8 @@ async function chatSync({
     };
   }
 
-  const { chat } = await WorkspaceChats.new({
-    workspaceId: workspace.id,
+  const { chat } = await persistAndModerateConversation({
+    workspace,
     prompt: message,
     response: {
       text: textResponse,
@@ -416,9 +430,10 @@ async function chatSync({
       type: chatMode,
       metrics: performanceMetrics,
     },
-    threadId: thread?.id || null,
+    thread,
     apiSessionId: sessionId,
     user,
+    moderationMessage: message,
   });
 
   return {
@@ -491,6 +506,12 @@ async function streamChat({
   // Since preset commands are not supported in API calls, we can just process the message here
   const processedMessage = await grepAllSlashCommands(message);
   message = processedMessage;
+  const providerSessionId = buildProviderSessionId({
+    workspace,
+    user,
+    thread,
+    apiSessionId: sessionId,
+  });
 
   if (EphemeralAgentHandler.isAgentInvocation({ message })) {
     await Telemetry.sendTelemetry("agent_chat_started");
@@ -519,19 +540,20 @@ async function streamChat({
     return eventListener
       .streamAgentEvents(response, uuid)
       .then(async ({ thoughts, textResponse }) => {
-        await WorkspaceChats.new({
-          workspaceId: workspace.id,
+        await persistAndModerateConversation({
+          workspace,
           prompt: String(message),
           response: {
             text: textResponse,
             sources: [],
-            attachments: attachments,
+            attachments,
             type: chatMode,
             thoughts,
           },
+          thread,
           include: true,
-          threadId: thread?.id || null,
           apiSessionId: sessionId,
+          moderationMessage: message,
         });
         writeResponseChunk(response, {
           uuid,
@@ -570,20 +592,21 @@ async function streamChat({
       error: null,
       metrics: {},
     });
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: message,
       response: {
         text: textResponse,
         sources: [],
-        attachments: attachments,
+        attachments,
         type: chatMode,
         metrics: {},
       },
-      threadId: thread?.id || null,
+      thread,
       apiSessionId: sessionId,
       include: false,
       user,
+      moderationMessage: message,
     });
     return;
   }
@@ -709,20 +732,21 @@ async function streamChat({
       metrics: {},
     });
 
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: message,
       response: {
         text: textResponse,
         sources: [],
-        attachments: attachments,
+        attachments,
         type: chatMode,
         metrics: {},
       },
-      threadId: thread?.id || null,
+      thread,
       apiSessionId: sessionId,
       include: false,
       user,
+      moderationMessage: message,
     });
     return;
   }
@@ -750,6 +774,7 @@ async function streamChat({
       await LLMConnector.getChatCompletion(messages, {
         temperature: workspace?.openAiTemp ?? LLMConnector.defaultTemp,
         user: user,
+        sessionId: providerSessionId,
       });
     completeText = textResponse;
     metrics = performanceMetrics;
@@ -766,14 +791,15 @@ async function streamChat({
     const stream = await LLMConnector.streamGetChatCompletion(messages, {
       temperature: workspace?.openAiTemp ?? LLMConnector.defaultTemp,
       user: user,
+      sessionId: providerSessionId,
     });
     completeText = await LLMConnector.handleStream(response, stream, { uuid });
     metrics = stream.metrics;
   }
 
   if (completeText?.length > 0) {
-    const { chat } = await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    const { chat } = await persistAndModerateConversation({
+      workspace,
       prompt: message,
       response: {
         text: completeText,
@@ -782,9 +808,10 @@ async function streamChat({
         metrics,
         attachments,
       },
-      threadId: thread?.id || null,
+      thread,
       apiSessionId: sessionId,
       user,
+      moderationMessage: message,
     });
 
     writeResponseChunk(response, {

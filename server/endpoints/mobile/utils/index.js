@@ -47,7 +47,9 @@ async function handleMobileCommand(request, response) {
 
   if (command === "workspace-content") {
     const workspace = user
-      ? await Workspace.getWithUser(user, { slug: String(body.workspaceSlug) })
+      ? await Workspace.getWithUserMembership(user, {
+          slug: String(body.workspaceSlug),
+        })
       : await Workspace.get({ slug: String(body.workspaceSlug) });
 
     if (!workspace)

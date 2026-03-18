@@ -10,6 +10,7 @@ import {
   PencilSimpleLine,
   Nut,
   Toolbox,
+  SignOut,
 } from "@phosphor-icons/react";
 import AgentIcon from "@/media/animations/agent-static.png";
 import CommunityHubIcon from "@/media/illustrations/community-hub.png";
@@ -20,6 +21,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import showToast from "@/utils/toast";
 import System from "@/models/system";
+import { logoutCurrentUser } from "@/utils/session";
 import Option from "./MenuOption";
 import { CanViewChatHistoryProvider } from "../CanViewChatHistory";
 import useAppVersion from "@/hooks/useAppVersion";
@@ -115,6 +117,7 @@ export default function SettingsSidebar() {
                     <SidebarOptions user={user} t={t} />
                     <div className="h-[1.5px] bg-[#3D4147] mx-3 mt-[14px]" />
                     <SupportEmail />
+                    <SignOutButton t={t} />
                     <Link
                       hidden={
                         user?.hasOwnProperty("role") && user.role !== "admin"
@@ -169,6 +172,7 @@ export default function SettingsSidebar() {
                   <SidebarOptions user={user} t={t} />
                   <div className="h-[1.5px] bg-[#3D4147] mx-3 mt-[14px]" />
                   <SupportEmail />
+                  <SignOutButton t={t} />
                   <Link
                     hidden={
                       user?.hasOwnProperty("role") && user.role !== "admin"
@@ -215,6 +219,19 @@ function SupportEmail() {
     >
       {t("settings.contact")}
     </Link>
+  );
+}
+
+function SignOutButton({ t }) {
+  return (
+    <button
+      type="button"
+      onClick={() => logoutCurrentUser(paths.login(true))}
+      className="mx-3 mt-1 flex items-center gap-2 text-xs leading-[18px] text-theme-text-secondary hover:text-white hover:light:text-theme-text-primary"
+    >
+      <SignOut className="h-4 w-4 flex-shrink-0" />
+      <span>{t("profile_settings.signout")}</span>
+    </button>
   );
 }
 
@@ -281,7 +298,6 @@ const SidebarOptions = ({ user = null, t }) => (
               roles: ["admin", "manager"],
             },
             {
-              hidden: !canViewChatHistory,
               btnText: t("settings.workspace-chats"),
               href: paths.settings.chats(),
               flex: true,

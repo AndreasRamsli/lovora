@@ -781,6 +781,110 @@
         }
       }
     },
+    "/v1/admin/conversation-flags": {
+      "post": {
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/v1/admin/conversation-flags/{id}/dismiss": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/v1/admin/conversation-flags/{id}/suspend-user": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/v1/admin/conversation-flags/{id}/unsuspend-user": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
     "/v1/admin/preferences": {
       "post": {
         "tags": [
@@ -2705,59 +2809,11 @@
     },
     "/v1/system/export-chats": {
       "get": {
-        "tags": [
-          "System Settings"
-        ],
-        "description": "Export all of the chats from the system in a known format. Output depends on the type sent. Will be send with the correct header for the output.",
-        "parameters": [
-          {
-            "name": "type",
-            "in": "query",
-            "description": "Export format jsonl, json, csv, jsonAlpaca",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "description": "",
+        "parameters": [],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "example": [
-                    {
-                      "role": "user",
-                      "content": "What is AnythinglLM?"
-                    },
-                    {
-                      "role": "assistant",
-                      "content": "AnythingLLM is a knowledge graph and vector database management system built using NodeJS express server. It provides an interface for handling all interactions, including vectorDB management and LLM (Language Model) interactions."
-                    }
-                  ]
-                }
-              }
-            }
-          },
           "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvalidAPIKey"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvalidAPIKey"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error"
+            "description": "Forbidden"
           }
         }
       }
