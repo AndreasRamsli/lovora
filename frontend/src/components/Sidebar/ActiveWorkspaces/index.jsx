@@ -14,7 +14,6 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import showToast from "@/utils/toast";
 import { LAST_VISITED_WORKSPACE } from "@/utils/constants";
 import { safeJsonParse } from "@/utils/request";
-import { getWorkspaceDisplayName } from "@/utils/workspaceDisplay";
 import { useTranslation } from "react-i18next";
 
 export default function ActiveWorkspaces() {
@@ -127,9 +126,7 @@ export default function ActiveWorkspaces() {
                               : paths.workspace.chat(workspace.slug)
                           }
                           data-tooltip-id="workspace-name"
-                          data-tooltip-content={getWorkspaceDisplayName(
-                            workspace
-                          )}
+                          data-tooltip-content={workspace?.name}
                           aria-current={isActive ? "page" : ""}
                           className={`
                             transition-all duration-[200ms]
@@ -158,7 +155,7 @@ export default function ActiveWorkspaces() {
                                   w-full group-hover:w-[130px] group-hover:duration-200
                                 `}
                                 >
-                                  {getWorkspaceDisplayName(workspace)}
+                                  {workspace?.name}
                                 </p>
                               </div>
                             </div>

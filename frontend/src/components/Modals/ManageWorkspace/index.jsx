@@ -9,7 +9,6 @@ import useUser from "../../../hooks/useUser";
 import DocumentSettings from "./Documents";
 import DataConnectors from "./DataConnectors";
 import ModalWrapper from "@/components/ModalWrapper";
-import { getWorkspaceDisplayName } from "@/utils/workspaceDisplay";
 
 const noop = () => {};
 const ManageWorkspace = ({ hideModal = noop, providedSlug = null }) => {
@@ -45,8 +44,7 @@ const ManageWorkspace = ({ hideModal = noop, providedSlug = null }) => {
           <div className="relative p-6 border-b rounded-t border-theme-modal-border">
             <div className="w-full flex gap-x-2 items-center">
               <h3 className="text-xl font-semibold text-white overflow-hidden overflow-ellipsis whitespace-nowrap">
-                {t("connectors.manage.editing")} "
-                {getWorkspaceDisplayName(workspace)}"
+                {t("connectors.manage.editing")} "{workspace?.name}"
               </h3>
             </div>
             <button

@@ -7,7 +7,6 @@ import paths from "@/utils/paths";
 import Embed from "@/models/embed";
 import MarkdownRenderer from "../MarkdownRenderer";
 import { safeJsonParse } from "@/utils/request";
-import { getWorkspaceDisplayName } from "@/utils/workspaceDisplay";
 
 export default function ChatRow({ chat, onDelete }) {
   const { t } = useTranslation();
@@ -43,7 +42,7 @@ export default function ChatRow({ chat, onDelete }) {
             rel="noreferrer"
             className="text-white flex items-center hover:underline"
           >
-            {getWorkspaceDisplayName(chat.embed_config.workspace)}
+            {chat.embed_config.workspace?.name}
           </a>
         </td>
         <td
