@@ -1,9 +1,12 @@
 const { v4: uuidv4 } = require("uuid");
 const { DocumentManager } = require("../DocumentManager");
-const { WorkspaceChats } = require("../../models/workspaceChats");
 const { getVectorDbClass, getLLMProvider } = require("../helpers");
 const { writeResponseChunk } = require("../helpers/chat/responses");
 const { chatPrompt, sourceIdentifier } = require("./index");
+const {
+  buildProviderSessionId,
+  persistAndModerateConversation,
+} = require("./persistence");
 
 const { PassThrough } = require("stream");
 
@@ -21,6 +24,7 @@ async function chatSync({
     provider: workspace?.chatProvider,
     model: workspace?.chatModel,
   });
+  const providerSessionId = buildProviderSessionId({ workspace });
   const VectorDb = getVectorDbClass();
   const hasVectorizedSpace = await VectorDb.hasNamespace(workspace.slug);
   const embeddingsCount = await VectorDb.namespaceCount(workspace.slug);
@@ -32,8 +36,8 @@ async function chatSync({
       workspace?.queryRefusalResponse ??
       "There is no relevant information in this workspace to answer your query.";
 
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: String(prompt),
       response: {
         text: textResponse,
@@ -42,6 +46,7 @@ async function chatSync({
         attachments,
       },
       include: false,
+      moderationMessage: String(prompt),
     });
 
     return formatJSON(
@@ -125,8 +130,8 @@ async function chatSync({
       workspace?.queryRefusalResponse ??
       "There is no relevant information in this workspace to answer your query.";
 
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: String(prompt),
       response: {
         text: textResponse,
@@ -135,6 +140,7 @@ async function chatSync({
         attachments,
       },
       include: false,
+      moderationMessage: String(prompt),
     });
 
     return formatJSON(
@@ -166,6 +172,7 @@ async function chatSync({
     {
       temperature:
         temperature ?? workspace?.openAiTemp ?? LLMConnector.defaultTemp,
+      sessionId: providerSessionId,
     }
   );
 
@@ -183,8 +190,8 @@ async function chatSync({
     );
   }
 
-  const { chat } = await WorkspaceChats.new({
-    workspaceId: workspace.id,
+  const { chat } = await persistAndModerateConversation({
+    workspace,
     prompt: String(prompt),
     response: {
       text: textResponse,
@@ -193,6 +200,7 @@ async function chatSync({
       metrics,
       attachments,
     },
+    moderationMessage: String(prompt),
   });
 
   return formatJSON(
@@ -224,6 +232,7 @@ async function streamChat({
     provider: workspace?.chatProvider,
     model: workspace?.chatModel,
   });
+  const providerSessionId = buildProviderSessionId({ workspace });
   const VectorDb = getVectorDbClass();
   const hasVectorizedSpace = await VectorDb.hasNamespace(workspace.slug);
   const embeddingsCount = await VectorDb.namespaceCount(workspace.slug);
@@ -254,8 +263,8 @@ async function streamChat({
       workspace?.queryRefusalResponse ??
       "There is no relevant information in this workspace to answer your query.";
 
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: String(prompt),
       response: {
         text: textResponse,
@@ -264,6 +273,7 @@ async function streamChat({
         attachments,
       },
       include: false,
+      moderationMessage: String(prompt),
     });
 
     writeResponseChunk(
@@ -355,8 +365,8 @@ async function streamChat({
       workspace?.queryRefusalResponse ??
       "There is no relevant information in this workspace to answer your query.";
 
-    await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    await persistAndModerateConversation({
+      workspace,
       prompt: String(prompt),
       response: {
         text: textResponse,
@@ -365,6 +375,7 @@ async function streamChat({
         attachments,
       },
       include: false,
+      moderationMessage: String(prompt),
     });
 
     writeResponseChunk(
@@ -419,6 +430,7 @@ async function streamChat({
   const stream = await LLMConnector.streamGetChatCompletion(messages, {
     temperature:
       temperature ?? workspace?.openAiTemp ?? LLMConnector.defaultTemp,
+    sessionId: providerSessionId,
   });
   const completeText = await LLMConnector.handleStream(
     responseInterceptor,
@@ -430,8 +442,8 @@ async function streamChat({
   );
 
   if (completeText?.length > 0) {
-    const { chat } = await WorkspaceChats.new({
-      workspaceId: workspace.id,
+    const { chat } = await persistAndModerateConversation({
+      workspace,
       prompt: String(prompt),
       response: {
         text: completeText,
@@ -440,6 +452,7 @@ async function streamChat({
         metrics: stream.metrics,
         attachments,
       },
+      moderationMessage: String(prompt),
     });
 
     writeResponseChunk(

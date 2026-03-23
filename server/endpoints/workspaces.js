@@ -23,7 +23,10 @@ const { EventLogs } = require("../models/eventLogs");
 const {
   WorkspaceSuggestedMessages,
 } = require("../models/workspacesSuggestedMessages");
-const { validWorkspaceSlug } = require("../utils/middleware/validWorkspace");
+const {
+  validWorkspaceSlug,
+  validWorkspaceSlugByMembership,
+} = require("../utils/middleware/validWorkspace");
 const { convertToChatHistory } = require("../utils/helpers/chat/responses");
 const { CollectorApi } = require("../utils/collectorApi");
 const {
@@ -388,14 +391,15 @@ function workspaceEndpoints(app) {
 
   app.get(
     "/workspace/:slug/chats",
-    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.all]),
+      validWorkspaceSlugByMembership,
+    ],
     async (request, response) => {
       try {
-        const { slug } = request.params;
         const user = await userFromSession(request, response);
-        const workspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
+        const workspace = response.locals.workspace;
 
         if (!workspace) {
           response.sendStatus(400).end();
@@ -610,7 +614,11 @@ function workspaceEndpoints(app) {
 
   app.get(
     "/workspace/:slug/tts/:chatId",
-    [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.all]),
+      validWorkspaceSlugByMembership,
+    ],
     async function (request, response) {
       try {
         const { chatId } = request.params;

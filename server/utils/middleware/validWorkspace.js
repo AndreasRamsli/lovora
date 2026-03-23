@@ -46,7 +46,55 @@ async function validWorkspaceAndThreadSlug(request, response, next) {
   next();
 }
 
+async function validWorkspaceSlugByMembership(request, response, next) {
+  const { slug } = request.params;
+  const user = await userFromSession(request, response);
+  const workspace = multiUserMode(response)
+    ? await Workspace.getWithUserMembership(user, { slug })
+    : await Workspace.get({ slug });
+
+  if (!workspace) {
+    response
+      .status(403)
+      .send("Workspace content access requires explicit workspace membership.");
+    return;
+  }
+
+  response.locals.workspace = workspace;
+  next();
+}
+
+async function validWorkspaceAndThreadSlugByMembership(request, response, next) {
+  const { slug, threadSlug } = request.params;
+  const user = await userFromSession(request, response);
+  const workspace = multiUserMode(response)
+    ? await Workspace.getWithUserMembership(user, { slug })
+    : await Workspace.get({ slug });
+
+  if (!workspace) {
+    response
+      .status(403)
+      .send("Workspace content access requires explicit workspace membership.");
+    return;
+  }
+
+  const thread = await WorkspaceThread.get({
+    slug: threadSlug,
+    user_id: user?.id || null,
+  });
+  if (!thread) {
+    response.status(404).send("Workspace thread does not exist.");
+    return;
+  }
+
+  response.locals.workspace = workspace;
+  response.locals.thread = thread;
+  next();
+}
+
 module.exports = {
   validWorkspaceSlug,
   validWorkspaceAndThreadSlug,
+  validWorkspaceSlugByMembership,
+  validWorkspaceAndThreadSlugByMembership,
 };

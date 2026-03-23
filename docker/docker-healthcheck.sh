@@ -1,13 +1,17 @@
 #!/bin/bash
+set -euo pipefail
 
-# Send a request to the specified URL
-response=$(curl --write-out '%{http_code}' --silent --output /dev/null http://localhost:3001/api/ping)
+PORT="${SERVER_PORT:-3001}"
+response=$(
+  curl --write-out '%{http_code}' --silent --output /dev/null \
+    "http://localhost:${PORT}/api/health"
+)
 
-# If the HTTP response code is 200 (OK), the server is up
+# If the HTTP response code is 200 (OK), the server is ready
 if [ "$response" -eq 200 ]; then
-  echo "Server is up"
+  echo "Server is ready"
   exit 0
 else
-  echo "Server is down"
+  echo "Server is not ready"
   exit 1
 fi

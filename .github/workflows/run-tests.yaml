@@ -1,4 +1,4 @@
-name: Run backend tests
+name: Run security and backend tests
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -10,6 +10,9 @@ on:
     paths:
       - "server/**.js"
       - "collector/**.js"
+      - "frontend/**"
+      - "package.json"
+      - ".github/workflows/run-tests.yaml"
 
 jobs:
   run-script:
@@ -25,6 +28,7 @@ jobs:
           node-version: '18'
 
       - name: Cache root dependencies
+        id: cache-root
         uses: actions/cache@v3
         with:
           path: |
@@ -35,6 +39,7 @@ jobs:
             ${{ runner.os }}-yarn-root-
 
       - name: Cache server dependencies
+        id: cache-server
         uses: actions/cache@v3
         with:
           path: |
@@ -45,6 +50,7 @@ jobs:
             ${{ runner.os }}-yarn-server-
 
       - name: Cache collector dependencies
+        id: cache-collector
         uses: actions/cache@v3
         with:
           path: |
@@ -53,6 +59,17 @@ jobs:
           key: ${{ runner.os }}-yarn-collector-${{ hashFiles('collector/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-collector-
+
+      - name: Cache frontend dependencies
+        id: cache-frontend
+        uses: actions/cache@v3
+        with:
+          path: |
+            frontend/node_modules
+            ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-frontend-${{ hashFiles('frontend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-frontend-
 
       - name: Install root dependencies
         if: steps.cache-root.outputs.cache-hit != 'true'
@@ -69,11 +86,24 @@ jobs:
           PUPPETEER_SKIP_DOWNLOAD: "true"
           SHARP_IGNORE_GLOBAL_LIBVIPS: "true"
 
+      - name: Install frontend dependencies
+        if: steps.cache-frontend.outputs.cache-hit != 'true'
+        run: cd frontend && yarn install --frozen-lockfile
+
       - name: Setup environment and Prisma
         run: yarn setup:envs && yarn prisma:setup
 
-      - name: Run test suites
-        run: yarn test
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run unit tests
+        run: yarn test:unit
+
+      - name: Run integration tests
+        run: yarn test:integration
+
+      - name: Run browser moderation tests
+        run: yarn test:e2e
 
       - name: Fail job on error
         if: failure()

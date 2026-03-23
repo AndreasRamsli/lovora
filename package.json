@@ -18,7 +18,10 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "jest",
+    "test": "yarn test:unit",
+    "test:unit": "NODE_OPTIONS=--disable-warning=DEP0040 jest server/__tests__ --testPathIgnorePatterns=/server/__tests__/integration/",
+    "test:integration": "NODE_OPTIONS=--disable-warning=DEP0040 jest --runInBand server/__tests__/integration",
+    "test:e2e": "playwright test",
     "lint": "cd server && yarn lint && cd ../frontend && yarn lint && cd ../collector && yarn lint",
     "local:setup": "bash ./scripts/local-dev-setup.sh",
     "local:start": "bash ./scripts/local-dev-start.sh",
@@ -31,6 +34,8 @@
     "dev:all": "npx concurrently \"yarn dev:server\" \"yarn dev:frontend\" \"yarn dev:collector\"",
     "prisma:generate": "cd server && npx prisma generate",
     "prisma:migrate": "cd server && npx prisma migrate dev --name init",
+    "prisma:deploy": "cd server && yarn migrate:deploy",
+    "prisma:deploy:dev": "cd server && yarn migrate:deploy:dev",
     "prisma:seed": "cd server && npx prisma db seed",
     "prisma:setup": "yarn prisma:generate && yarn prisma:migrate && yarn prisma:seed",
     "prisma:reset": "truncate -s 0 server/storage/anythingllm.db && yarn prisma:migrate",
@@ -45,7 +50,9 @@
   },
   "private": false,
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "concurrently": "^9.1.2",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "supertest": "^7.1.4"
   }
 }

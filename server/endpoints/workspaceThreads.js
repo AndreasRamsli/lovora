@@ -15,6 +15,7 @@ const { WorkspaceThread } = require("../models/workspaceThread");
 const {
   validWorkspaceSlug,
   validWorkspaceAndThreadSlug,
+  validWorkspaceAndThreadSlugByMembership,
 } = require("../utils/middleware/validWorkspace");
 const { WorkspaceChats } = require("../models/workspaceChats");
 const { convertToChatHistory } = require("../utils/helpers/chat/responses");
@@ -128,7 +129,7 @@ function workspaceThreadEndpoints(app) {
     [
       validatedRequest,
       flexUserRoleValid([ROLES.all]),
-      validWorkspaceAndThreadSlug,
+      validWorkspaceAndThreadSlugByMembership,
     ],
     async (request, response) => {
       try {

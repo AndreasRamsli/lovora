@@ -238,7 +238,15 @@ class OpenRouterLLM {
     ];
   }
 
-  async getChatCompletion(messages = null, { temperature = 0.7 }) {
+  #buildUserIdentifier(user = null) {
+    if (!user) return null;
+    return user?.id ? `user-${user.id}` : user?.username || null;
+  }
+
+  async getChatCompletion(
+    messages = null,
+    { temperature = 0.7, user = null, sessionId = null }
+  ) {
     if (!(await this.isValidChatCompletionModel(this.model)))
       throw new Error(
         `OpenRouter chat: ${this.model} is not valid for chat completion!`
@@ -251,6 +259,8 @@ class OpenRouterLLM {
       // This is an OpenRouter specific option that allows us to get the reasoning text
       // before the token text.
       include_reasoning: true,
+      user: this.#buildUserIdentifier(user),
+      session_id: sessionId || null,
     };
 
     const result = await LLMPerformanceMonitor.measureAsyncFunction(
@@ -282,7 +292,10 @@ class OpenRouterLLM {
     };
   }
 
-  async streamGetChatCompletion(messages = null, { temperature = 0.7 }) {
+  async streamGetChatCompletion(
+    messages = null,
+    { temperature = 0.7, user = null, sessionId = null }
+  ) {
     if (!(await this.isValidChatCompletionModel(this.model)))
       throw new Error(
         `OpenRouter chat: ${this.model} is not valid for chat completion!`
@@ -296,6 +309,8 @@ class OpenRouterLLM {
       // This is an OpenRouter specific option that allows us to get the reasoning text
       // before the token text.
       include_reasoning: true,
+      user: this.#buildUserIdentifier(user),
+      session_id: sessionId || null,
     };
 
     const measuredStreamRequest = await LLMPerformanceMonitor.measureStream({

@@ -1,12 +1,15 @@
 /* eslint-env jest, node */
 const { OpenAICompatibleChat } = require('../../../utils/chats/openaiCompatible');
-const { WorkspaceChats } = require('../../../models/workspaceChats');
 const { getVectorDbClass, getLLMProvider } = require('../../../utils/helpers');
 const { extractTextContent, extractAttachments } = require('../../../endpoints/api/openai/helpers');
+const {
+  buildProviderSessionId,
+  persistAndModerateConversation,
+} = require('../../../utils/chats/persistence');
 
 // Mock dependencies
-jest.mock('../../../models/workspaceChats');
 jest.mock('../../../utils/helpers');
+jest.mock('../../../utils/chats/persistence');
 jest.mock('../../../utils/DocumentManager', () => ({
   DocumentManager: class {
     constructor() {
@@ -63,8 +66,19 @@ describe('OpenAICompatibleChat', () => {
     };
     getLLMProvider.mockReturnValue(mockLLMConnector);
 
-    // Setup WorkspaceChats mock
-    WorkspaceChats.new.mockResolvedValue({ chat: { id: 'mock-chat-id' } });
+    buildProviderSessionId.mockReturnValue(
+      'workspace:test-workspace:user:single-user:default'
+    );
+    persistAndModerateConversation.mockResolvedValue({
+      chat: { id: 'mock-chat-id' },
+      error: null,
+      moderationResult: {
+        disposition: 'safe',
+        riskLevel: 'safe',
+        categories: [],
+        matchedRules: [],
+      },
+    });
 
     // Setup mock response object for streaming
     mockResponse = {
@@ -103,9 +117,9 @@ describe('OpenAICompatibleChat', () => {
       });
 
       // Verify chat was saved with correct format
-      expect(WorkspaceChats.new).toHaveBeenCalledWith(
+      expect(persistAndModerateConversation).toHaveBeenCalledWith(
         expect.objectContaining({
-          workspaceId: mockWorkspace.id,
+          workspace: mockWorkspace,
           prompt: multiModalPrompt[0].text,
           response: expect.objectContaining({
             text: 'Mock response',
@@ -115,6 +129,12 @@ describe('OpenAICompatibleChat', () => {
               contentString: multiModalPrompt[1].image_url.url
             }]
           })
+        })
+      );
+      expect(mockLLMConnector.getChatCompletion).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({
+          sessionId: 'workspace:test-workspace:user:single-user:default',
         })
       );
 
@@ -148,9 +168,9 @@ describe('OpenAICompatibleChat', () => {
       });
 
       // Verify chat was saved without attachments
-      expect(WorkspaceChats.new).toHaveBeenCalledWith(
+      expect(persistAndModerateConversation).toHaveBeenCalledWith(
         expect.objectContaining({
-          workspaceId: mockWorkspace.id,
+          workspace: mockWorkspace,
           prompt: promptString,
           response: expect.objectContaining({
             text: 'Mock response',
@@ -199,9 +219,9 @@ describe('OpenAICompatibleChat', () => {
       expect(mockLLMConnector.handleStream).toHaveBeenCalled();
 
       // Verify chat was saved with attachments
-      expect(WorkspaceChats.new).toHaveBeenCalledWith(
+      expect(persistAndModerateConversation).toHaveBeenCalledWith(
         expect.objectContaining({
-          workspaceId: mockWorkspace.id,
+          workspace: mockWorkspace,
           prompt: multiModalPrompt[0].text,
           response: expect.objectContaining({
             text: 'Mock streamed response',
@@ -211,6 +231,12 @@ describe('OpenAICompatibleChat', () => {
               contentString: multiModalPrompt[1].image_url.url
             }]
           })
+        })
+      );
+      expect(mockLLMConnector.streamGetChatCompletion).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({
+          sessionId: 'workspace:test-workspace:user:single-user:default',
         })
       );
     });
@@ -234,9 +260,9 @@ describe('OpenAICompatibleChat', () => {
       expect(mockLLMConnector.handleStream).toHaveBeenCalled();
 
       // Verify chat was saved without attachments
-      expect(WorkspaceChats.new).toHaveBeenCalledWith(
+      expect(persistAndModerateConversation).toHaveBeenCalledWith(
         expect.objectContaining({
-          workspaceId: mockWorkspace.id,
+          workspace: mockWorkspace,
           prompt: promptString,
           response: expect.objectContaining({
             text: 'Mock streamed response',

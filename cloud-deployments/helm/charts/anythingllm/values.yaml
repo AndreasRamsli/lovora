@@ -172,15 +172,15 @@ resources: {}
 
 readinessProbe:
   httpGet:
-    path: /v1/api/health
-    port: 8888
+    path: /api/health
+    port: 3001
   initialDelaySeconds: 15
   periodSeconds: 5
   successThreshold: 2
 livenessProbe:
   httpGet:
-    path: /v1/api/health
-    port: 8888
+    path: /api/health
+    port: 3001
   initialDelaySeconds: 15
   periodSeconds: 5
   failureThreshold: 3
@@ -228,4 +228,3 @@ extraObjects: []
 #         remoteRef:
 #           key: secret/data/anything-llm
 #           property: open_ai_key
-

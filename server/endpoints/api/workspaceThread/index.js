@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { WorkspaceThread } = require("../../../models/workspaceThread");
 const { Workspace } = require("../../../models/workspace");
+const { ConversationFlags } = require("../../../models/conversationFlags");
 const { validApiKey } = require("../../../utils/middleware/validApiKey");
 const { reqBody, multiUserMode } = require("../../../utils/http");
 const { VALID_CHAT_MODE } = require("../../../utils/chats/stream");
@@ -8,7 +9,6 @@ const { Telemetry } = require("../../../models/telemetry");
 const { EventLogs } = require("../../../models/eventLogs");
 const {
   writeResponseChunk,
-  convertToChatHistory,
 } = require("../../../utils/helpers/chat/responses");
 const { WorkspaceChats } = require("../../../models/workspaceChats");
 const { User } = require("../../../models/user");
@@ -299,18 +299,18 @@ function apiWorkspaceThreadEndpoints(app) {
           return;
         }
 
-        const history = await WorkspaceChats.where(
-          {
+        const history = await ConversationFlags.listMetadataByClause({
+          clause: {
             workspaceId: workspace.id,
             thread_id: thread.id,
-            api_session_id: null, // Do not include API session chats.
+            api_session_id: null,
             include: true,
           },
-          null,
-          { id: "asc" }
-        );
+          limit: null,
+          orderBy: { id: "asc" },
+        });
 
-        response.status(200).json({ history: convertToChatHistory(history) });
+        response.status(200).json({ history });
       } catch (e) {
         console.error(e.message, e);
         response.sendStatus(500).end();

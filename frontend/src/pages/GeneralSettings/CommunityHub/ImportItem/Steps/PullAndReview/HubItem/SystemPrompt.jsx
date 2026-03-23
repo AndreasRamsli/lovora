@@ -5,7 +5,6 @@ import Workspace from "@/models/workspace";
 import showToast from "@/utils/toast";
 import paths from "@/utils/paths";
 import CommunityHub from "@/models/communityHub";
-import { getWorkspaceDisplayName } from "@/utils/workspaceDisplay";
 import { useTranslation } from "react-i18next";
 
 export default function SystemPrompt({ item, setStep }) {
@@ -102,7 +101,7 @@ export default function SystemPrompt({ item, setStep }) {
             >
               {workspaces.map((workspace) => (
                 <option key={workspace.id} value={workspace.slug}>
-                  {getWorkspaceDisplayName(workspace)}
+                  {workspace?.name}
                 </option>
               ))}
             </optgroup>

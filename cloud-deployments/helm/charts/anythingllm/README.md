@@ -115,7 +115,7 @@ helm install my-anythingllm ./anythingllm -f values-secret.yaml
 | ingress.tls | list | `[]` |  |
 | initContainers | list | `[]` |  |
 | livenessProbe.failureThreshold | int | `3` |  |
-| livenessProbe.httpGet.path | string | `"/v1/api/health"` |  |
+| livenessProbe.httpGet.path | string | `"/api/health"` |  |
 | livenessProbe.httpGet.port | int | `8888` |  |
 | livenessProbe.initialDelaySeconds | int | `15` |  |
 | livenessProbe.periodSeconds | int | `5` |  |
@@ -130,7 +130,7 @@ helm install my-anythingllm ./anythingllm -f values-secret.yaml
 | podAnnotations | object | `{}` |  |
 | podLabels | object | `{}` |  |
 | podSecurityContext.fsGroup | int | `1000` |  |
-| readinessProbe.httpGet.path | string | `"/v1/api/health"` |  |
+| readinessProbe.httpGet.path | string | `"/api/health"` |  |
 | readinessProbe.httpGet.port | int | `8888` |  |
 | readinessProbe.initialDelaySeconds | int | `15` |  |
 | readinessProbe.periodSeconds | int | `5` |  |

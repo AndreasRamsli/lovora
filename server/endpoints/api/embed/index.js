@@ -126,7 +126,7 @@ function apiEmbedEndpoints(app) {
     */
       try {
         const { embedUuid } = request.params;
-        const chats = await EmbedChats.where({
+        const chats = await EmbedChats.listMetadata({
           embed_config: { uuid: String(embedUuid) },
         });
         response.status(200).json({ chats });
@@ -186,7 +186,7 @@ function apiEmbedEndpoints(app) {
     */
       try {
         const { embedUuid, sessionUuid } = request.params;
-        const chats = await EmbedChats.where({
+        const chats = await EmbedChats.listMetadata({
           embed_config: { uuid: String(embedUuid) },
           session_id: String(sessionUuid),
         });

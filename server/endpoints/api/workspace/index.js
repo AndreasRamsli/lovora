@@ -3,6 +3,7 @@ const { Document } = require("../../../models/documents");
 const { Telemetry } = require("../../../models/telemetry");
 const { DocumentVectors } = require("../../../models/vectors");
 const { Workspace } = require("../../../models/workspace");
+const { ConversationFlags } = require("../../../models/conversationFlags");
 const { WorkspaceChats } = require("../../../models/workspaceChats");
 const { getVectorDbClass, getLLMProvider } = require("../../../utils/helpers");
 const { multiUserMode, reqBody } = require("../../../utils/http");
@@ -10,7 +11,6 @@ const { validApiKey } = require("../../../utils/middleware/validApiKey");
 const { VALID_CHAT_MODE } = require("../../../utils/chats/stream");
 const { EventLogs } = require("../../../models/eventLogs");
 const {
-  convertToChatHistory,
   writeResponseChunk,
 } = require("../../../utils/helpers/chat/responses");
 const { ApiChatHandler } = require("../../../utils/chats/apiChatHandler");
@@ -427,17 +427,22 @@ function apiWorkspaceEndpoints(app) {
           ? orderBy
           : "asc";
 
-        const history = apiSessionId
-          ? await WorkspaceChats.forWorkspaceByApiSessionId(
-              workspace.id,
-              apiSessionId,
-              validLimit,
-              { createdAt: validOrderBy }
-            )
-          : await WorkspaceChats.forWorkspace(workspace.id, validLimit, {
-              createdAt: validOrderBy,
-            });
-        response.status(200).json({ history: convertToChatHistory(history) });
+        const history = await ConversationFlags.listMetadataByClause({
+          clause: {
+            workspaceId: workspace.id,
+            thread_id: null,
+            include: true,
+            ...(apiSessionId
+              ? {
+                  user_id: null,
+                  api_session_id: String(apiSessionId),
+                }
+              : { api_session_id: null }),
+          },
+          limit: validLimit,
+          orderBy: { createdAt: validOrderBy },
+        });
+        response.status(200).json({ history });
       } catch (e) {
         console.error(e.message, e);
         response.sendStatus(500).end();

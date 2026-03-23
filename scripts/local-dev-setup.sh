@@ -129,8 +129,9 @@ SERVER_ENV="${TARGET_REPO_DIR}/server/.env.development"
 COLLECTOR_ENV="${TARGET_REPO_DIR}/collector/.env.development"
 FRONTEND_ENV="${TARGET_REPO_DIR}/frontend/.env"
 STORAGE_DIR="${TARGET_REPO_DIR}/.local-storage"
+LOCAL_SERVER_PORT="${SERVER_PORT:-3001}"
 
-upsert_env "${SERVER_ENV}" "SERVER_PORT" "3001"
+upsert_env "${SERVER_ENV}" "SERVER_PORT" "${LOCAL_SERVER_PORT}"
 upsert_env "${SERVER_ENV}" "COLLECTOR_PORT" "8888"
 upsert_env "${SERVER_ENV}" "STORAGE_DIR" "\"${STORAGE_DIR}\""
 set_env_default "${SERVER_ENV}" "JWT_SECRET" "\"$(generate_secret)\""
@@ -143,7 +144,8 @@ upsert_env "${SERVER_ENV}" "ENABLE_HTTP_LOGGER" "\"true\""
 upsert_env "${COLLECTOR_ENV}" "STORAGE_DIR" "\"${STORAGE_DIR}\""
 upsert_env "${COLLECTOR_ENV}" "ENABLE_HTTP_LOGGER" "\"true\""
 
-upsert_env "${FRONTEND_ENV}" "VITE_API_BASE" "'http://localhost:3001/api'"
+upsert_env "${FRONTEND_ENV}" "VITE_API_BASE" "'/api'"
+upsert_env "${FRONTEND_ENV}" "VITE_API_PROXY_TARGET" "\"http://localhost:${LOCAL_SERVER_PORT}\""
 
 for passthrough in \
   LLM_PROVIDER OPEN_AI_KEY OPEN_MODEL_PREF OPENROUTER_API_KEY OPENROUTER_MODEL_PREF \
@@ -155,7 +157,7 @@ for passthrough in \
 done
 
 echo "[local-dev-setup] Running Prisma generate + migrate deploy"
-(cd "${TARGET_REPO_DIR}/server" && npx prisma generate --schema=./prisma/schema.prisma && npx prisma migrate deploy --schema=./prisma/schema.prisma)
+(cd "${TARGET_REPO_DIR}/server" && npx prisma generate --schema=./prisma/schema.prisma && node ./scripts/run-with-migrations.js migrate-only-dev)
 
 cat <<EOF
 [local-dev-setup] Complete.

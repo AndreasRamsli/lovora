@@ -11,7 +11,6 @@ import EditEmbedModal from "./EditEmbedModal";
 import CodeSnippetModal from "./CodeSnippetModal";
 import moment from "moment";
 import { safeJsonParse } from "@/utils/request";
-import { getWorkspaceDisplayName } from "@/utils/workspaceDisplay";
 
 export default function EmbedRow({ embed }) {
   const { t } = useTranslation();
@@ -70,7 +69,7 @@ export default function EmbedRow({ embed }) {
             rel="noreferrer"
             className="text-white flex items-center hover:underline"
           >
-            {getWorkspaceDisplayName(embed.workspace)}
+            {embed.workspace?.name}
           </a>
         </th>
         <th scope="row" className="px-6 whitespace-nowrap">

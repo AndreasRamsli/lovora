@@ -11,7 +11,6 @@ import Workspace from "@/models/workspace";
 import { Tooltip } from "react-tooltip";
 import { safeJsonParse } from "@/utils/request";
 import { useTranslation } from "react-i18next";
-import { getWorkspaceDisplayName } from "@/utils/workspaceDisplay";
 
 function WorkspaceDirectory({
   workspace,
@@ -95,7 +94,7 @@ function WorkspaceDirectory({
       <div className="px-8">
         <div className="flex items-center justify-start w-[560px]">
           <h3 className="text-white text-base font-bold ml-5">
-            {getWorkspaceDisplayName(workspace)}
+            {workspace?.name}
           </h3>
         </div>
         <div className="relative w-[560px] h-[445px] bg-theme-settings-input-bg rounded-2xl mt-5 border border-theme-modal-border">
@@ -124,7 +123,7 @@ function WorkspaceDirectory({
       <div className="px-8">
         <div className="flex items-center justify-start w-[560px]">
           <h3 className="text-white text-base font-bold ml-5">
-            {getWorkspaceDisplayName(workspace)}
+            {workspace?.name}
           </h3>
         </div>
         <div className="relative w-[560px] h-[445px] mt-5">
