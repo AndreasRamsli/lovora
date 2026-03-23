@@ -101,4 +101,52 @@ describe("TextSplitter", () => {
     expect(chunks.length).toEqual(5);
     expect(chunks.every(chunk => chunk.startsWith("testing3: <document_metadata>"))).toBe(true);
   });
+
+  test("uses legal paragraph splitting for Lovdata documents", async () => {
+    const text = [
+      "HR-2024-1-A",
+      "",
+      "Kilde: https://lovdata.no/dokument/HRSTR/avgjorelse/hr-2024-1-a",
+      "Korpus: HRA",
+      "",
+      "(1) Første avsnitt er kort.",
+      "",
+      "(2) Andre avsnitt er også kort.",
+      "",
+      "(3) Tredje avsnitt er kort nok til å stå samlet.",
+    ].join("\n");
+
+    const textSplitter = new TextSplitter({
+      chunkSize: 140,
+      chunkOverlap: 0,
+      documentMetadata: {
+        docSource: "Lovdata",
+        chunkSource: "link://https://lovdata.no/dokument/HRSTR/avgjorelse/hr-2024-1-a",
+      },
+    });
+    const chunks = await textSplitter.splitText(text);
+
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks[0]).toContain("(1) Første avsnitt er kort.");
+    expect(chunks[1]).toContain("(1) Første avsnitt er kort.");
+    expect(chunks[1]).toContain("(2) Andre avsnitt er også kort.");
+  });
+
+  test("splits long Lovdata paragraphs on sentence boundaries first", async () => {
+    const textSplitter = new TextSplitter({
+      chunkSize: 90,
+      chunkOverlap: 0,
+      documentMetadata: {
+        corpus: "HRA",
+      },
+    });
+
+    const chunks = await textSplitter.splitText(
+      "Tittel\n\nDette er første setning. Dette er andre setning. Dette er tredje setning som også er ganske lang. Dette er fjerde setning."
+    );
+
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks[0].endsWith(".")).toBe(true);
+    expect(chunks.every((chunk) => chunk.length <= 90)).toBe(true);
+  });
 });

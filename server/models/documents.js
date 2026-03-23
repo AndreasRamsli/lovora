@@ -5,15 +5,10 @@ const { Telemetry } = require("./telemetry");
 const { EventLogs } = require("./eventLogs");
 const { safeJsonParse } = require("../utils/http");
 const { getModelTag } = require("../endpoints/utils");
-
-function normalizeSourceIdentity(sourceIdentity = {}) {
-  return {
-    title: sourceIdentity?.title || null,
-    published: sourceIdentity?.published || null,
-    chunkSource: sourceIdentity?.chunkSource || null,
-    location: sourceIdentity?.location || null,
-  };
-}
+const {
+  normalizeSourceIdentity,
+  sourceIdentityScore,
+} = require("../utils/sourceIdentity");
 
 const Document = {
   writable: ["pinned", "watched", "lastUpdatedAt"],
@@ -295,7 +290,12 @@ const Document = {
       }
     }
 
-    if (!identity.title || !identity.published) {
+    if (
+      !identity.title &&
+      !identity.published &&
+      !identity.chunkSource &&
+      !identity.url
+    ) {
       return {
         title: identity.title,
         pageContent: null,
@@ -312,25 +312,25 @@ const Document = {
         metadata: true,
       })
     )
-      .map((document) => ({
-        ...document,
-        parsedMetadata: safeJsonParse(document.metadata, {}),
-      }))
-      .filter(
-        ({ parsedMetadata }) =>
-          parsedMetadata?.title === identity.title &&
-          parsedMetadata?.published === identity.published
-      );
+      .map((document) => {
+        const parsedMetadata = safeJsonParse(document.metadata, {});
+        return {
+          ...document,
+          parsedMetadata,
+          matchScore: sourceIdentityScore(identity, parsedMetadata),
+        };
+      })
+      .filter(({ matchScore }) => matchScore > 0);
 
-    const narrowedCandidates =
-      candidates.length > 1 && identity.chunkSource
-        ? candidates.filter(
-            ({ parsedMetadata }) =>
-              parsedMetadata?.chunkSource === identity.chunkSource
-          )
-        : candidates;
+    const highestScore = candidates.reduce(
+      (max, { matchScore }) => Math.max(max, matchScore),
+      0
+    );
+    const narrowedCandidates = candidates.filter(
+      ({ matchScore }) => matchScore === highestScore
+    );
 
-    if (narrowedCandidates.length !== 1) {
+    if (highestScore === 0 || narrowedCandidates.length !== 1) {
       return {
         title: identity.title,
         pageContent: null,

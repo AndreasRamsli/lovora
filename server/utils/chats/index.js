@@ -1,9 +1,9 @@
-const { v4: uuidv4 } = require("uuid");
 const { WorkspaceChats } = require("../../models/workspaceChats");
 const { resetMemory } = require("./commands/reset");
 const { convertToPromptHistory } = require("../helpers/chat/responses");
 const { SlashCommandPresets } = require("../../models/slashCommandsPresets");
 const { SystemPromptVariables } = require("../../models/systemPromptVariables");
+const { sourceIdentifier } = require("../sourceIdentity");
 
 const VALID_COMMANDS = {
   "/reset": resetMemory,
@@ -97,16 +97,6 @@ async function chatPrompt(workspace, user = null) {
     user?.id,
     workspace?.id
   );
-}
-
-// We use this util function to deduplicate sources from similarity searching
-// if the document is already pinned.
-// Eg: You pin a csv, if we RAG + full-text that you will get the same data
-// points both in the full-text and possibly from RAG - result in bad results
-// even if the LLM was not even going to hallucinate.
-function sourceIdentifier(sourceDocument) {
-  if (!sourceDocument?.title || !sourceDocument?.published) return uuidv4();
-  return `title:${sourceDocument.title}-timestamp:${sourceDocument.published}`;
 }
 
 module.exports = {

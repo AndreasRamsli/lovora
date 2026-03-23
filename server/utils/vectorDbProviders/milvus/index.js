@@ -211,7 +211,8 @@ class Milvus extends VectorDatabase {
 
       const EmbedderEngine = getEmbeddingEngineSelection();
       const textSplitter = new TextSplitter({
-        chunkSize: TextSplitter.determineMaxChunkSize(
+        chunkSize: TextSplitter.determineChunkSize(
+          metadata,
           await SystemSettings.getValueOrFallback({
             label: "text_splitter_chunk_size",
           }),
@@ -223,6 +224,7 @@ class Milvus extends VectorDatabase {
         ),
         chunkHeaderMeta: TextSplitter.buildHeaderMeta(metadata),
         chunkPrefix: EmbedderEngine?.embeddingPrefix,
+        documentMetadata: metadata,
       });
       const textChunks = await textSplitter.splitText(pageContent);
 

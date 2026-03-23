@@ -40,7 +40,7 @@ function parseLeadingSourceHeader(pageContent = "") {
       continue;
     }
 
-    const match = currentLine.match(/^([^:]{1,80}):\s*(.+)$/);
+    const match = currentLine.match(/^([^:]{1,80}):\s*(.*)$/);
     if (!match) break;
 
     fields.push({
@@ -222,6 +222,7 @@ export default function SourceDetailBody({
           title: source?.title || null,
           published: source?.published || null,
           chunkSource: primaryChunk.chunkSource || null,
+          url: source?.url || primaryChunk.url || null,
           location: source?.location || null,
         },
         threadSlug

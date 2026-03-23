@@ -56,6 +56,18 @@ class TextSplitter {
     return prefValue > limit ? limit : prefValue;
   }
 
+  static determineLegalChunkSize(embedderLimit = 1500) {
+    const limit = Number(embedderLimit);
+    if (isNullOrNaN(limit)) return 1500;
+    return Math.min(1500, limit);
+  }
+
+  static determineChunkSize(metadata = {}, preferred = null, embedderLimit = 1000) {
+    return this.shouldUseLegalParagraphMode(metadata)
+      ? this.determineLegalChunkSize(embedderLimit)
+      : this.determineMaxChunkSize(preferred, embedderLimit);
+  }
+
   /**
    *  Creates a string of metadata to be prepended to each chunk.
    * @param {DocumentMetadata} metadata - Metadata to be prepended to each chunk.
@@ -74,6 +86,24 @@ class TextSplitter {
         as: "published",
         pluck: (metadata) => {
           return metadata?.published || null;
+        },
+      },
+      corpus: {
+        as: "corpus",
+        pluck: (metadata) => {
+          return metadata?.corpus || null;
+        },
+      },
+      court: {
+        as: "court",
+        pluck: (metadata) => {
+          return metadata?.court || null;
+        },
+      },
+      documentType: {
+        as: "documentType",
+        pluck: (metadata) => {
+          return metadata?.documentType || null;
         },
       },
       chunkSource: {
@@ -154,7 +184,13 @@ class TextSplitter {
    * @param {number} [config.chunkOverlap = 20] - The overlap between chunks.
    */
   #setSplitter(config = {}) {
-    // if (!config?.splitByFilename) {// TODO do something when specific extension is present? }
+    if (TextSplitter.shouldUseLegalParagraphMode(config?.documentMetadata)) {
+      return new LegalParagraphSplitter({
+        chunkSize: isNaN(config?.chunkSize) ? 1_500 : Number(config?.chunkSize),
+        chunkHeader: this.stringifyHeader(),
+      });
+    }
+
     return new RecursiveSplitter({
       chunkSize: isNaN(config?.chunkSize) ? 1_000 : Number(config?.chunkSize),
       chunkOverlap: isNaN(config?.chunkOverlap)
@@ -162,6 +198,20 @@ class TextSplitter {
         : Number(config?.chunkOverlap),
       chunkHeader: this.stringifyHeader(),
     });
+  }
+
+  static shouldUseLegalParagraphMode(metadata = {}) {
+    const url = String(metadata?.url || "");
+    const chunkSource = String(metadata?.chunkSource || "");
+    const docSource = String(metadata?.docSource || "");
+    const corpus = String(metadata?.corpus || "").toUpperCase();
+
+    return (
+      docSource === "Lovdata" ||
+      url.includes("lovdata.no/") ||
+      chunkSource.includes("lovdata.no/") ||
+      ["HRA", "EMDN", "LRA", "TRA", "JSR"].includes(corpus)
+    );
   }
 
   async splitText(documentText) {
@@ -200,6 +250,165 @@ class RecursiveSplitter {
     return documents
       .filter((doc) => !!doc.pageContent)
       .map((doc) => doc.pageContent);
+  }
+}
+
+class LegalParagraphSplitter {
+  constructor({ chunkSize, chunkHeader = null }) {
+    this.chunkSize = chunkSize;
+    this.chunkHeader = chunkHeader;
+    this.log(`Will split legal text with`, {
+      chunkSize,
+      chunkHeader: chunkHeader ? `${chunkHeader?.slice(0, 50)}...` : null,
+    });
+  }
+
+  log(text, ...args) {
+    console.log(`\x1b[35m[LegalParagraphSplitter]\x1b[0m ${text}`, ...args);
+  }
+
+  applyHeader(text = "") {
+    if (!this.chunkHeader) return text;
+    return `${this.chunkHeader}${text}`;
+  }
+
+  splitIntoParagraphs(documentText = "") {
+    return documentText
+      .replace(/\r\n/g, "\n")
+      .split(/\n{2,}/)
+      .map((block) => block.trim())
+      .filter(Boolean);
+  }
+
+  splitBySentence(paragraph = "") {
+    const sentenceSplit = paragraph
+      .split(/(?<=[.!?])\s+(?=[A-ZÆØÅ0-9(«"'])/u)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (sentenceSplit.length <= 1) return [paragraph];
+
+    const chunks = [];
+    let current = "";
+
+    for (const sentence of sentenceSplit) {
+      const candidate = current ? `${current} ${sentence}` : sentence;
+      if (candidate.length <= this.chunkSize) {
+        current = candidate;
+        continue;
+      }
+
+      if (current) chunks.push(current);
+      if (sentence.length <= this.chunkSize) {
+        current = sentence;
+        continue;
+      }
+
+      const hardSplit = this.hardSplit(sentence);
+      chunks.push(...hardSplit.slice(0, -1));
+      current = hardSplit[hardSplit.length - 1];
+    }
+
+    if (current) chunks.push(current);
+    return chunks;
+  }
+
+  hardSplit(text = "") {
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return [];
+
+    const chunks = [];
+    let current = "";
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (candidate.length <= this.chunkSize) {
+        current = candidate;
+        continue;
+      }
+
+      if (current) chunks.push(current);
+      if (word.length <= this.chunkSize) {
+        current = word;
+        continue;
+      }
+
+      for (let start = 0; start < word.length; start += this.chunkSize) {
+        const slice = word.slice(start, start + this.chunkSize);
+        if (slice.length === this.chunkSize) chunks.push(slice);
+        else current = slice;
+      }
+    }
+
+    if (current) chunks.push(current);
+    return chunks;
+  }
+
+  normalizeParagraphs(documentText = "") {
+    return this.splitIntoParagraphs(documentText).flatMap((paragraph) => {
+      if (paragraph.length <= this.chunkSize) return [paragraph];
+
+      const sentenceChunks = this.splitBySentence(paragraph);
+      if (sentenceChunks.every((chunk) => chunk.length <= this.chunkSize)) {
+        return sentenceChunks;
+      }
+
+      return this.hardSplit(paragraph);
+    });
+  }
+
+  extractPreamble(paragraphs = []) {
+    if (paragraphs.length < 2) return { preamble: "", bodyParagraphs: paragraphs };
+    const [titleBlock, metadataBlock, ...bodyParagraphs] = paragraphs;
+    const looksLikeTitle = !titleBlock.includes(":");
+    const looksLikeMetadata = /^Kilde:\s+/m.test(metadataBlock);
+    if (!looksLikeTitle || !looksLikeMetadata) {
+      return { preamble: "", bodyParagraphs: paragraphs };
+    }
+
+    return {
+      preamble: `${titleBlock}\n\n${metadataBlock}`.trim(),
+      bodyParagraphs,
+    };
+  }
+
+  async _splitText(documentText) {
+    const paragraphs = this.normalizeParagraphs(documentText);
+    if (paragraphs.length === 0) return [];
+
+    const { preamble, bodyParagraphs } = this.extractPreamble(paragraphs);
+    const normalizedParagraphs = bodyParagraphs.length ? bodyParagraphs : paragraphs;
+    const firstChunkLimit =
+      preamble && preamble.length + 2 < this.chunkSize
+        ? this.chunkSize - (preamble.length + 2)
+        : this.chunkSize;
+
+    const chunks = [];
+    let current = [];
+
+    for (const paragraph of normalizedParagraphs) {
+      const currentText = current.join("\n\n");
+      const nextText = currentText ? `${currentText}\n\n${paragraph}` : paragraph;
+      const activeLimit =
+        preamble && chunks.length === 0 ? firstChunkLimit : this.chunkSize;
+
+      if (!current.length || nextText.length <= activeLimit) {
+        current.push(paragraph);
+        continue;
+      }
+
+      chunks.push(current.join("\n\n"));
+      const overlap = current[current.length - 1];
+      current =
+        overlap && `${overlap}\n\n${paragraph}`.length <= this.chunkSize
+          ? [overlap, paragraph]
+          : [paragraph];
+    }
+
+    if (current.length) chunks.push(current.join("\n\n"));
+    return chunks.map((chunk, index) => {
+      const withPreamble =
+        index === 0 && preamble ? `${preamble}\n\n${chunk}` : chunk;
+      return this.applyHeader(withPreamble);
+    });
   }
 }
 

@@ -133,6 +133,7 @@ function workspaceParsedFilesEndpoints(app) {
           title = null,
           published = null,
           chunkSource = null,
+          url = null,
           location = null,
           threadSlug = null,
         } = reqBody(request);
@@ -164,6 +165,7 @@ function workspaceParsedFilesEndpoints(app) {
               title,
               published,
               chunkSource,
+              url,
               location,
             },
           }

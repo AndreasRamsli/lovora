@@ -209,7 +209,8 @@ class AstraDB extends VectorDatabase {
       const textSplitter = new TextSplitter({
         chunkSize: Math.min(
           7500,
-          TextSplitter.determineMaxChunkSize(
+          TextSplitter.determineChunkSize(
+            metadata,
             await SystemSettings.getValueOrFallback({
               label: "text_splitter_chunk_size",
             }),
@@ -222,6 +223,7 @@ class AstraDB extends VectorDatabase {
         ),
         chunkHeaderMeta: TextSplitter.buildHeaderMeta(metadata),
         chunkPrefix: EmbedderEngine?.embeddingPrefix,
+        documentMetadata: metadata,
       });
       const textChunks = await textSplitter.splitText(pageContent);
 

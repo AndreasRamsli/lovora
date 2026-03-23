@@ -3,6 +3,10 @@ const { EventLogs } = require("./eventLogs");
 const { Document } = require("./documents");
 const { documentsPath, directUploadsPath } = require("../utils/files");
 const { safeJsonParse } = require("../utils/http");
+const {
+  normalizeSourceIdentity,
+  sourceIdentityScore,
+} = require("../utils/sourceIdentity");
 const fs = require("fs");
 const path = require("path");
 
@@ -258,7 +262,8 @@ const WorkspaceParsedFiles = {
     sourceIdentity = {},
   } = {}) {
     try {
-      if (!workspace?.id) return buildUnavailableSource(sourceIdentity);
+      const identity = normalizeSourceIdentity(sourceIdentity);
+      if (!workspace?.id) return buildUnavailableSource(identity);
 
       const scopedClause = {
         workspaceId: workspace.id,
@@ -272,15 +277,15 @@ const WorkspaceParsedFiles = {
           path.basename(location)
         );
         if (!fs.existsSync(sourceFile))
-          return buildUnavailableSource(sourceIdentity);
+          return buildUnavailableSource(identity);
 
         const content = fs.readFileSync(sourceFile, "utf-8");
         const data = safeJsonParse(content, null);
-        if (!data?.pageContent) return buildUnavailableSource(sourceIdentity);
+        if (!data?.pageContent) return buildUnavailableSource(identity);
 
         const { pageContent, ...fileMetadata } = data;
         return {
-          title: fileMetadata.title || sourceIdentity.title,
+          title: fileMetadata.title || identity.title,
           pageContent,
           metadata: Object.keys(metadata).length ? metadata : fileMetadata,
           location: fileMetadata.location || location,
@@ -288,15 +293,15 @@ const WorkspaceParsedFiles = {
         };
       };
 
-      if (sourceIdentity?.location) {
+      if (identity.location) {
         const byLocation = await this.get({
           ...scopedClause,
-          metadata: { contains: sourceIdentity.location },
+          metadata: { contains: identity.location },
         });
 
         if (byLocation) {
           const metadata = safeJsonParse(byLocation.metadata, {});
-          if (metadata?.location === sourceIdentity.location) {
+          if (metadata?.location === identity.location) {
             return readParsedFile(metadata.location, metadata);
           }
         }
@@ -308,30 +313,30 @@ const WorkspaceParsedFiles = {
       });
 
       const candidates = scopedFiles
-        .map((file) => ({
-          ...file,
-          parsedMetadata: safeJsonParse(file.metadata, {}),
-        }))
-        .filter(
-          ({ parsedMetadata }) =>
-            parsedMetadata?.title === sourceIdentity?.title &&
-            parsedMetadata?.published === sourceIdentity?.published
-        );
+        .map((file) => {
+          const parsedMetadata = safeJsonParse(file.metadata, {});
+          return {
+            ...file,
+            parsedMetadata,
+            matchScore: sourceIdentityScore(identity, parsedMetadata),
+          };
+        })
+        .filter(({ matchScore }) => matchScore > 0);
 
-      const narrowedCandidates =
-        candidates.length > 1 && sourceIdentity?.chunkSource
-          ? candidates.filter(
-              ({ parsedMetadata }) =>
-                parsedMetadata?.chunkSource === sourceIdentity.chunkSource
-            )
-          : candidates;
+      const highestScore = candidates.reduce(
+        (max, { matchScore }) => Math.max(max, matchScore),
+        0
+      );
+      const narrowedCandidates = candidates.filter(
+        ({ matchScore }) => matchScore === highestScore
+      );
 
-      if (narrowedCandidates.length === 1) {
+      if (highestScore > 0 && narrowedCandidates.length === 1) {
         const [{ parsedMetadata }] = narrowedCandidates;
         return readParsedFile(parsedMetadata.location, parsedMetadata);
       }
 
-      return await Document.resolveSourceDocument(workspace, sourceIdentity);
+      return await Document.resolveSourceDocument(workspace, identity);
     } catch (error) {
       console.error("Failed to resolve source document:", error);
       return buildUnavailableSource(sourceIdentity);
