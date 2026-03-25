@@ -17,6 +17,17 @@ class OpenAiEmbedder {
     this.embeddingMaxChunkLength = 8_191;
   }
 
+  get outputDimensions() {
+    if (
+      process.env.EMBEDDING_OUTPUT_DIMENSIONS &&
+      !isNaN(process.env.EMBEDDING_OUTPUT_DIMENSIONS) &&
+      Number(process.env.EMBEDDING_OUTPUT_DIMENSIONS) > 0
+    ) {
+      return parseInt(process.env.EMBEDDING_OUTPUT_DIMENSIONS);
+    }
+    return null;
+  }
+
   log(text, ...args) {
     console.log(`\x1b[36m[${this.className}]\x1b[0m ${text}`, ...args);
   }
@@ -29,7 +40,13 @@ class OpenAiEmbedder {
   }
 
   async embedChunks(textChunks = []) {
-    this.log(`Embedding ${textChunks.length} chunks...`);
+    this.log(
+      `Embedding ${textChunks.length} chunks with ${this.model}${
+        this.outputDimensions
+          ? ` (${this.outputDimensions} dimensions)`
+          : " (default dimensions)"
+      }...`
+    );
 
     // Because there is a hard POST limit on how many chunks can be sent at once to OpenAI (~8mb)
     // we concurrently execute each max batch of text chunks possible.
@@ -42,6 +59,9 @@ class OpenAiEmbedder {
             .create({
               model: this.model,
               input: chunk,
+              ...(this.outputDimensions
+                ? { dimensions: this.outputDimensions }
+                : {}),
             })
             .then((result) => {
               resolve({ data: result?.data, error: null });
