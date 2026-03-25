@@ -4,6 +4,7 @@ const { handleAPIFileUpload } = require("../../../utils/files/multer");
 const {
   viewLocalFiles,
   findDocumentInDocuments,
+  findDocumentByChunkSourceInFolder,
   getDocumentsByFolder,
   normalizePath,
   isWithin,
@@ -40,6 +41,53 @@ function validateWorkspaceSlugQuery(request, response, next) {
       .end();
   }
   next();
+}
+
+function defaultWorkspaceAttachResult() {
+  return {
+    attempted: false,
+    success: true,
+    errors: [],
+    skippedExisting: [],
+  };
+}
+
+async function attachDocumentToWorkspaces(addToWorkspaces = "", docLocation = null) {
+  if (!addToWorkspaces) return defaultWorkspaceAttachResult();
+
+  try {
+    const result = await Document.api.uploadToWorkspace(
+      addToWorkspaces,
+      docLocation
+    );
+    return {
+      ...defaultWorkspaceAttachResult(),
+      ...result,
+      success: Boolean(result?.success),
+    };
+  } catch (error) {
+    return {
+      attempted: true,
+      success: false,
+      errors: [error.message],
+      skippedExisting: [],
+    };
+  }
+}
+
+function apiDocumentShape(document = {}, location = null) {
+  const {
+    cached: _cached,
+    pinnedWorkspaces: _pinnedWorkspaces,
+    watched: _watched,
+    ...metadata
+  } = document;
+
+  return {
+    location,
+    name: path.basename(location || document.name || ""),
+    ...metadata,
+  };
 }
 
 function apiDocumentEndpoints(app) {
@@ -278,6 +326,27 @@ function apiDocumentEndpoints(app) {
         if (!fs.existsSync(targetFolderPath))
           fs.mkdirSync(targetFolderPath, { recursive: true });
 
+        const existingDocument =
+          typeof metadata?.chunkSource === "string" && metadata.chunkSource.length
+            ? await findDocumentByChunkSourceInFolder(folder, metadata.chunkSource)
+            : null;
+        if (existingDocument) {
+          const workspaceAttach = await attachDocumentToWorkspaces(
+            addToWorkspaces,
+            existingDocument.location
+          );
+
+          return response.status(200).json({
+            success: true,
+            deduped: true,
+            error: null,
+            documents: [
+              apiDocumentShape(existingDocument, existingDocument.location),
+            ],
+            workspaceAttach,
+          });
+        }
+
         const Collector = new CollectorApi();
         const processingOnline = await Collector.online();
         if (!processingOnline) {
@@ -338,12 +407,17 @@ function apiDocumentEndpoints(app) {
           folder,
         });
 
-        if (!!addToWorkspaces)
-          await Document.api.uploadToWorkspace(
-            addToWorkspaces,
-            documents?.[0].location
-          );
-        response.status(200).json({ success: true, error: null, documents });
+        const workspaceAttach = await attachDocumentToWorkspaces(
+          addToWorkspaces,
+          documents?.[0]?.location
+        );
+        response.status(200).json({
+          success: true,
+          deduped: false,
+          error: null,
+          documents,
+          workspaceAttach,
+        });
       } catch (e) {
         console.error(e.message, e);
         response.sendStatus(500).end();

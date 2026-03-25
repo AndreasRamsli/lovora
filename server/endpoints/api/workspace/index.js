@@ -16,6 +16,20 @@ const {
 const { ApiChatHandler } = require("../../../utils/chats/apiChatHandler");
 const { getModelTag } = require("../../utils");
 
+function vectorSearchErrorResponse(error) {
+  if (error?.code !== "QUERY_EMBEDDING_FAILED") return null;
+  return {
+    status: error.statusCode || 503,
+    body: {
+      success: false,
+      code: "query_embedding_failed",
+      message:
+        "Vector search is temporarily unavailable because query embeddings could not be generated.",
+      details: error.message,
+    },
+  };
+}
+
 function apiWorkspaceEndpoints(app) {
   if (!app) return;
 
@@ -1008,6 +1022,12 @@ function apiWorkspaceEndpoints(app) {
         });
       } catch (e) {
         console.error(e.message, e);
+        const vectorSearchError = vectorSearchErrorResponse(e);
+        if (vectorSearchError) {
+          return response
+            .status(vectorSearchError.status)
+            .json(vectorSearchError.body);
+        }
         response.sendStatus(500).end();
       }
     }

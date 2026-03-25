@@ -163,6 +163,48 @@ async function getDocumentsByFolder(folderName = "") {
 }
 
 /**
+ * Finds the first document in a folder with a matching chunkSource.
+ * @param {string} folderName
+ * @param {string} chunkSource
+ * @returns {Promise<null|{name: string, type: string, location: string, [string]: any}>}
+ */
+async function findDocumentByChunkSourceInFolder(
+  folderName = "",
+  chunkSource = ""
+) {
+  if (!folderName || !chunkSource) return null;
+
+  const folderPath = path.resolve(documentsPath, normalizePath(folderName));
+  if (
+    !isWithin(documentsPath, folderPath) ||
+    !fs.existsSync(folderPath) ||
+    !fs.lstatSync(folderPath).isDirectory()
+  ) {
+    return null;
+  }
+
+  const files = fs.readdirSync(folderPath);
+  for (const file of files) {
+    if (path.extname(file) !== ".json") continue;
+    const filePath = path.join(folderPath, file);
+    const rawData = fs.readFileSync(filePath, "utf8");
+    const cachefilename = `${folderName}/${file}`;
+    const { pageContent: _pageContent, ...metadata } = JSON.parse(rawData);
+    if (metadata.chunkSource !== chunkSource) continue;
+
+    return {
+      name: file,
+      type: "file",
+      location: cachefilename,
+      ...metadata,
+      cached: await cachedVectorInformation(cachefilename, true),
+    };
+  }
+
+  return null;
+}
+
+/**
  * Searches the vector-cache folder for existing information so we dont have to re-embed a
  * document and can instead push directly to vector db.
  * @param {string} filename - the filename to check for cached vector information
@@ -486,6 +528,7 @@ function hasRequiredMetadata(metadata = {}) {
 
 module.exports = {
   findDocumentInDocuments,
+  findDocumentByChunkSourceInFolder,
   cachedVectorInformation,
   viewLocalFiles,
   purgeSourceDocument,

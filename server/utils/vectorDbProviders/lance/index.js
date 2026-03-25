@@ -426,7 +426,19 @@ class LanceDb extends VectorDatabase {
       };
     }
 
-    const queryVector = await LLMConnector.embedTextInput(input);
+    let queryVector;
+    try {
+      queryVector = await LLMConnector.embedTextInput(input);
+    } catch (error) {
+      const wrappedError = new Error(
+        `Failed to embed vector-search query: ${error.message}`
+      );
+      wrappedError.code = "QUERY_EMBEDDING_FAILED";
+      wrappedError.statusCode = 503;
+      wrappedError.cause = error;
+      throw wrappedError;
+    }
+
     const result = rerank
       ? await this.rerankedSimilarityResponse({
           client,

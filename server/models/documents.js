@@ -10,6 +10,10 @@ const {
   sourceIdentityScore,
 } = require("../utils/sourceIdentity");
 
+function isUniqueConstraintError(error) {
+  return error?.code === "P2002";
+}
+
 const Document = {
   writable: ["pinned", "watched", "lastUpdatedAt"],
   /**
@@ -86,15 +90,36 @@ const Document = {
 
   addDocuments: async function (workspace, additions = [], userId = null) {
     const VectorDb = getVectorDbClass();
-    if (additions.length === 0) return { failed: [], embedded: [] };
+    if (additions.length === 0) {
+      return {
+        failedToEmbed: [],
+        errors: [],
+        embedded: [],
+        skippedExisting: [],
+      };
+    }
     const { fileData } = require("../utils/files");
     const embedded = [];
+    const skippedExisting = [];
     const failedToEmbed = [];
     const errors = new Set();
 
     for (const path of additions) {
+      const existingDocument = await this.get({
+        workspaceId: workspace.id,
+        docpath: path,
+      });
+      if (existingDocument) {
+        skippedExisting.push(path);
+        continue;
+      }
+
       const data = await fileData(path);
-      if (!data) continue;
+      if (!data) {
+        failedToEmbed.push(path);
+        errors.add(`Document source file could not be read: ${path}`);
+        continue;
+      }
 
       const docId = uuidv4();
       const { pageContent: _pageContent, ...metadata } = data;
@@ -126,7 +151,21 @@ const Document = {
         await prisma.workspace_documents.create({ data: newDoc });
         embedded.push(path);
       } catch (error) {
+        try {
+          await VectorDb.deleteDocumentFromNamespace(workspace.slug, docId);
+          await prisma.document_vectors.deleteMany({ where: { docId } });
+        } catch (cleanupError) {
+          console.error(cleanupError.message);
+        }
+
+        if (isUniqueConstraintError(error)) {
+          skippedExisting.push(path);
+          continue;
+        }
+
         console.error(error.message);
+        failedToEmbed.push(metadata?.title || newDoc.filename);
+        errors.add(error.message);
       }
     }
 
@@ -141,11 +180,16 @@ const Document = {
       "workspace_documents_added",
       {
         workspaceName: workspace?.name || "Unknown Workspace",
-        numberOfDocumentsAdded: additions.length,
+        numberOfDocumentsAdded: embedded.length,
       },
       userId
     );
-    return { failedToEmbed, errors: Array.from(errors), embedded };
+    return {
+      failedToEmbed,
+      errors: Array.from(errors),
+      embedded,
+      skippedExisting,
+    };
   },
 
   removeDocuments: async function (workspace, removals = [], userId = null) {
@@ -164,9 +208,7 @@ const Document = {
       );
 
       try {
-        await prisma.workspace_documents.delete({
-          where: { id: document.id, workspaceId: workspace.id },
-        });
+        await prisma.workspace_documents.delete({ where: { id: document.id } });
         await prisma.document_vectors.deleteMany({
           where: { docId: document.docId },
         });
@@ -365,44 +407,80 @@ const Document = {
      * functionality should only be used by the backend /v1/documents/upload endpoints for post-upload embedding.
      * @param {string} wsSlugs - The slugs of the workspaces to embed the document into, will be comma-separated list of workspace slugs
      * @param {string} docLocation - The location/path of the document that was uploaded
-     * @returns {Promise<boolean>} - True if the document was uploaded successfully, false otherwise
+     * @returns {Promise<{attempted: boolean, success: boolean, errors: any[], skippedExisting: string[], embedded: string[]}>}
      */
     uploadToWorkspace: async function (wsSlugs = "", docLocation = null) {
+      const result = {
+        attempted: false,
+        success: true,
+        errors: [],
+        skippedExisting: [],
+        embedded: [],
+      };
+
       if (!docLocation)
-        return console.log(
-          "No document location provided for embedding",
-          docLocation
-        );
+        return {
+          ...result,
+          success: false,
+          errors: ["No document location provided for embedding"],
+        };
 
       const slugs = wsSlugs
         .split(",")
         .map((slug) => String(slug)?.trim()?.toLowerCase());
       if (slugs.length === 0)
-        return console.log(`No workspaces provided got: ${wsSlugs}`);
+        return {
+          ...result,
+          success: false,
+          errors: [`No workspaces provided got: ${wsSlugs}`],
+        };
 
       const { Workspace } = require("./workspace");
       const workspaces = await Workspace.where({ slug: { in: slugs } });
       if (workspaces.length === 0)
-        return console.log("No valid workspaces found for slugs: ", slugs);
+        return {
+          ...result,
+          success: false,
+          errors: [`No valid workspaces found for slugs: ${slugs.join(", ")}`],
+        };
 
-      // Upsert the document into each workspace - do this sequentially
-      // because the document may be large and we don't want to overwhelm the embedder, plus on the first
-      // upsert we will then have the cache of the document - making n+1 embeds faster. If we parallelize this
-      // we will have to do a lot of extra work to ensure that the document is not embedded more than once.
+      result.attempted = true;
       for (const workspace of workspaces) {
-        const { failedToEmbed = [], errors = [] } = await Document.addDocuments(
-          workspace,
-          [docLocation]
-        );
-        if (failedToEmbed.length > 0)
-          return console.log(
-            `Failed to embed document into workspace ${workspace.slug}`,
-            errors
-          );
-        console.log(`Document embedded into workspace ${workspace.slug}...`);
+        try {
+          const {
+            failedToEmbed = [],
+            errors = [],
+            embedded = [],
+            skippedExisting = [],
+          } = await Document.addDocuments(workspace, [docLocation]);
+
+          if (embedded.includes(docLocation)) {
+            result.embedded.push(workspace.slug);
+            console.log(`Document embedded into workspace ${workspace.slug}...`);
+          }
+
+          if (skippedExisting.includes(docLocation)) {
+            result.skippedExisting.push(workspace.slug);
+          }
+
+          if (failedToEmbed.length > 0 || errors.length > 0) {
+            result.success = false;
+            result.errors.push({
+              workspace: workspace.slug,
+              failedToEmbed,
+              errors,
+            });
+          }
+        } catch (error) {
+          result.success = false;
+          result.errors.push({
+            workspace: workspace.slug,
+            errors: [error.message],
+          });
+        }
       }
 
-      return true;
+      return result;
     },
   },
 };
