@@ -11,11 +11,22 @@ async function resolveLegacyUserFromBetterAuthRequest(request) {
   return await mapBetterAuthSessionToLegacyUser(session);
 }
 
+function setNoStore(response) {
+  response.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+  response.set("Pragma", "no-cache");
+  response.set("Expires", "0");
+  response.set("Surrogate-Control", "no-store");
+}
+
 function betterAuthBridgeEndpoints(app) {
   if (!app) return;
 
   app.get("/auth/bridge/session", async (request, response) => {
     try {
+      setNoStore(response);
       const legacyUser = await resolveLegacyUserFromBetterAuthRequest(request);
       if (!legacyUser) {
         return response.status(401).json({
@@ -42,6 +53,7 @@ function betterAuthBridgeEndpoints(app) {
 
   app.post("/auth/bridge/exchange", async (request, response) => {
     try {
+      setNoStore(response);
       const legacyUser = await resolveLegacyUserFromBetterAuthRequest(request);
       if (!legacyUser) {
         return response.status(401).json({

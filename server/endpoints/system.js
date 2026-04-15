@@ -66,6 +66,13 @@ const {
   sendReadinessResponse,
 } = require("../utils/moderation/schemaReadiness");
 
+function setNoStore(response) {
+  response.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  response.set("Pragma", "no-cache");
+  response.set("Expires", "0");
+  response.set("Surrogate-Control", "no-store");
+}
+
 function systemEndpoints(app) {
   if (!app) return;
 
@@ -123,6 +130,7 @@ function systemEndpoints(app) {
     [validatedRequest],
     async (request, response) => {
       try {
+        setNoStore(response);
         if (multiUserMode(response)) {
           const user = await userFromSession(request, response);
           if (!user || user.suspended) {
@@ -153,6 +161,7 @@ function systemEndpoints(app) {
     [validatedRequest],
     async (request, response) => {
       try {
+        setNoStore(response);
         if (!multiUserMode(response))
           return response
             .status(200)

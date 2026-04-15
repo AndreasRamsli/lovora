@@ -50,28 +50,9 @@ export function usePasswordModal(notry = false) {
 
       const settings = await System.keys();
       if (settings?.MultiUserMode) {
+        const localUser = window.localStorage.getItem(AUTH_USER);
         const currentToken = window.localStorage.getItem(AUTH_TOKEN);
-        if (!!currentToken) {
-          const valid = notry ? false : await System.checkAuth(currentToken);
-          if (!valid) {
-            setAuth({
-              loading: false,
-              requiresAuth: true,
-              mode: "multi",
-            });
-            window.localStorage.removeItem(AUTH_USER);
-            window.localStorage.removeItem(AUTH_TOKEN);
-            window.localStorage.removeItem(AUTH_TIMESTAMP);
-            return;
-          } else {
-            setAuth({
-              loading: false,
-              requiresAuth: false,
-              mode: "multi",
-            });
-            return;
-          }
-        } else {
+        if (!localUser) {
           setAuth({
             loading: false,
             requiresAuth: true,
@@ -79,6 +60,26 @@ export function usePasswordModal(notry = false) {
           });
           return;
         }
+
+        const valid = notry ? false : await System.checkAuth(currentToken);
+        if (!valid) {
+          setAuth({
+            loading: false,
+            requiresAuth: true,
+            mode: "multi",
+          });
+          window.localStorage.removeItem(AUTH_USER);
+          window.localStorage.removeItem(AUTH_TOKEN);
+          window.localStorage.removeItem(AUTH_TIMESTAMP);
+          return;
+        }
+
+        setAuth({
+          loading: false,
+          requiresAuth: false,
+          mode: "multi",
+        });
+        return;
       } else {
         // Running token check in single user Auth mode.
         // If Single user Auth is disabled - skip check

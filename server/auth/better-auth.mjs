@@ -51,5 +51,6 @@ export const auth = betterAuth({
   plugins,
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: false,
   },
 });

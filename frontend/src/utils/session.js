@@ -15,7 +15,7 @@ import { betterAuthClient } from "@/lib/betterAuthClient";
 export default async function validateSessionTokenForUser() {
   const isValidSession = await fetch(`${API_BASE}/system/check-token`, {
     method: "GET",
-    cache: "default",
+    cache: "no-store",
     credentials: "include",
     headers: baseHeaders(),
   })
