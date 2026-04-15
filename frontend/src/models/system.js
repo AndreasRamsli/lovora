@@ -129,6 +129,7 @@ const System = {
 
   checkAuth: async function (currentToken = null) {
     const valid = await fetch(`${API_BASE}/system/check-token`, {
+      credentials: "include",
       headers: baseHeaders(currentToken),
     })
       .then((res) => res.ok)
@@ -157,6 +158,7 @@ const System = {
    */
   refreshUser: () => {
     return fetch(`${API_BASE}/system/refresh-user`, {
+      credentials: "include",
       headers: baseHeaders(),
     })
       .then((res) => {

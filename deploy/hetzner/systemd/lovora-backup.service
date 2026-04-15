@@ -1,0 +1,7 @@
+[Unit]
+Description=Lovora Hetzner backup
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/lovora/lovora/deploy/hetzner
+ExecStart=/srv/lovora/lovora/deploy/hetzner/scripts/backup.sh

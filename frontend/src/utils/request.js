@@ -10,9 +10,7 @@ export function userFromStorage() {
 
 export function baseHeaders(providedToken = null) {
   const token = providedToken || window.localStorage.getItem(AUTH_TOKEN);
-  return {
-    Authorization: token ? `Bearer ${token}` : null,
-  };
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export function safeJsonParse(jsonString, fallback = null) {

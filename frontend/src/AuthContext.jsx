@@ -68,8 +68,8 @@ export function AuthProvider(props) {
         user: refreshedUser,
       }));
     }
-    if (store.authToken) refreshUser();
-  }, [store.authToken]);
+    if (store.authToken || store.user?.id) refreshUser();
+  }, [store.authToken, store.user?.id, navigate]);
 
   return (
     <AuthContext.Provider value={{ store, actions }}>

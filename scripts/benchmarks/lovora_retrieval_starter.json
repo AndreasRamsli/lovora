@@ -1,0 +1,86 @@
+[
+  {
+    "id": "hra_lugano_jurisdiction",
+    "query": "Kan en saksøker utenfor konvensjonsområdet bruke Luganokonvensjonen til å saksøke i Norge når tvisten ellers ikke har tilknytning til en konvensjonsstat?",
+    "tags": ["hra", "jurisdiction", "mixed"],
+    "notes": "Stedlig kompetanse og Luganokonvensjonen.",
+    "expect": {
+      "corpus": "HRA",
+      "lovdataId": "hr-2012-2393-a",
+      "titleIncludes": "HR-2012-2393-A"
+    }
+  },
+  {
+    "id": "hra_sykepenger_arbeidsufor",
+    "query": "I HR-2019-2336-A, når kunne NAV avslå sykepenger fordi pleieassistenten ikke hadde sannsynliggjort arbeidsuførhet etter folketrygdloven § 8-4, og hvorfor fikk de tidsnære bevisene størst vekt?",
+    "tags": ["hra", "trygd", "mixed"],
+    "notes": "HR om avslag på sykepenger og begivenhetsnære bevis.",
+    "expect": {
+      "corpus": "HRA",
+      "lovdataId": "hr-2019-2336-a",
+      "titleExact": "HR-2019-2336-A"
+    }
+  },
+  {
+    "id": "hra_psykisk_ubalanse_situasjonsbetinget",
+    "query": "I HR-2018-2344-A, ga psykisk ubalanse situasjonsbetinget krav på sykepenger når saken i hovedsak gjaldt sønnens sykdom og konflikt med arbeidsgiver?",
+    "tags": ["hra", "trygd", "mixed"],
+    "notes": "HR om egen sykdom versus belastende livshendelser.",
+    "expect": {
+      "corpus": "HRA",
+      "lovdataId": "hr-2018-2344-a",
+      "titleExact": "HR-2018-2344-A"
+    }
+  },
+  {
+    "id": "emdn_tvangsadopsjon_artikkel_8",
+    "query": "I Pedersen and Others v. Norway, var tvangsadopsjon og begrenset kontakt etter omsorgsovertakelse et brudd på EMK artikkel 8?",
+    "tags": ["emdn", "barnevern", "human-rights", "mixed"],
+    "notes": "Pedersen and Others v. Norway.",
+    "expect": {
+      "corpus": "EMDN",
+      "lovdataId": "emdn-2015-39710-norge",
+      "titleIncludes": "PEDERSEN"
+    }
+  },
+  {
+    "id": "emdn_utlevering_usa_artikkel_3",
+    "query": "I Bijan Balahan v. Sweden, kunne utlevering til USA krenke EMK artikkel 3 på grunn av risiko for livsvarig fengsel uten prøveløslatelse under Three Strikes Law?",
+    "tags": ["emdn", "extradition", "human-rights", "mixed"],
+    "notes": "Bijan Balahan v. Sweden.",
+    "expect": {
+      "corpus": "EMDN",
+      "lovdataId": "emdn-2022-9839-j-sveri",
+      "titleIncludes": "BIJAN BALAHAN"
+    }
+  },
+  {
+    "id": "trr_behandlingsdager_sykepenger",
+    "query": "I TRR-2024-135, hadde en hjelpepleier med ankyloserende spondyloartritt rett til sykepenger for behandlingsdager hos fysioterapeut, og måtte behandlingen gjøre det nødvendig å ikke arbeide hele dagen?",
+    "tags": ["trr", "trygd", "mixed"],
+    "notes": "Trygderetten om behandlingsdager og nødvendighetsvilkåret.",
+    "expect": {
+      "lovdataId": "trr-2024-135",
+      "chunkSourceIncludes": "trr-2024-135"
+    }
+  },
+  {
+    "id": "sf_salærforskrift",
+    "query": "Hva regulerer forskrift om salær fra det offentlige til advokater m.v.?",
+    "tags": ["sf", "regulation", "mixed"],
+    "notes": "Forskrift om salær fra det offentlige til advokater m.v.",
+    "expect": {
+      "titleIncludes": "salaer"
+    }
+  },
+  {
+    "id": "nav_afp_taushetsplikt",
+    "query": "Hva sier NAV-rundskrivet om taushetsplikt etter AFP-tilskottsloven § 29?",
+    "tags": ["nav", "rundskriv", "mixed"],
+    "notes": "Rundskriv om AFP i privat sektor, § 29 taushetsplikt.",
+    "expect": {
+      "urlIncludes": "/nav/rundskriv/r65-00",
+      "titleIncludes": "taushetsplikt"
+    }
+  }
+]

@@ -3,9 +3,8 @@ import System from "../../../models/system";
 import { AUTH_TOKEN, AUTH_USER } from "../../../utils/constants";
 import paths from "../../../utils/paths";
 import showToast from "@/utils/toast";
-import ModalWrapper from "@/components/ModalWrapper";
-import { useModal } from "@/hooks/useModal";
-import RecoveryCodeModal from "@/components/Modals/DisplayRecoveryCodeModal";
+import { betterAuthClient } from "@/lib/betterAuthClient";
+import AuthBridge from "@/models/authBridge";
 import { useTranslation } from "react-i18next";
 import { t } from "i18next";
 
@@ -172,51 +171,72 @@ const ResetPasswordForm = ({ onSubmit }) => {
 
 export default function MultiUserAuth() {
   const { t } = useTranslation();
+  const [view, setView] = useState("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [recoveryCodes, setRecoveryCodes] = useState([]);
-  const [downloadComplete, setDownloadComplete] = useState(false);
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
   const [showRecoveryForm, setShowRecoveryForm] = useState(false);
   const [showResetPasswordForm, setShowResetPasswordForm] = useState(false);
   const [customAppName, setCustomAppName] = useState(null);
 
-  const {
-    isOpen: isRecoveryCodeModalOpen,
-    openModal: openRecoveryCodeModal,
-    closeModal: closeRecoveryCodeModal,
-  } = useModal();
+  const persistSessionAndRedirect = (user) => {
+    window.localStorage.setItem(AUTH_USER, JSON.stringify(user));
+    window.localStorage.removeItem(AUTH_TOKEN);
+    window.location = paths.home();
+  };
+
+  const getBetterAuthSessionUser = async () => {
+    const session = await AuthBridge.session();
+    if (session?.valid && session?.user) {
+      return session.user;
+    }
+    throw new Error(
+      session?.message || "Could not establish an authenticated session."
+    );
+  };
 
   const handleLogin = async (e) => {
     setError(null);
-    setLoading(true);
     e.preventDefault();
+    setLoading(true);
     const data = {};
     const form = new FormData(e.target);
-    for (var [key, value] of form.entries()) data[key] = value;
-    const { valid, user, token, message, recoveryCodes } =
-      await System.requestToken(data);
-    if (valid && !!token && !!user) {
-      setUser(user);
-      setToken(token);
+    for (const [key, value] of form.entries()) data[key] = value;
 
-      if (recoveryCodes) {
-        setRecoveryCodes(recoveryCodes);
-        openRecoveryCodeModal();
-      } else {
-        window.localStorage.setItem(AUTH_USER, JSON.stringify(user));
-        window.localStorage.setItem(AUTH_TOKEN, token);
-        window.location = paths.home();
+    try {
+      const email = String(data.username || "")
+        .trim()
+        .toLowerCase();
+      const password = String(data.password || "");
+
+      if (view === "signup") {
+        const { error: signUpError } = await betterAuthClient.signUp.email({
+          name: email,
+          email,
+          password,
+        });
+        if (signUpError) throw new Error(signUpError.message);
+        const sessionUser = await getBetterAuthSessionUser();
+        persistSessionAndRedirect(sessionUser);
+        return;
       }
-    } else {
-      setError(message);
+
+      const { error: signInError } = await betterAuthClient.signIn.email({
+        email,
+        password,
+      });
+      if (signInError) {
+        throw new Error(signInError.message || "Sign in failed.");
+      }
+
+      const sessionUser = await getBetterAuthSessionUser();
+      persistSessionAndRedirect(sessionUser);
+    } catch (error) {
+      setError(error.message);
+    } finally {
       setLoading(false);
     }
-    setLoading(false);
   };
 
-  const handleDownloadComplete = () => setDownloadComplete(true);
   const handleResetPassword = () => setShowRecoveryForm(true);
   const handleRecoverySubmit = async (username, recoveryCodes) => {
     const { success, resetToken, error } = await System.recoverAccount(
@@ -256,14 +276,6 @@ export default function MultiUserAuth() {
   };
 
   useEffect(() => {
-    if (downloadComplete && user && token) {
-      window.localStorage.setItem(AUTH_USER, JSON.stringify(user));
-      window.localStorage.setItem(AUTH_TOKEN, token);
-      window.location = paths.home();
-    }
-  }, [downloadComplete, user, token]);
-
-  useEffect(() => {
     const fetchCustomAppName = async () => {
       const { appName } = await System.fetchCustomAppName();
       setCustomAppName(appName || "");
@@ -284,62 +296,66 @@ export default function MultiUserAuth() {
   if (showResetPasswordForm)
     return <ResetPasswordForm onSubmit={handleResetSubmit} />;
   return (
-    <>
-      <form
-        onSubmit={handleLogin}
-        className="flex flex-col justify-center items-center"
-      >
-        <div className="flex items-start justify-between pt-7 pb-9">
-          <div className="flex items-center flex-col gap-y-[18px] max-w-[300px]">
-            <div className="flex gap-x-1">
-              <h3 className="text-white light:text-infinite-night text-[38px] leading-[28px] font-medium text-center white-space-nowrap block">
-                {t("login.multi-user.welcome")}
-              </h3>
-            </div>
-            <p className="text-doctor/55 light:text-infinite-night/55 text-sm text-center">
-              {t("login.sign-in", { appName: customAppName || "Lovora" })}
-            </p>
+    <form
+      onSubmit={handleLogin}
+      className="flex flex-col justify-center items-center"
+    >
+      <div className="flex items-start justify-between pt-7 pb-9">
+        <div className="flex items-center flex-col gap-y-[18px] max-w-[300px]">
+          <div className="flex gap-x-1">
+            <h3 className="text-white light:text-infinite-night text-[38px] leading-[28px] font-medium text-center white-space-nowrap block">
+              {t("login.multi-user.welcome")}
+            </h3>
           </div>
+          <p className="text-doctor/55 light:text-infinite-night/55 text-sm text-center">
+            {view === "signup"
+              ? "Create your account to continue."
+              : t("login.sign-in", { appName: customAppName || "Lovora" })}
+          </p>
         </div>
-        <div className="w-full px-12">
-          <div className="w-full flex flex-col gap-y-3">
-            <div className="w-full flex flex-col gap-y-2">
-              <label className="text-doctor/75 light:text-infinite-night text-sm">
-                {t("login.multi-user.placeholder-username")}
-              </label>
-              <input
-                name="username"
-                type="text"
-                className="border-none bg-zinc-800 light:bg-divine-pleasure text-zinc-200 light:text-infinite-night/55 text-sm rounded-lg p-2.5 w-[300px] h-[34px] focus:outline-none focus:ring-1 focus:ring-sky-300"
-                required={true}
-                autoComplete="off"
-              />
-            </div>
-            <div className="w-full px-0 flex flex-col gap-y-2">
-              <label className="text-doctor/75 light:text-infinite-night text-sm">
-                {t("login.multi-user.placeholder-password")}
-              </label>
-              <input
-                name="password"
-                type="password"
-                className="border-none bg-zinc-800 light:bg-divine-pleasure text-zinc-200 light:text-infinite-night/55 text-sm rounded-lg p-2.5 w-[300px] h-[34px] focus:outline-none focus:ring-1 focus:ring-sky-300"
-                required={true}
-                autoComplete="off"
-              />
-            </div>
-            {error && <p className="text-red-400 text-sm">Error: {error}</p>}
+      </div>
+      <div className="w-full px-12">
+        <div className="w-full flex flex-col gap-y-3">
+          <div className="w-full flex flex-col gap-y-2">
+            <label className="text-doctor/75 light:text-infinite-night text-sm">
+              {t("login.multi-user.placeholder-username")}
+            </label>
+            <input
+              name="username"
+              type="text"
+              className="border-none bg-zinc-800 light:bg-divine-pleasure text-zinc-200 light:text-infinite-night/55 text-sm rounded-lg p-2.5 w-[300px] h-[34px] focus:outline-none focus:ring-1 focus:ring-sky-300"
+              required={true}
+              autoComplete="off"
+            />
           </div>
+          <div className="w-full px-0 flex flex-col gap-y-2">
+            <label className="text-doctor/75 light:text-infinite-night text-sm">
+              {t("login.multi-user.placeholder-password")}
+            </label>
+            <input
+              name="password"
+              type="password"
+              className="border-none bg-zinc-800 light:bg-divine-pleasure text-zinc-200 light:text-infinite-night/55 text-sm rounded-lg p-2.5 w-[300px] h-[34px] focus:outline-none focus:ring-1 focus:ring-sky-300"
+              required={true}
+              autoComplete="off"
+            />
+          </div>
+          {error && <p className="text-red-400 text-sm">Error: {error}</p>}
         </div>
-        <div className="flex items-center px-12 mt-9 space-x-2 w-full flex-col gap-y-6">
-          <button
-            disabled={loading}
-            type="submit"
-            className="text-zinc-950 bg-white hover:bg-zinc-300 light:bg-burnt-earth/20 light:text-infinite-night light:hover:bg-burnt-earth/20 text-sm font-semibold rounded-lg border-primary-button h-[34px] w-full"
-          >
-            {loading
-              ? t("login.multi-user.validating")
+      </div>
+      <div className="flex items-center px-12 mt-9 space-x-2 w-full flex-col gap-y-6">
+        <button
+          disabled={loading}
+          type="submit"
+          className="text-zinc-950 bg-white hover:bg-zinc-300 light:bg-burnt-earth/20 light:text-infinite-night light:hover:bg-burnt-earth/20 text-sm font-semibold rounded-lg border-primary-button h-[34px] w-full"
+        >
+          {loading
+            ? t("login.multi-user.validating")
+            : view === "signup"
+              ? "Create account"
               : t("login.multi-user.login")}
-          </button>
+        </button>
+        {view === "login" && (
           <button
             type="button"
             className="text-zinc-200 light:text-infinite-night/55 hover:text-sky-300 light:hover:text-burnt-earth hover:underline text-sm flex gap-x-1"
@@ -350,16 +366,20 @@ export default function MultiUserAuth() {
               {t("login.multi-user.reset")}
             </b>
           </button>
-        </div>
-      </form>
-
-      <ModalWrapper isOpen={isRecoveryCodeModalOpen} noPortal={true}>
-        <RecoveryCodeModal
-          recoveryCodes={recoveryCodes}
-          onDownloadComplete={handleDownloadComplete}
-          onClose={closeRecoveryCodeModal}
-        />
-      </ModalWrapper>
-    </>
+        )}
+        <button
+          type="button"
+          className="text-zinc-200 light:text-infinite-night/55 hover:text-sky-300 light:hover:text-burnt-earth hover:underline text-sm"
+          onClick={() => {
+            setError(null);
+            setView((current) => (current === "login" ? "signup" : "login"));
+          }}
+        >
+          {view === "signup"
+            ? "Already have an account? Sign in"
+            : "New here? Create an account"}
+        </button>
+      </div>
+    </form>
   );
 }

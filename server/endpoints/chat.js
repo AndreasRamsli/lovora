@@ -48,14 +48,26 @@ function chatEndpoints(app) {
         response.setHeader("Connection", "keep-alive");
         response.flushHeaders();
 
-        if (multiUserMode(response) && !(await User.canSendChat(user))) {
+        const chatAccessState = multiUserMode(response)
+          ? await User.getChatAccessState(user)
+          : { allowed: true, reason: "single_user_mode", quota: null };
+        if (multiUserMode(response) && !chatAccessState.allowed) {
+          const isQuotaReached = chatAccessState.reason === "quota_reached";
+          const quota = chatAccessState.quota || null;
+          const limit = quota?.limit ?? 0;
+          const windowHours = quota?.windowHours ?? 0;
+          const humanMessage = isQuotaReached
+            ? `You have reached your free chat limit of ${limit} messages in ${windowHours} hours. Please upgrade to continue.`
+            : "Chat access is not available for this account.";
           writeResponseChunk(response, {
             id: uuidv4(),
             type: "abort",
             textResponse: null,
             sources: [],
             close: true,
-            error: `You have met your maximum 24 hour chat quota of ${user.dailyMessageLimit} chats. Try again later.`,
+            ...(isQuotaReached ? { errorCode: "CHAT_QUOTA_REACHED" } : {}),
+            error: humanMessage,
+            ...(isQuotaReached ? { quota } : {}),
           });
           return;
         }
@@ -135,14 +147,26 @@ function chatEndpoints(app) {
         response.setHeader("Connection", "keep-alive");
         response.flushHeaders();
 
-        if (multiUserMode(response) && !(await User.canSendChat(user))) {
+        const chatAccessState = multiUserMode(response)
+          ? await User.getChatAccessState(user)
+          : { allowed: true, reason: "single_user_mode", quota: null };
+        if (multiUserMode(response) && !chatAccessState.allowed) {
+          const isQuotaReached = chatAccessState.reason === "quota_reached";
+          const quota = chatAccessState.quota || null;
+          const limit = quota?.limit ?? 0;
+          const windowHours = quota?.windowHours ?? 0;
+          const humanMessage = isQuotaReached
+            ? `You have reached your free chat limit of ${limit} messages in ${windowHours} hours. Please upgrade to continue.`
+            : "Chat access is not available for this account.";
           writeResponseChunk(response, {
             id: uuidv4(),
             type: "abort",
             textResponse: null,
             sources: [],
             close: true,
-            error: `You have met your maximum 24 hour chat quota of ${user.dailyMessageLimit} chats. Try again later.`,
+            ...(isQuotaReached ? { errorCode: "CHAT_QUOTA_REACHED" } : {}),
+            error: humanMessage,
+            ...(isQuotaReached ? { quota } : {}),
           });
           return;
         }

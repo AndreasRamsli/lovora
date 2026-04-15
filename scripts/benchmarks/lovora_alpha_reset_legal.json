@@ -1,0 +1,20 @@
+[
+  {
+    "id": "nl_contracter",
+    "query": "Hva sier Norske Lov om contracter og forpligter?",
+    "tags": ["nl", "alpha"],
+    "expect": {
+      "lovdataId": "nl-16870415-000",
+      "corpus": "NL"
+    }
+  },
+  {
+    "id": "sf_stamhus_salg",
+    "query": "Hvilke dokumenter må stamhusbesidderen sende ved salg av leilendingsgods?",
+    "tags": ["sf", "alpha"],
+    "expect": {
+      "lovdataId": "sf-18960626-9805",
+      "corpus": "SF"
+    }
+  }
+]

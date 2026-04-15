@@ -8,11 +8,19 @@ class VoyageAiEmbedder {
     } = require("@langchain/community/embeddings/voyage");
 
     this.model = process.env.EMBEDDING_MODEL_PREF || "voyage-3-lite";
-    this.voyage = new VoyageEmbeddings({
+    const voyageConfig = {
       apiKey: process.env.VOYAGEAI_API_KEY,
       modelName: this.model,
       // Voyage AI's limit per request is 128 https://docs.voyageai.com/docs/rate-limits#use-larger-batches
       batchSize: 128,
+    };
+    this.documentVoyage = new VoyageEmbeddings({
+      ...voyageConfig,
+      inputType: "document",
+    });
+    this.queryVoyage = new VoyageEmbeddings({
+      ...voyageConfig,
+      inputType: "query",
     });
     this.embeddingMaxChunkLength = this.#getMaxEmbeddingLength();
   }
@@ -40,18 +48,18 @@ class VoyageAiEmbedder {
   }
 
   async embedTextInput(textInput) {
-    const result = await this.voyage.embedDocuments(
-      Array.isArray(textInput) ? textInput : [textInput]
-    );
+    const result = Array.isArray(textInput)
+      ? await this.queryVoyage.embedDocuments(textInput)
+      : await this.queryVoyage.embedQuery(textInput);
 
     // If given an array return the native Array[Array] format since that should be the outcome.
     // But if given a single string, we need to flatten it so that we have a 1D array.
-    return (Array.isArray(textInput) ? result : result.flat()) || [];
+    return (Array.isArray(textInput) ? result : result.flat?.() ?? result) || [];
   }
 
   async embedChunks(textChunks = []) {
     try {
-      const embeddings = await this.voyage.embedDocuments(textChunks);
+      const embeddings = await this.documentVoyage.embedDocuments(textChunks);
       return embeddings;
     } catch (error) {
       console.error("Voyage AI Failed to embed:", error);

@@ -9,12 +9,14 @@ import {
 } from "./constants";
 import { baseHeaders } from "./request";
 import paths from "./paths";
+import { betterAuthClient } from "@/lib/betterAuthClient";
 
 // Checks current localstorage and validates the session based on that.
 export default async function validateSessionTokenForUser() {
   const isValidSession = await fetch(`${API_BASE}/system/check-token`, {
     method: "GET",
     cache: "default",
+    credentials: "include",
     headers: baseHeaders(),
   })
     .then((res) => res.status === 200)
@@ -32,7 +34,10 @@ export function clearStoredSession() {
   window.sessionStorage.removeItem(PENDING_HOME_MESSAGE);
 }
 
-export function logoutCurrentUser(redirectTo = paths.login(true)) {
+export async function logoutCurrentUser(redirectTo = paths.login(true)) {
+  try {
+    await betterAuthClient.signOut();
+  } catch {}
   clearStoredSession();
   window.location.replace(redirectTo);
 }

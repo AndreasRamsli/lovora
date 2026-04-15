@@ -265,7 +265,7 @@ const supportedSources = [
  * @param {{title: string, chunks: {text: string, chunkSource: string}[]}} options
  * @returns {{isUrl: boolean, text: string, href: string, icon: string}}
  */
-export function parseChunkSource({ title = "", chunks = [] }) {
+export function parseChunkSource({ title = "", chunks = [], url = null }) {
   const nullResponse = {
     isUrl: false,
     text: null,
@@ -273,25 +273,33 @@ export function parseChunkSource({ title = "", chunks = [] }) {
     icon: "file",
   };
 
-  if (
-    !chunks.length ||
-    !supportedSources.some((source) =>
-      chunks[0].chunkSource?.startsWith(source)
-    )
-  )
-    return nullResponse;
+  const primaryChunkSource = chunks[0]?.chunkSource;
+  const sourceID = supportedSources.find((source) =>
+    primaryChunkSource?.startsWith(source)
+  );
+
+  if (!sourceID) {
+    try {
+      const fallbackUrl = new URL(url);
+      return {
+        isUrl: true,
+        href: fallbackUrl.toString(),
+        text: fallbackUrl.host + fallbackUrl.pathname,
+        icon: "link",
+      };
+    } catch {
+      return nullResponse;
+    }
+  }
 
   try {
-    const sourceID = supportedSources.find((source) =>
-      chunks[0].chunkSource?.startsWith(source)
-    );
     let url, text, icon;
 
     // Try to parse the URL from the chunk source
     // If it fails, we'll use the title as the text and the link icon
     // but the document will not be linkable
     try {
-      url = new URL(chunks[0].chunkSource.split(sourceID)[1]);
+      url = new URL(primaryChunkSource.split(sourceID)[1]);
     } catch {}
 
     switch (sourceID) {

@@ -59,8 +59,7 @@ function useIsAuthenticated() {
 
       // Multi-user mode checks
       const localUser = localStorage.getItem(AUTH_USER);
-      const localAuthToken = localStorage.getItem(AUTH_TOKEN);
-      if (!localUser || !localAuthToken) {
+      if (!localUser) {
         setIsAuthed(false);
         return;
       }

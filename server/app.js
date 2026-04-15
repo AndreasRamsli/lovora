@@ -29,10 +29,26 @@ const { agentFlowEndpoints } = require("./endpoints/agentFlows");
 const { mcpServersEndpoints } = require("./endpoints/mcpServers");
 const { mobileEndpoints } = require("./endpoints/mobile");
 const { webPushEndpoints } = require("./endpoints/webPush");
+const { billingEndpoints } = require("./endpoints/billing");
+const { betterAuthBridgeEndpoints } = require("./endpoints/betterAuthBridge");
 const { httpLogger } = require("./middleware/httpLogger");
 const { sendReadinessResponse } = require("./utils/moderation/schemaReadiness");
 
 const FILE_LIMIT = "3GB";
+const STRIPE_WEBHOOK_PATH = "/api/billing/stripe/webhook";
+const BETTER_AUTH_BRIDGE_PATH_PREFIX = "/api/auth/bridge/";
+let betterAuthNodeHandlerPromise = null;
+
+async function getBetterAuthNodeHandler() {
+  if (!betterAuthNodeHandlerPromise) {
+    betterAuthNodeHandlerPromise = Promise.all([
+      import("./auth/better-auth.mjs"),
+      import("better-auth/node"),
+    ]).then(([{ auth }, { toNodeHandler }]) => toNodeHandler(auth));
+  }
+
+  return betterAuthNodeHandlerPromise;
+}
 
 function createApp({ enableWebSockets = true } = {}) {
   const app = express();
@@ -50,8 +66,32 @@ function createApp({ enableWebSockets = true } = {}) {
   }
 
   app.use(cors({ origin: true }));
+  app.all("/api/auth/*", async (request, response, next) => {
+    if (request.path?.startsWith(BETTER_AUTH_BRIDGE_PATH_PREFIX)) {
+      return next();
+    }
+
+    try {
+      const authHandler = await getBetterAuthNodeHandler();
+      return authHandler(request, response);
+    } catch (error) {
+      return next(error);
+    }
+  });
   app.use(bodyParser.text({ limit: FILE_LIMIT }));
-  app.use(bodyParser.json({ limit: FILE_LIMIT }));
+  app.use(
+    bodyParser.json({
+      limit: FILE_LIMIT,
+      verify: (request, _response, buffer) => {
+        if (
+          request.originalUrl?.startsWith(STRIPE_WEBHOOK_PATH) &&
+          buffer?.length
+        ) {
+          request.rawBody = Buffer.from(buffer);
+        }
+      },
+    })
+  );
   app.use(
     bodyParser.urlencoded({
       limit: FILE_LIMIT,
@@ -65,6 +105,7 @@ function createApp({ enableWebSockets = true } = {}) {
 
   app.use("/api", apiRouter);
   systemEndpoints(apiRouter);
+  betterAuthBridgeEndpoints(apiRouter);
   extensionEndpoints(apiRouter);
   workspaceEndpoints(apiRouter);
   workspaceThreadEndpoints(apiRouter);
@@ -84,6 +125,7 @@ function createApp({ enableWebSockets = true } = {}) {
   mcpServersEndpoints(apiRouter);
   mobileEndpoints(apiRouter);
   webPushEndpoints(apiRouter);
+  billingEndpoints(apiRouter);
   embeddedEndpoints(apiRouter);
   browserExtensionEndpoints(apiRouter);
 

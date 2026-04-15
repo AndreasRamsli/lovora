@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,6 +11,7 @@ generator client {
 //   provider = "postgresql"
 //   url      = env("DATABASE_URL")
 // }
+
 datasource db {
   provider = "sqlite"
   url      = "file:../storage/anythingllm.db"
@@ -63,6 +65,8 @@ model users {
   id                           Int                           @id @default(autoincrement())
   username                     String?                       @unique
   password                     String
+  betterAuthUserId             String?                       @unique
+  authProvider                 String                        @default("legacy")
   pfpFilename                  String?
   role                         String                        @default("default")
   suspended                    Int                           @default(0)
@@ -70,6 +74,11 @@ model users {
   createdAt                    DateTime                      @default(now())
   lastUpdatedAt                DateTime                      @default(now())
   dailyMessageLimit            Int?
+  stripeCustomerId             String?                       @unique
+  stripeSubscriptionId         String?                       @unique
+  billingPlan                  String?                       @default("free")
+  billingStatus                String?                       @default("inactive")
+  billingCurrentPeriodEnd      DateTime?
   bio                          String?                       @default("")
   web_push_subscription_config String?
   workspace_chats              workspace_chats[]
@@ -89,6 +98,9 @@ model users {
   workspace_parsed_files       workspace_parsed_files[]
   conversation_flags           conversation_flags[]          @relation("ConversationFlagUser")
   reviewed_conversation_flags  conversation_flags[]          @relation("ConversationFlagReviewer")
+
+  @@index([authProvider])
+  @@index([billingStatus])
 }
 
 model recovery_codes {
@@ -182,18 +194,18 @@ model workspace_suggested_messages {
 }
 
 model workspace_chats {
-  id             Int      @id @default(autoincrement())
-  workspaceId    Int
-  prompt         String
-  response       String
-  include        Boolean  @default(true)
-  user_id        Int?
-  thread_id      Int? // No relation to prevent whole table migration
-  api_session_id String? // String identifier for only the dev API to partition chats in any mode.
-  createdAt      DateTime @default(now())
-  lastUpdatedAt  DateTime @default(now())
-  feedbackScore  Boolean?
-  users          users?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id                Int                 @id @default(autoincrement())
+  workspaceId       Int
+  prompt            String
+  response          String
+  include           Boolean             @default(true)
+  user_id           Int?
+  thread_id         Int? // No relation to prevent whole table migration
+  api_session_id    String? // String identifier for only the dev API to partition chats in any mode.
+  createdAt         DateTime            @default(now())
+  lastUpdatedAt     DateTime            @default(now())
+  feedbackScore     Boolean?
+  users             users?              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   conversation_flag conversation_flags?
 }
 
@@ -392,6 +404,7 @@ model prompt_history {
 }
 
 // Schema specific to mobile app <> Desktop app connection
+
 model desktop_mobile_devices {
   id         Int      @id @default(autoincrement())
   deviceOs   String
@@ -420,4 +433,67 @@ model workspace_parsed_files {
 
   @@index([workspaceId])
   @@index([userId])
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

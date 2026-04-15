@@ -18,6 +18,12 @@ function isNullOrNaN(value) {
   return isNaN(value);
 }
 
+function hasCanonicalLovdataStatutePath(value = "") {
+  return /\/dokument\/(?:nl\/lov|sf\/forskrift)\/\d{4}-\d{2}-\d{2}-\d+(?=[/?#]|$)/i.test(
+    String(value)
+  );
+}
+
 class TextSplitter {
   #splitter;
 
@@ -56,15 +62,21 @@ class TextSplitter {
     return prefValue > limit ? limit : prefValue;
   }
 
-  static determineLegalChunkSize(embedderLimit = 1500) {
+  static determineLegalChunkSize(metadata = {}, embedderLimit = 1500) {
+    const isStatuteCorpus = this.isStatuteCorpus(metadata);
+    const envValue = isStatuteCorpus
+      ? process.env.LEGAL_CHUNK_SIZE_STATUTE
+      : process.env.LEGAL_CHUNK_SIZE_CASELAW;
+    const defaultSize = isStatuteCorpus ? 1100 : 1500;
+    const preferred = isNullOrNaN(envValue) ? defaultSize : Number(envValue);
     const limit = Number(embedderLimit);
-    if (isNullOrNaN(limit)) return 1500;
-    return Math.min(1500, limit);
+    if (isNullOrNaN(limit)) return preferred;
+    return Math.min(preferred, limit);
   }
 
   static determineChunkSize(metadata = {}, preferred = null, embedderLimit = 1000) {
     return this.shouldUseLegalParagraphMode(metadata)
-      ? this.determineLegalChunkSize(embedderLimit)
+      ? this.determineLegalChunkSize(metadata, embedderLimit)
       : this.determineMaxChunkSize(preferred, embedderLimit);
   }
 
@@ -186,7 +198,9 @@ class TextSplitter {
   #setSplitter(config = {}) {
     if (TextSplitter.shouldUseLegalParagraphMode(config?.documentMetadata)) {
       return new LegalParagraphSplitter({
-        chunkSize: isNaN(config?.chunkSize) ? 1_500 : Number(config?.chunkSize),
+        chunkSize: isNaN(config?.chunkSize)
+          ? TextSplitter.determineLegalChunkSize(config?.documentMetadata)
+          : Number(config?.chunkSize),
         chunkHeader: this.stringifyHeader(),
       });
     }
@@ -200,6 +214,14 @@ class TextSplitter {
     });
   }
 
+  static isStatuteCorpus(metadata = {}) {
+    const corpus = String(metadata?.corpus || "").toUpperCase();
+    if (["NL", "SF"].includes(corpus)) return true;
+
+    const candidates = [metadata?.url, metadata?.chunkSource].filter(Boolean);
+    return candidates.some((value) => hasCanonicalLovdataStatutePath(value));
+  }
+
   static shouldUseLegalParagraphMode(metadata = {}) {
     const url = String(metadata?.url || "");
     const chunkSource = String(metadata?.chunkSource || "");
@@ -210,7 +232,8 @@ class TextSplitter {
       docSource === "Lovdata" ||
       url.includes("lovdata.no/") ||
       chunkSource.includes("lovdata.no/") ||
-      ["HRA", "EMDN", "LRA", "TRA", "JSR"].includes(corpus)
+      this.isStatuteCorpus(metadata) ||
+      ["HRA", "EMDN", "LRA", "TRA", "JSR", "NL", "SF"].includes(corpus)
     );
   }
 

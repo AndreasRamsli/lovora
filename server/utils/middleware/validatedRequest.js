@@ -1,7 +1,7 @@
 const { SystemSettings } = require("../../models/systemSettings");
-const { User } = require("../../models/user");
 const { EncryptionManager } = require("../EncryptionManager");
 const { decodeJWT } = require("../http");
+const { resolveRequestUser } = require("../auth/requestUserFromRequest");
 const EncryptionMgr = new EncryptionManager();
 
 async function validatedRequest(request, response, next) {
@@ -69,28 +69,10 @@ async function validatedRequest(request, response, next) {
 }
 
 async function validateMultiUserRequest(request, response, next) {
-  const auth = request.header("Authorization");
-  const token = auth ? auth.split(" ")[1] : null;
-
-  if (!token) {
-    response.status(401).json({
-      error: "No auth token found.",
-    });
-    return;
-  }
-
-  const valid = decodeJWT(token);
-  if (!valid || !valid.id) {
-    response.status(401).json({
-      error: "Invalid auth token.",
-    });
-    return;
-  }
-
-  const user = await User.get({ id: valid.id });
+  const user = await resolveRequestUser(request, response);
   if (!user) {
     response.status(401).json({
-      error: "Invalid auth for user.",
+      error: "Invalid auth token.",
     });
     return;
   }

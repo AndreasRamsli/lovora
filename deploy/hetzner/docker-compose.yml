@@ -1,0 +1,68 @@
+name: lovora-hetzner
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: deploy/hetzner/Dockerfile
+      args:
+        ARG_UID: ${UID:-1000}
+        ARG_GID: ${GID:-1000}
+    cap_add:
+      - SYS_ADMIN
+    env_file:
+      - ./anythingllm.env
+    environment:
+      NODE_ENV: production
+      ANYTHING_LLM_RUNTIME: docker
+      STORAGE_DIR: /app/server/storage
+    volumes:
+      - ./anythingllm.env:/app/server/.env
+      - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/server/storage:/app/server/storage
+      - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/collector/hotdir:/app/collector/hotdir
+      - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/collector/outputs:/app/collector/outputs
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3001/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.8
+    depends_on:
+      app:
+        condition: service_healthy
+    env_file:
+      - ./anythingllm.env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

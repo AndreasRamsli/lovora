@@ -1,0 +1,67 @@
+[
+  {
+    "id": "lra_civil_gjenapning_rettslig_interesse",
+    "query": "I LB-2015-8721, hadde A fortsatt rettslig interesse i a fa provd gyldigheten av Gjenopptakelseskommisjonens avslag nar kommisjonen senere hadde truffet ny avgjorelse om gjenapning av samme straffesak?",
+    "tags": ["lra", "civil", "postrun"],
+    "notes": "Civil-process LRA smoke case about rettslig interesse and later gjenapning.",
+    "expect": {
+      "corpus": "LRA",
+      "lovdataId": "lb-2015-8721",
+      "titleExact": "LB-2015-8721"
+    }
+  },
+  {
+    "id": "lra_criminal_varetekt_ungdom",
+    "query": "I LB-2024-55223, var varetektsfengsling i to uker av en 17 1/2 ar gammel siktet tvingende nodvendig, og hvilken betydning fikk overforing til ungdomsenhet?",
+    "tags": ["lra", "criminal", "postrun"],
+    "notes": "Criminal-procedure LRA smoke case about youth detention.",
+    "expect": {
+      "corpus": "LRA",
+      "lovdataId": "lb-2024-55223",
+      "titleExact": "LB-2024-55223"
+    }
+  },
+  {
+    "id": "lra_health_tvangent_vern",
+    "query": "I LF-2022-163071, skulle tvungent psykisk helsevern opphore fordi grunnvilkaret om alvorlig sinnslidelse i psykisk helsevernloven 3-3 ikke lenger var oppfylt?",
+    "tags": ["lra", "health", "postrun"],
+    "notes": "Administrative/health LRA smoke case about opphor av tvungent psykisk helsevern.",
+    "expect": {
+      "corpus": "LRA",
+      "lovdataId": "lf-2022-163071",
+      "titleExact": "LF-2022-163071"
+    }
+  },
+  {
+    "id": "hra_lugano_jurisdiction_regression",
+    "query": "Kan en saksoker utenfor konvensjonsomradet bruke Luganokonvensjonen til a saksoke i Norge nar tvisten ellers ikke har tilknytning til en konvensjonsstat?",
+    "tags": ["hra", "regression", "postrun"],
+    "notes": "HRA regression case from the mixed benchmark.",
+    "expect": {
+      "corpus": "HRA",
+      "lovdataId": "hr-2012-2393-a",
+      "titleIncludes": "HR-2012-2393-A"
+    }
+  },
+  {
+    "id": "emdn_utlevering_usa_artikkel_3_regression",
+    "query": "I Bijan Balahan v. Sweden, kunne utlevering til USA krenke EMK artikkel 3 pa grunn av risiko for livsvarig fengsel uten proveloslatelse under Three Strikes Law?",
+    "tags": ["emdn", "regression", "postrun"],
+    "notes": "EMDN regression case from the mixed benchmark.",
+    "expect": {
+      "corpus": "EMDN",
+      "lovdataId": "emdn-2022-9839-j-sveri",
+      "titleIncludes": "BIJAN BALAHAN"
+    }
+  },
+  {
+    "id": "trr_behandlingsdager_regression",
+    "query": "I TRR-2024-135, hadde en hjelpepleier med ankyloserende spondyloartritt rett til sykepenger for behandlingsdager hos fysioterapeut, og matte behandlingen gjore det nodvendig a ikke arbeide hele dagen?",
+    "tags": ["trr", "regression", "postrun"],
+    "notes": "TRR regression case from the mixed benchmark.",
+    "expect": {
+      "lovdataId": "trr-2024-135",
+      "chunkSourceIncludes": "trr-2024-135"
+    }
+  }
+]

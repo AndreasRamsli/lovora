@@ -149,4 +149,73 @@ describe("TextSplitter", () => {
     expect(chunks[0].endsWith(".")).toBe(true);
     expect(chunks.every((chunk) => chunk.length <= 90)).toBe(true);
   });
+
+  test("recognizes NL and SF corpora as legal text without Lovdata URLs", () => {
+    expect(
+      TextSplitter.shouldUseLegalParagraphMode({
+        corpus: "NL",
+      })
+    ).toBe(true);
+
+    expect(
+      TextSplitter.shouldUseLegalParagraphMode({
+        corpus: "SF",
+      })
+    ).toBe(true);
+  });
+
+  test("does not infer NL or SF statutes from loose substring mentions", () => {
+    expect(
+      TextSplitter.isStatuteCorpus({
+        title: "Veileder for BNL-123 og andre standarder",
+      })
+    ).toBe(false);
+
+    expect(
+      TextSplitter.isStatuteCorpus({
+        title: "Måling med SF-36 i helseforskning",
+      })
+    ).toBe(false);
+
+    expect(
+      TextSplitter.isStatuteCorpus({
+        chunkSource: "link://https://example.com/commentary?ref=NL-16870415-000",
+      })
+    ).toBe(false);
+  });
+
+  test("uses statute and case-law legal chunk env knobs by corpus", () => {
+    const originalStatute = process.env.LEGAL_CHUNK_SIZE_STATUTE;
+    const originalCaselaw = process.env.LEGAL_CHUNK_SIZE_CASELAW;
+
+    process.env.LEGAL_CHUNK_SIZE_STATUTE = "900";
+    process.env.LEGAL_CHUNK_SIZE_CASELAW = "1400";
+
+    expect(TextSplitter.determineChunkSize({ corpus: "NL" }, null, 2000)).toBe(
+      900
+    );
+    expect(TextSplitter.determineChunkSize({ corpus: "SF" }, null, 2000)).toBe(
+      900
+    );
+    expect(
+      TextSplitter.determineChunkSize(
+        {
+          url: "https://lovdata.no/dokument/NL/lov/1687-04-15-0",
+        },
+        null,
+        2000
+      )
+    ).toBe(900);
+    expect(TextSplitter.determineChunkSize({ corpus: "HRA" }, null, 2000)).toBe(
+      1400
+    );
+
+    if (typeof originalStatute === "undefined")
+      delete process.env.LEGAL_CHUNK_SIZE_STATUTE;
+    else process.env.LEGAL_CHUNK_SIZE_STATUTE = originalStatute;
+
+    if (typeof originalCaselaw === "undefined")
+      delete process.env.LEGAL_CHUNK_SIZE_CASELAW;
+    else process.env.LEGAL_CHUNK_SIZE_CASELAW = originalCaselaw;
+  });
 });

@@ -11,14 +11,23 @@ const { EventLogs } = require("./eventLogs");
  * @property {string} role
  * @property {boolean} suspended
  * @property {number|null} dailyMessageLimit
+ * @property {string|null} billingStatus
+ * @property {Date|null} billingCurrentPeriodEnd
  */
 
 const User = {
   usernameRegex: new RegExp(/^[a-z][a-z0-9._@-]*$/),
+  normalizeAuthProvider: function (value = "legacy") {
+    const normalized = String(value || "legacy").trim().toLowerCase();
+    const allowed = ["legacy", "better-auth"];
+    return allowed.includes(normalized) ? normalized : "legacy";
+  },
   writable: [
     // Used for generic updates so we can validate keys in request body
     "username",
     "password",
+    "betterAuthUserId",
+    "authProvider",
     "pfpFilename",
     "role",
     "suspended",
@@ -57,6 +66,19 @@ const User = {
       }
       return String(role);
     },
+    betterAuthUserId: (betterAuthUserId = null) => {
+      if (
+        betterAuthUserId === null ||
+        typeof betterAuthUserId === "undefined" ||
+        String(betterAuthUserId).trim().length === 0
+      ) {
+        return null;
+      }
+      return String(betterAuthUserId).trim();
+    },
+    authProvider: (authProvider = "legacy") => {
+      return User.normalizeAuthProvider(authProvider);
+    },
     dailyMessageLimit: (dailyMessageLimit = null) => {
       if (dailyMessageLimit === null) return null;
       const limit = Number(dailyMessageLimit);
@@ -79,6 +101,10 @@ const User = {
     switch (key) {
       case "suspended":
         return Number(Boolean(value));
+      case "betterAuthUserId":
+        return value === null ? null : String(value);
+      case "authProvider":
+        return User.normalizeAuthProvider(value);
       case "dailyMessageLimit":
         return value === null ? null : Number(value);
       default:
@@ -354,27 +380,128 @@ const User = {
     return { checkedOK: true, error: "No error." };
   },
 
+  getEffectiveFreeQuotaConfig: function () {
+    const parsedLimit = Number(process.env.FREE_MESSAGE_LIMIT ?? 5);
+    const parsedWindowHours = Number(
+      process.env.FREE_MESSAGE_WINDOW_HOURS ?? 6
+    );
+
+    return {
+      limit:
+        Number.isNaN(parsedLimit) || parsedLimit < 1
+          ? 5
+          : Math.floor(parsedLimit),
+      windowHours:
+        Number.isNaN(parsedWindowHours) || parsedWindowHours < 1
+          ? 6
+          : Math.floor(parsedWindowHours),
+    };
+  },
+
+  hasActivePaidAccess: function (user = null) {
+    if (!user) return false;
+    if (user.billingStatus !== "active") return false;
+    if (!user.billingCurrentPeriodEnd) return false;
+    return new Date(user.billingCurrentPeriodEnd).getTime() > Date.now();
+  },
+
+  getChatAccessState: async function (user = null) {
+    const { ROLES } = require("../utils/middleware/multiUserProtected");
+
+    if (!user) {
+      return {
+        allowed: false,
+        reason: "no_user",
+        quota: null,
+      };
+    }
+
+    if (user.role === ROLES.admin || user.role === "admin") {
+      return {
+        allowed: true,
+        reason: "admin_bypass",
+        quota: null,
+      };
+    }
+
+    if (this.hasActivePaidAccess(user)) {
+      return {
+        allowed: true,
+        reason: "paid_access",
+        quota: null,
+      };
+    }
+
+    const { WorkspaceChats } = require("./workspaceChats");
+    const { limit, windowHours } = this.getEffectiveFreeQuotaConfig();
+    const parsedCustomLimit =
+      user.dailyMessageLimit === null ? limit : Number(user.dailyMessageLimit);
+    const effectiveLimit =
+      Number.isNaN(parsedCustomLimit) || parsedCustomLimit < 1
+        ? limit
+        : Math.floor(parsedCustomLimit);
+    const windowStart = new Date(Date.now() - windowHours * 60 * 60 * 1000);
+
+    const used = await WorkspaceChats.count({
+      user_id: user.id,
+      createdAt: {
+        gte: windowStart,
+      },
+    });
+    const remaining = Math.max(effectiveLimit - used, 0);
+    const baseQuota = {
+      limit: effectiveLimit,
+      windowHours,
+      used,
+      remaining,
+      nextResetAt: null,
+    };
+
+    if (used < effectiveLimit) {
+      return {
+        allowed: true,
+        reason: "within_quota",
+        quota: baseQuota,
+      };
+    }
+
+    const oldestInWindow = await WorkspaceChats.where(
+      {
+        user_id: user.id,
+        createdAt: {
+          gte: windowStart,
+        },
+      },
+      1,
+      { createdAt: "asc" }
+    );
+    const oldestCreatedAt = oldestInWindow?.[0]?.createdAt
+      ? new Date(oldestInWindow[0].createdAt).getTime()
+      : null;
+    const nextResetAt =
+      oldestCreatedAt !== null
+        ? new Date(oldestCreatedAt + windowHours * 60 * 60 * 1000).toISOString()
+        : null;
+
+    return {
+      allowed: false,
+      reason: "quota_reached",
+      quota: {
+        ...baseQuota,
+        nextResetAt,
+      },
+    };
+  },
+
   /**
-   * Check if a user can send a chat based on their daily message limit.
-   * This limit is system wide and not per workspace and only applies to
-   * multi-user mode AND non-admin users.
+   * Check if a user can send a chat based on role, billing entitlement,
+   * and free quota constraints.
    * @param {User} user The user object record.
    * @returns {Promise<boolean>} True if the user can send a chat, false otherwise.
    */
   canSendChat: async function (user) {
-    const { ROLES } = require("../utils/middleware/multiUserProtected");
-    if (!user || user.dailyMessageLimit === null || user.role === ROLES.admin)
-      return true;
-
-    const { WorkspaceChats } = require("./workspaceChats");
-    const currentChatCount = await WorkspaceChats.count({
-      user_id: user.id,
-      createdAt: {
-        gte: new Date(new Date() - 24 * 60 * 60 * 1000), // 24 hours
-      },
-    });
-
-    return currentChatCount < user.dailyMessageLimit;
+    const accessState = await this.getChatAccessState(user);
+    return accessState.allowed;
   },
 };
 

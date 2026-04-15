@@ -34,6 +34,7 @@ import SuggestedMessages from "@/components/lib/SuggestedMessages";
 import TextSizeMenu from "./TextSizeMenu";
 import WorkspaceModelPicker from "./WorkspaceModelPicker";
 import SourcesSidebar, { SourcesSidebarProvider } from "./SourcesSidebar";
+import PricingGate from "./PricingGate";
 
 export default function ChatContainer({ workspace, knownHistory = [] }) {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
   const [chatHistory, setChatHistory] = useState(knownHistory);
   const [socketId, setSocketId] = useState(null);
   const [websocket, setWebsocket] = useState(null);
+  const [showPricingGate, setShowPricingGate] = useState(false);
   const { files, parseAttachments } = useContext(DndUploaderContext);
   const { chatHistoryRef } = useChatContainerQuickScroll();
   const pendingMessageChecked = useRef(false);
@@ -256,15 +258,22 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
         workspaceSlug: workspace.slug,
         threadSlug,
         prompt: promptMessage.userMessage,
-        chatHandler: (chatResult) =>
-          handleChat(
+        chatHandler: (chatResult) => {
+          if (
+            chatResult?.type === "abort" &&
+            chatResult?.errorCode === "CHAT_QUOTA_REACHED"
+          ) {
+            setShowPricingGate(true);
+          }
+          return handleChat(
             chatResult,
             setLoadingResponse,
             setChatHistory,
             remHistory,
             _chatHistory,
             setSocketId
-          ),
+          );
+        },
         attachments,
       });
       return;
@@ -377,13 +386,21 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
               <h1 className="text-white text-xl md:text-2xl mb-11 text-center">
                 {t("main-page.greeting")}
               </h1>
-              <PromptInput
-                submit={handleSubmit}
-                isStreaming={loadingResponse}
-                sendCommand={sendCommand}
-                attachments={files}
-                centered={true}
-              />
+              {showPricingGate ? (
+                <PricingGate
+                  workspaceSlug={workspace.slug}
+                  onClose={() => setShowPricingGate(false)}
+                  centered={true}
+                />
+              ) : (
+                <PromptInput
+                  submit={handleSubmit}
+                  isStreaming={loadingResponse}
+                  sendCommand={sendCommand}
+                  attachments={files}
+                  centered={true}
+                />
+              )}
               <QuickActions
                 hasAvailableWorkspace={!!workspace}
                 onCreateAgent={() => navigate(paths.settings.agentSkills())}
@@ -434,13 +451,20 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
                     regenerateAssistantMessage={regenerateAssistantMessage}
                   />
                 </MetricsProvider>
-                <PromptInput
-                  submit={handleSubmit}
-                  isStreaming={loadingResponse}
-                  sendCommand={sendCommand}
-                  attachments={files}
-                  centered={false}
-                />
+                {showPricingGate ? (
+                  <PricingGate
+                    workspaceSlug={workspace.slug}
+                    onClose={() => setShowPricingGate(false)}
+                  />
+                ) : (
+                  <PromptInput
+                    submit={handleSubmit}
+                    isStreaming={loadingResponse}
+                    sendCommand={sendCommand}
+                    attachments={files}
+                    centered={false}
+                  />
+                )}
               </div>
             </div>
           </DnDFileUploaderWrapper>
