@@ -8,6 +8,10 @@ import AuthBridge from "@/models/authBridge";
 import { useTranslation } from "react-i18next";
 import { t } from "i18next";
 
+function isEmailAddress(value = "") {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
 const RecoveryForm = ({ onSubmit, setShowRecoveryForm }) => {
   const [username, setUsername] = useState("");
   const [recoveryCodeInputs, setRecoveryCodeInputs] = useState(
@@ -203,12 +207,15 @@ export default function MultiUserAuth() {
     for (const [key, value] of form.entries()) data[key] = value;
 
     try {
-      const email = String(data.username || "")
-        .trim()
-        .toLowerCase();
+      const identifier = String(data.username || "").trim();
+      const email = identifier.toLowerCase();
       const password = String(data.password || "");
 
       if (view === "signup") {
+        if (!isEmailAddress(identifier)) {
+          throw new Error("Account creation currently requires an email address.");
+        }
+
         const { error: signUpError } = await betterAuthClient.signUp.email({
           name: email,
           email,
@@ -220,12 +227,23 @@ export default function MultiUserAuth() {
         return;
       }
 
-      const { error: signInError } = await betterAuthClient.signIn.email({
-        email,
-        password,
-      });
-      if (signInError) {
-        throw new Error(signInError.message || "Sign in failed.");
+      if (isEmailAddress(identifier)) {
+        const { error: signInError } = await betterAuthClient.signIn.email({
+          email,
+          password,
+        });
+        if (signInError) {
+          throw new Error(signInError.message || "Sign in failed.");
+        }
+      } else {
+        const legacyLogin = await AuthBridge.legacyLogin({
+          username: identifier,
+          password,
+        });
+
+        if (!legacyLogin.valid) {
+          throw new Error(legacyLogin.message || "Sign in failed.");
+        }
       }
 
       const sessionUser = await getBetterAuthSessionUser();

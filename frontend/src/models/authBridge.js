@@ -49,6 +49,29 @@ const AuthBridge = {
         message: error.message,
       }));
   },
+  legacyLogin: async ({ username, password }) => {
+    return fetch(`${API_BASE}/auth/bridge/legacy-login`, {
+      method: "POST",
+      cache: "no-store",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, password }),
+    })
+      .then(async (res) => {
+        const payload = await res.json().catch(() => ({}));
+        return {
+          valid: res.ok,
+          ...payload,
+          message: payload?.message || (!res.ok ? `Login failed (${res.status})` : null),
+        };
+      })
+      .catch((error) => ({
+        valid: false,
+        message: error.message,
+      }));
+  },
 };
 
 export default AuthBridge;
