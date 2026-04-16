@@ -9,7 +9,7 @@ export default function useLoginMode() {
     const user = !!window.localStorage.getItem(AUTH_USER);
     const token = !!window.localStorage.getItem(AUTH_TOKEN);
     let _mode = null;
-    if (user && token) _mode = "multi";
+    if (user) _mode = "multi";
     if (!user && token) _mode = "single";
     setMode(_mode);
   }, [window]);
