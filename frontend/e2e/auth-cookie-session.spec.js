@@ -42,6 +42,66 @@ test("cookie-only better auth session works without local auth token", async ({
     });
   });
 
+  await page.route("**/api/workspaces", async (route) => {
+    await route.fulfill({
+      json: {
+        workspaces: [
+          {
+            id: 1,
+            name: "Workspace",
+            slug: "workspace",
+          },
+        ],
+      },
+    });
+  });
+
+  await page.route("**/api/system/custom-footer-icons", async (route) => {
+    await route.fulfill({ json: { customFooterIcons: [] } });
+  });
+
+  await page.route("**/api/system/support-email", async (route) => {
+    await route.fulfill({ json: { email: null } });
+  });
+
+  await page.route("**/api/system/logo?**", async (route) => {
+    await route.fulfill({ status: 204, body: "" });
+  });
+
+  await page.route("**/api/system/pfp/2", async (route) => {
+    await route.fulfill({ status: 204, body: "" });
+  });
+
+  await page.route("**/api/workspace/workspace/threads", async (route) => {
+    await route.fulfill({ json: { threads: [] } });
+  });
+
+  await page.route(
+    "**/api/workspace/workspace/suggested-messages",
+    async (route) => {
+      await route.fulfill({ json: { suggestedMessages: [] } });
+    }
+  );
+
+  await page.route("**/api/workspace/workspace/pfp", async (route) => {
+    await route.fulfill({ status: 204, body: "" });
+  });
+
+  await page.route("**/api/workspace/workspace/parsed-files**", async (route) => {
+    await route.fulfill({
+      json: {
+        files: [],
+        contextWindow: 128000,
+        currentContextTokenCount: 0,
+      },
+    });
+  });
+
   await page.goto("/");
   await expect(page).not.toHaveURL(/\/login/);
+  await expect(
+    page.locator(
+      'xpath=//div[contains(@class,"absolute") and contains(@class,"z-40")]/button'
+    )
+  ).toBeVisible();
 });
