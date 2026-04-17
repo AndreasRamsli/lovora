@@ -1,12 +1,15 @@
 import { describe, expect, test } from "@jest/globals";
-import {
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const {
   PRICING_BUTTON_VARIANTS,
   PRICING_DIVIDER_CLASS,
   PRICING_SWITCH_VARIANTS,
   PricingButton,
   PricingDivider,
   PricingSwitch,
-} from "./pricingPrimitives.jsx";
+} = require("./pricingPrimitives.jsx");
 
 describe("Lovora pricing primitives contract", () => {
   test("exports the pricing wrapper primitives with component-like surfaces", () => {

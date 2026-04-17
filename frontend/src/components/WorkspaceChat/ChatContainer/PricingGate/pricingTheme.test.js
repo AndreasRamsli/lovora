@@ -12,14 +12,18 @@ describe("Lovora pricing theme contract", () => {
     expect(PRICING_LAYOUT_CLASSES.card).toContain("h-[25rem]");
   });
 
-  test("keeps semantic neutral tokens free of caller-level emergency overrides", () => {
+  test("keeps semantic primitive handles free of caller-level class tokens", () => {
     const darkTheme = getPricingTheme("dark");
     const lightTheme = getPricingTheme("light");
 
-    expect(darkTheme.neutralButton).not.toContain("!bg");
-    expect(lightTheme.neutralButton).not.toContain("!bg");
-    expect(darkTheme.neutralToggle).toContain("bg-[#d8dfe8]/18");
-    expect(darkTheme.divider).toContain("bg-[#c7ced8]/12");
+    expect(darkTheme.themeName).toBe("dark");
+    expect(lightTheme.themeName).toBe("light");
+    expect(darkTheme.neutralButton).toBe("neutral");
+    expect(darkTheme.featuredButton).toBe("featured");
+    expect(lightTheme.neutralToggle).toBe("neutral");
+    expect(lightTheme.featuredToggle).toBe("featured");
+    expect(darkTheme.divider).toBe("dark");
+    expect(lightTheme.divider).toBe("light");
   });
 
   test("keeps the pricing toggle geometry roomy enough", () => {
