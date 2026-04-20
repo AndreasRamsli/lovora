@@ -1,50 +1,130 @@
 import { describe, expect, test } from "@jest/globals";
+import fs from "node:fs";
 import {
   PRICING_LADDER,
   STUDENT_CALLOUT,
   TEAM_CONTACT_HREF,
-  formatPriceKr,
+  getDisplayPriceLabel,
   getPrimaryAction,
 } from "./pricingCatalog.js";
 
 describe("Lovora pricing catalog", () => {
-  test("formats card prices with trailing kr", () => {
-    expect(formatPriceKr("149")).toBe("149 kr");
-    expect(formatPriceKr("5,390")).toBe("5,390 kr");
-    expect(formatPriceKr("249")).toBe("249 kr");
+  test("defines compact visual roles for soft and featured cards", () => {
+    expect(
+      PRICING_LADDER.map(({ slug, surfaceTone, supportsAnnualBilling }) => ({
+        slug,
+        surfaceTone,
+        supportsAnnualBilling,
+      }))
+    ).toEqual([
+      {
+        slug: "personal-entry",
+        surfaceTone: "soft",
+        supportsAnnualBilling: true,
+      },
+      {
+        slug: "serious-individual",
+        surfaceTone: "featured",
+        supportsAnnualBilling: true,
+      },
+      {
+        slug: "student-plan",
+        surfaceTone: "soft",
+        supportsAnnualBilling: false,
+      },
+    ]);
   });
 
-  test("keeps the month pass inside Personal Entry", () => {
+  test("uses personal, pro, and student in the top row and moves team into the bottom bar", () => {
+    expect(PRICING_LADDER.map(({ slug }) => slug)).toEqual([
+      "personal-entry",
+      "serious-individual",
+      "student-plan",
+    ]);
+
+    expect(
+      PRICING_LADDER.map(({ subtitle }) => subtitle.split(/\s+/).length)
+    ).toEqual([3, 3, 3]);
+
     const entry = PRICING_LADDER.find((tier) => tier.slug === "personal-entry");
+    expect(entry.secondaryOffer).toBeUndefined();
 
-    expect(entry.secondaryOffer).toMatchObject({
-      label: "249 kr / 30 days",
-      planKey: "month_pass",
-      kind: "checkout",
-    });
-  });
-
-  test("moves student pricing into a separate callout", () => {
     expect(STUDENT_CALLOUT).toMatchObject({
-      title: "Student plan",
-      priceLabel: "From 149 kr / month",
-      planKey: "student_exam_monthly",
+      title: "Professional / Team",
+      ctaLabel: "Contact sales",
     });
   });
 
-  test("keeps Serious Individual highlighted and Team sales led", () => {
+  test("shows the new standard recurring prices", () => {
+    const entry = PRICING_LADDER.find((tier) => tier.slug === "personal-entry");
     const serious = PRICING_LADDER.find(
       (tier) => tier.slug === "serious-individual"
     );
-    const team = PRICING_LADDER.find(
-      (tier) => tier.slug === "professional-team"
+    const student = PRICING_LADDER.find((tier) => tier.slug === "student-plan");
+
+    expect(entry.priceLabel).toBe("249 kr / month");
+    expect(serious.priceLabel).toBe("499 kr / month");
+    expect(student.priceLabel).toBe("From 149 kr / month");
+  });
+
+  test("switches recurring cards to 15 percent annual pricing and annual plan keys", () => {
+    const entry = PRICING_LADDER.find((tier) => tier.slug === "personal-entry");
+    const serious = PRICING_LADDER.find(
+      (tier) => tier.slug === "serious-individual"
     );
 
-    expect(serious.highlighted).toBe(true);
-    expect(getPrimaryAction(team)).toEqual({
+    expect(getDisplayPriceLabel(entry, true)).toBe("2,540 kr / year");
+    expect(getDisplayPriceLabel(serious, true)).toBe("5,090 kr / year");
+    expect(getPrimaryAction(entry, true)).toMatchObject({
+      kind: "checkout",
+      planKey: "personal_entry_annual",
+    });
+    expect(getPrimaryAction(serious, true)).toMatchObject({
+      kind: "checkout",
+      planKey: "monthly_subscription_annual",
+    });
+  });
+
+  test("removes the month pass badge from Personal Entry", () => {
+    const entry = PRICING_LADDER.find((tier) => tier.slug === "personal-entry");
+
+    expect(entry.secondaryOffer).toBeUndefined();
+  });
+
+  test("uses the bottom bar for team contact", () => {
+    expect(STUDENT_CALLOUT).toMatchObject({
+      title: "Professional / Team",
+      priceLabel: "999 kr / month",
+      ctaLabel: "Contact sales",
+    });
+  });
+
+  test("keeps Serious Individual highlighted and routes the bottom bar to sales", () => {
+    const serious = PRICING_LADDER.find(
+      (tier) => tier.slug === "serious-individual"
+    );
+
+    expect(serious.surfaceTone).toBe("featured");
+    expect(serious.badge).toBeUndefined();
+    expect(STUDENT_CALLOUT.action).toEqual({
       kind: "link",
       href: TEAM_CONTACT_HREF,
       label: "Contact sales",
     });
+  });
+});
+
+describe("Pricing gate component structure", () => {
+  test("uses feature-scoped pricing primitives instead of raw Button and Switch overrides", () => {
+    const source = fs.readFileSync(
+      new URL("./index.jsx", import.meta.url),
+      "utf8"
+    );
+
+    expect(source).toMatch(
+      /import\s+\{\s*PricingButton,\s*PricingDivider,\s*PricingSwitch,?\s*\}\s+from\s+"\.\/pricingPrimitives"/
+    );
+    expect(source).not.toContain("theme.neutralButton");
+    expect(source).not.toContain("theme.featuredToggle");
   });
 });
