@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 const PRICING_BUTTON_BASE_CLASS =
-  "rounded-full text-[0.88rem] font-semibold shadow-none";
+  "h-9 rounded-full text-[0.88rem] font-semibold shadow-none";
 
 const PRICING_SWITCH_BASE_CLASS =
   "h-[1.5rem] w-11 border-0 [&>span]:h-[1.15rem] [&>span]:w-[1.15rem] [&>span]:translate-x-[2px] [&>span]:bg-white [&>span]:shadow-none data-[state=checked]:[&>span]:translate-x-[20px]";
