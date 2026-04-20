@@ -14,7 +14,7 @@ const PRICING_DIVIDER_BASE_CLASS = "relative z-10 h-px";
 
 export const PRICING_BUTTON_VARIANTS = {
   dark: {
-    neutral: "bg-[#d8dfe8]/18 text-[#f6f8fb] hover:bg-[#d8dfe8]/28",
+    neutral: "bg-[#d8dfe8]/[.18] text-[#f6f8fb] hover:bg-[#d8dfe8]/[.28]",
     featured: "bg-[#7bb2ff] text-[#08111f] hover:bg-[#6aa9ff]",
   },
   light: {
@@ -27,9 +27,9 @@ export const PRICING_BUTTON_VARIANTS = {
 export const PRICING_SWITCH_VARIANTS = {
   dark: {
     neutral:
-      "bg-[#d8dfe8]/18 data-[state=checked]:bg-[#7bb2ff] data-[state=unchecked]:bg-[#d8dfe8]/12",
+      "bg-[#d8dfe8]/[.18] data-[state=checked]:bg-[#7bb2ff] data-[state=unchecked]:bg-[#d8dfe8]/[.12]",
     featured:
-      "bg-[#7bb2ff]/18 data-[state=checked]:bg-[#7bb2ff] data-[state=unchecked]:bg-white/[0.12]",
+      "bg-[#7bb2ff]/[.18] data-[state=checked]:bg-[#7bb2ff] data-[state=unchecked]:bg-white/[0.12]",
   },
   light: {
     neutral:
@@ -40,7 +40,7 @@ export const PRICING_SWITCH_VARIANTS = {
 };
 
 export const PRICING_DIVIDER_CLASS = {
-  dark: "bg-[#c7ced8]/12",
+  dark: "bg-[#c7ced8]/[.12]",
   light: "bg-[rgba(7,16,55,0.1)]",
 };
 
@@ -69,6 +69,8 @@ export const PricingButton = ({
   ...props
 }) =>
   React.createElement(Button, {
+    variant: "unstyled",
+    size: "unstyled",
     className: cn(
       PRICING_BUTTON_BASE_CLASS,
       resolveButtonVariant(themeName, tone),
@@ -84,6 +86,7 @@ export const PricingSwitch = ({
   ...props
 }) =>
   React.createElement(Switch, {
+    unstyled: true,
     className: cn(
       PRICING_SWITCH_BASE_CLASS,
       resolveSwitchVariant(themeName, tone),
@@ -94,6 +97,7 @@ export const PricingSwitch = ({
 
 export const PricingDivider = ({ themeName = "dark", className, ...props }) =>
   React.createElement(Separator, {
+    unstyled: true,
     className: cn(
       PRICING_DIVIDER_BASE_CLASS,
       resolveDividerVariant(themeName),

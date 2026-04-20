@@ -14,13 +14,13 @@ const DARK_THEME = {
   themeName: "dark",
   overlay: "bg-[#040918]/82",
   closeButton:
-    "border border-white/12 bg-black/30 text-white/80 hover:bg-white/10 hover:text-white",
+    "border border-white/[.12] bg-black/30 text-white/80 hover:bg-white/10 hover:text-white",
   neutralCard:
-    "border-[#c7ced8]/28 bg-[linear-gradient(180deg,#0f1115_0%,#151921_100%)] shadow-[0_30px_70px_-60px_rgba(15,23,42,0.95)]",
+    "border-[#c7ced8]/[.28] bg-[linear-gradient(180deg,#0f1115_0%,#151921_100%)] shadow-[0_30px_70px_-60px_rgba(15,23,42,0.95)]",
   featuredCard:
     "border-[#2f4f84] bg-[linear-gradient(180deg,#091224_0%,#102549_58%,#17386f_100%)] shadow-[0_30px_80px_-60px_rgba(56,118,212,0.9)]",
   calloutCard:
-    "border-[#c7ced8]/28 bg-[linear-gradient(180deg,#141922_0%,#1b2230_100%)]",
+    "border-[#c7ced8]/[.28] bg-[linear-gradient(180deg,#141922_0%,#1b2230_100%)]",
   title: "text-[#f5f7fb]",
   mutedText: "text-[#99a3b3]",
   bodyText: "text-[#d5dbe4]",
