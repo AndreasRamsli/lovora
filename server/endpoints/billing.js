@@ -62,6 +62,22 @@ function periodEndFromUnixTimestamp(unixTimestamp = null) {
   return new Date(unixTimestamp * 1000);
 }
 
+function resolveSubscriptionPeriodEnd(subscription = {}) {
+  const topLevelPeriodEnd = periodEndFromUnixTimestamp(
+    subscription.current_period_end
+  );
+  if (topLevelPeriodEnd) return topLevelPeriodEnd;
+
+  const itemPeriodEnds = Array.isArray(subscription?.items?.data)
+    ? subscription.items.data
+        .map((item) => periodEndFromUnixTimestamp(item?.current_period_end))
+        .filter(Boolean)
+        .sort((left, right) => right.getTime() - left.getTime())
+    : [];
+
+  return itemPeriodEnds[0] ?? null;
+}
+
 async function findWebhookUser({
   metadata = {},
   stripeCustomerId = null,
@@ -148,9 +164,7 @@ async function handleStripeSubscriptionEvent(subscription = {}) {
       subscription.metadata?.planKey ||
       user.billingPlan ||
       PLAN_KEYS.monthlySubscription,
-    billingCurrentPeriodEnd: periodEndFromUnixTimestamp(
-      subscription.current_period_end
-    ),
+    billingCurrentPeriodEnd: resolveSubscriptionPeriodEnd(subscription),
   };
 
   if (subscription.status === "canceled") {
@@ -325,4 +339,4 @@ function billingEndpoints(app) {
   });
 }
 
-module.exports = { billingEndpoints };
+module.exports = { billingEndpoints, resolveSubscriptionPeriodEnd };

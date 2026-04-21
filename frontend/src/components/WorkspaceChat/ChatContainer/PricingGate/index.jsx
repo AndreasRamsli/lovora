@@ -297,6 +297,8 @@ function BottomCallout({ callout, theme, themeName, isLoading, onCheckout }) {
 
 export default function PricingGate({
   workspaceSlug,
+  successUrl = null,
+  cancelUrl = null,
   onClose,
   centered = false,
 }) {
@@ -313,6 +315,8 @@ export default function PricingGate({
     const result = await Billing.createCheckoutSession({
       planKey,
       workspaceSlug,
+      successUrl,
+      cancelUrl,
     });
     setSubmittingPlan(null);
 
