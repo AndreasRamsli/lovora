@@ -24,9 +24,20 @@ function hasValidAbsoluteUrl(url = "") {
   }
 }
 
+function getRequestOrigin(request = {}) {
+  if (!request) return null;
+
+  if (typeof request.get === "function") {
+    const headerOrigin = request.get("origin");
+    if (headerOrigin) return headerOrigin;
+  }
+
+  return request.headers?.origin || null;
+}
+
 function getCheckoutBaseUrl(request = {}, requestBody = {}) {
   const candidateBaseUrl =
-    request.origin ||
+    getRequestOrigin(request) ||
     request.appBaseUrl ||
     requestBody.origin ||
     requestBody.appBaseUrl ||
@@ -374,6 +385,7 @@ function billingEndpoints(app) {
 module.exports = {
   billingEndpoints,
   resolveSubscriptionPeriodEnd,
+  getRequestOrigin,
   getCheckoutBaseUrl,
   resolveSafeCheckoutUrl,
   getCheckoutRedirectUrls,

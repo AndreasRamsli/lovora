@@ -133,4 +133,37 @@ describe("billing checkout redirects", () => {
       stripeCustomerId: "cus_123",
     });
   });
+
+  test("derives the checkout base URL from the Origin header when the env base is unset", async () => {
+    delete process.env.BILLING_APP_BASE_URL;
+
+    const app = express();
+    app.use(express.json());
+    app.use((request, response, next) => {
+      response.locals.user = { id: 8, username: "anna", billingPlan: "free" };
+      next();
+    });
+    billingEndpoints(app);
+
+    const response = await request(app)
+      .post("/billing/checkout-session")
+      .set("Origin", "https://app.lovora.no")
+      .send({
+        planKey: "monthly_subscription_annual",
+        workspaceSlug: "arbeidsrett",
+        successUrl: "https://evil.example/return",
+        cancelUrl: "https://evil.example/cancel",
+      });
+
+    expect(response.status).toBe(200);
+    const stripeClient = getStripeClient.mock.results[0].value;
+    expect(stripeClient.checkout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success_url:
+          "https://app.lovora.no/workspace/arbeidsrett?billing=success",
+        cancel_url:
+          "https://app.lovora.no/workspace/arbeidsrett?billing=cancel",
+      })
+    );
+  });
 });
