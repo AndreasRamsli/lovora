@@ -1,92 +1,114 @@
 export const TEAM_CONTACT_HREF = "mailto:team@mintplexlabs.com";
 
-export function formatPriceKr(value) {
-  return `${value} kr`;
-}
-
 export const PRICING_LADDER = [
   {
     slug: "personal-entry",
     name: "Personal Entry",
-    subtitle: "For students, private individuals, and light legal work",
-    priceLabel: "149 kr / month",
-    highlighted: false,
-    planKey: "personal_entry_monthly",
+    subtitle: "Light legal help",
+    priceLabel: "249 kr / month",
+    annualPriceLabel: "2,540 kr / year",
+    surfaceTone: "soft",
+    supportsAnnualBilling: true,
+    utilityLabel: "Annual",
     primaryAction: {
       kind: "checkout",
       label: "Start with Entry",
       planKey: "personal_entry_monthly",
     },
-    secondaryOffer: {
-      label: "249 kr / 30 days",
-      planKey: "month_pass",
+    annualAction: {
       kind: "checkout",
+      label: "Start with Entry",
+      planKey: "personal_entry_annual",
     },
-    note: "Student plan available with verification",
+    note: "For first-pass research",
     features: [
-      "Ask Lovora legal questions in Norwegian",
-      "Search across your uploaded legal material",
-      "300 queries / month",
-      "50 document uploads / month",
-      "Save time on first-pass legal research",
+      { text: "Ask legal questions", icon: "scale" },
+      { text: "Search uploaded material", icon: "search" },
+      { text: "300 monthly queries", icon: "message-square" },
+      { text: "50 document uploads", icon: "file-text" },
+      { text: "Fast answer drafts", icon: "clock-3" },
     ],
   },
   {
     slug: "serious-individual",
     name: "Serious Individual",
-    subtitle: "For solo lawyers and professionals who rely on Lovora weekly",
-    priceLabel: "599 kr / month",
-    annualPriceLabel: "5,390 kr / year",
-    highlighted: true,
-    planKey: "monthly_subscription",
-    badge: "Most popular",
+    subtitle: "Weekly professional work",
+    priceLabel: "499 kr / month",
+    annualPriceLabel: "5,090 kr / year",
+    surfaceTone: "featured",
+    supportsAnnualBilling: true,
+    utilityLabel: "Annual",
     primaryAction: {
       kind: "checkout",
       label: "Start with Serious Individual",
       planKey: "monthly_subscription",
     },
+    annualAction: {
+      kind: "checkout",
+      label: "Start with Serious Individual",
+      planKey: "monthly_subscription_annual",
+    },
+    note: "For repeat legal work",
     features: [
-      "Everything in Entry",
-      "Unlimited queries",
-      "500 document uploads / month",
-      "Priority support",
-      "Export and reusable outputs",
-      "Faster workflow for real case preparation",
+      { text: "Everything in Entry", icon: "layers-3" },
+      { text: "Unlimited queries", icon: "infinity" },
+      { text: "500 uploads monthly", icon: "upload" },
+      { text: "Priority support", icon: "shield-check" },
+      { text: "Export reusable outputs", icon: "files" },
+      { text: "Faster case prep", icon: "briefcase" },
     ],
   },
   {
-    slug: "professional-team",
-    name: "Professional / Team",
-    subtitle: "For small firms and legal teams",
-    priceLabel: "999 kr / month",
-    highlighted: false,
+    slug: "student-plan",
+    name: "Student Plan",
+    subtitle: "Exam season access",
+    priceLabel: "From 149 kr / month",
+    surfaceTone: "soft",
+    supportsAnnualBilling: false,
+    utilityLabel: "Verified access",
     primaryAction: {
-      kind: "link",
-      label: "Contact sales",
-      href: TEAM_CONTACT_HREF,
+      kind: "checkout",
+      label: "Student access",
+      planKey: "student_exam_monthly",
     },
-    note: "+399 kr per extra user • 899 kr / user / month for 3+ users",
+    note: "Requires student verification",
     features: [
-      "Everything in Serious Individual",
-      "Shared team workspace",
-      "Shared legal knowledge library",
-      "Admin and seat management",
-      "Usage visibility for team leads",
-      "SSO (coming soon)",
-      "Usage analytics (coming soon)",
+      { text: "Exam-window pricing", icon: "graduation-cap" },
+      { text: "Verification required", icon: "badge-check" },
+      { text: "Guided legal study", icon: "book-open" },
+      { text: "Reference-ready notes", icon: "pencil" },
+      { text: "Norwegian answers", icon: "message-square" },
     ],
   },
 ];
 
 export const STUDENT_CALLOUT = {
-  title: "Student plan",
-  priceLabel: "From 149 kr / month",
-  supportingText:
-    "Requires student verification and follows exam-window availability.",
-  ctaLabel: "Student access",
-  planKey: "student_exam_monthly",
+  title: "Professional / Team",
+  subtitle: "Shared team workflows",
+  priceLabel: "999 kr / month",
+  supportingText: "+399 kr per extra user • 899 kr / user / month for 3+ users",
+  ctaLabel: "Contact sales",
+  action: {
+    kind: "link",
+    label: "Contact sales",
+    href: TEAM_CONTACT_HREF,
+  },
+  features: [
+    { text: "Shared workspace", icon: "users" },
+    { text: "Knowledge library", icon: "book-open" },
+    { text: "Seat management", icon: "settings" },
+    { text: "Usage visibility", icon: "bar-chart-3" },
+  ],
 };
 
-export function getPrimaryAction(tier) {
+export function getDisplayPriceLabel(tier, isAnnual = false) {
+  if (!tier) return "";
+  if (isAnnual && tier.annualPriceLabel) return tier.annualPriceLabel;
+  return tier.priceLabel || "";
+}
+
+export function getPrimaryAction(tier, isAnnual = false) {
+  if (!tier) return null;
+  if (isAnnual && tier.annualAction) return tier.annualAction;
   return tier.primaryAction;
 }

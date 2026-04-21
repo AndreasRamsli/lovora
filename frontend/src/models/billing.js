@@ -1,5 +1,5 @@
-import { API_BASE } from "@/utils/constants";
-import { baseHeaders } from "@/utils/request";
+import { API_BASE } from "../utils/constants";
+import { baseHeaders } from "../utils/request";
 
 const Billing = {
   status: async function () {
@@ -19,11 +19,21 @@ const Billing = {
       .catch((e) => ({ success: false, error: e.message }));
   },
 
-  createCheckoutSession: async function ({ planKey, workspaceSlug }) {
+  createCheckoutSession: async function ({
+    planKey,
+    workspaceSlug,
+    successUrl = null,
+    cancelUrl = null,
+  }) {
     return await fetch(`${API_BASE}/billing/checkout-session`, {
       method: "POST",
       headers: baseHeaders(),
-      body: JSON.stringify({ planKey, workspaceSlug }),
+      body: JSON.stringify({
+        planKey,
+        workspaceSlug,
+        successUrl,
+        cancelUrl,
+      }),
     })
       .then(async (res) => {
         const payload = await res.json().catch(() => ({}));
