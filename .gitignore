@@ -12,9 +12,11 @@ yarn.lock
 .idea
 .local-storage/
 .local-dev/
+graphify-out/
 frontend/.env
 server/.env.development
 collector/.env.development
 .gstack/
 playwright-report/
 test-results/
+tmp-*.png
