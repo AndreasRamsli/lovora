@@ -82,6 +82,8 @@ XAI_LLM_MODEL_PREF='grok-4.20-reasoning'
 EMBEDDING_ENGINE='voyageai'
 VOYAGEAI_API_KEY=<real-voyage-api-key>
 EMBEDDING_MODEL_PREF='voyage-law-2'
+FREE_MESSAGE_LIMIT=1
+FREE_MESSAGE_WINDOW_HOURS=24
 ```
 
 Generate secrets locally with a password manager or `openssl`:
@@ -103,6 +105,20 @@ set -a
 . ./anythingllm.env
 set +a
 ```
+
+If you change the alpha quota on the live host, edit `anythingllm.env` there, update
+`FREE_MESSAGE_LIMIT` and `FREE_MESSAGE_WINDOW_HOURS`, and then rerun the rollout:
+
+```bash
+cd /srv/lovora/lovora/deploy/hetzner
+set -a
+. ./anythingllm.env
+set +a
+bash scripts/rollout.sh
+```
+
+The rollout script re-runs preflight, brings the stack back up, and keeps the quota
+change active without any separate server-side edit step.
 
 ## 3. Point DNS
 
