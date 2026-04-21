@@ -1,4 +1,5 @@
 const PLAN_KEYS = {
+  personalEntryMonthly: "personal_entry_monthly",
   monthPass: "month_pass",
   monthlySubscription: "monthly_subscription",
   studentExam: "student_exam_monthly",
@@ -21,6 +22,12 @@ function isStudentExamWindowOpen(referenceDate = new Date()) {
 
 function getPlanCatalog() {
   return {
+    [PLAN_KEYS.personalEntryMonthly]: {
+      key: PLAN_KEYS.personalEntryMonthly,
+      billingPlan: PLAN_KEYS.personalEntryMonthly,
+      mode: "subscription",
+      priceId: process.env.STRIPE_PRICE_PERSONAL_ENTRY_MONTHLY ?? "",
+    },
     [PLAN_KEYS.monthPass]: {
       key: PLAN_KEYS.monthPass,
       billingPlan: PLAN_KEYS.monthPass,

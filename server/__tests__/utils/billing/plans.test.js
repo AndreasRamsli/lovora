@@ -2,11 +2,13 @@
 const {
   PLAN_KEYS,
   isStudentExamWindowOpen,
+  listResolvedCheckoutPlans,
   resolveCheckoutPlan,
 } = require("../../../utils/billing/plans");
 
 describe("billing plan resolution", () => {
   beforeEach(() => {
+    process.env.STRIPE_PRICE_PERSONAL_ENTRY_MONTHLY = "price_entry_monthly";
     process.env.STRIPE_PRICE_MONTH_PASS = "price_month_pass";
     process.env.STRIPE_PRICE_MONTHLY_SUBSCRIPTION = "price_monthly_sub";
     process.env.STRIPE_PRICE_STUDENT_EXAM_MONTHLY = "price_exam_sub";
@@ -15,11 +17,27 @@ describe("billing plan resolution", () => {
   });
 
   afterAll(() => {
+    delete process.env.STRIPE_PRICE_PERSONAL_ENTRY_MONTHLY;
     delete process.env.STRIPE_PRICE_MONTH_PASS;
     delete process.env.STRIPE_PRICE_MONTHLY_SUBSCRIPTION;
     delete process.env.STRIPE_PRICE_STUDENT_EXAM_MONTHLY;
     delete process.env.STUDENT_EXAM_PERIOD_START;
     delete process.env.STUDENT_EXAM_PERIOD_END;
+  });
+
+  test("resolves personal entry monthly as subscription", () => {
+    const plan = resolveCheckoutPlan(
+      PLAN_KEYS.personalEntryMonthly,
+      new Date("2026-04-14T12:00:00.000Z")
+    );
+
+    expect(plan).toMatchObject({
+      key: PLAN_KEYS.personalEntryMonthly,
+      mode: "subscription",
+      priceId: "price_entry_monthly",
+      available: true,
+      reason: null,
+    });
   });
 
   test("resolves month pass as one-time payment", () => {
@@ -50,6 +68,21 @@ describe("billing plan resolution", () => {
   test("student exam plan is available inside exam window", () => {
     expect(isStudentExamWindowOpen(new Date("2026-05-20T12:00:00.000Z"))).toBe(
       true
+    );
+  });
+
+  test("lists personal entry in the resolved checkout catalog", () => {
+    const plans = listResolvedCheckoutPlans(
+      new Date("2026-05-20T12:00:00.000Z")
+    );
+
+    expect(plans.map((plan) => plan.key)).toEqual(
+      expect.arrayContaining([
+        PLAN_KEYS.personalEntryMonthly,
+        PLAN_KEYS.monthPass,
+        PLAN_KEYS.monthlySubscription,
+        PLAN_KEYS.studentExam,
+      ])
     );
   });
 });
