@@ -24,25 +24,60 @@ function hasValidAbsoluteUrl(url = "") {
   }
 }
 
-function getCheckoutRedirectUrls(requestBody = {}) {
-  const workspaceSlug = String(requestBody.workspaceSlug || "").trim();
-  const appBaseUrl =
+function getCheckoutBaseUrl(request = {}, requestBody = {}) {
+  const candidateBaseUrl =
+    request.origin ||
+    request.appBaseUrl ||
     requestBody.origin ||
     requestBody.appBaseUrl ||
     process.env.BILLING_APP_BASE_URL ||
     null;
+
+  if (!candidateBaseUrl) return null;
+
+  try {
+    const parsedBaseUrl = new URL(candidateBaseUrl);
+    if (!hasValidAbsoluteUrl(parsedBaseUrl.toString())) return null;
+    return parsedBaseUrl.origin;
+  } catch {
+    return null;
+  }
+}
+
+function resolveSafeCheckoutUrl(candidateUrl, fallbackPath, baseUrl) {
+  if (!baseUrl) return null;
+
+  const safeBaseUrl = new URL(baseUrl);
+  const fallbackUrl = new URL(fallbackPath, safeBaseUrl).toString();
+
+  if (!candidateUrl) return fallbackUrl;
+
+  try {
+    const parsedCandidate = new URL(candidateUrl, safeBaseUrl);
+    if (parsedCandidate.origin !== safeBaseUrl.origin) return fallbackUrl;
+    return parsedCandidate.toString();
+  } catch {
+    return fallbackUrl;
+  }
+}
+
+function getCheckoutRedirectUrls(request = {}, requestBody = {}) {
+  const workspaceSlug = String(requestBody.workspaceSlug || "").trim();
+  const baseUrl = getCheckoutBaseUrl(request, requestBody);
   const defaultPath = workspaceSlug
     ? `/workspace/${workspaceSlug}`
     : "/settings/system/billing";
 
-  const successUrl =
-    requestBody.successUrl ||
-    process.env.STRIPE_CHECKOUT_SUCCESS_URL ||
-    (appBaseUrl ? `${appBaseUrl}${defaultPath}?billing=success` : null);
-  const cancelUrl =
-    requestBody.cancelUrl ||
-    process.env.STRIPE_CHECKOUT_CANCEL_URL ||
-    (appBaseUrl ? `${appBaseUrl}${defaultPath}?billing=cancel` : null);
+  const successUrl = resolveSafeCheckoutUrl(
+    requestBody.successUrl || process.env.STRIPE_CHECKOUT_SUCCESS_URL,
+    `${defaultPath}?billing=success`,
+    baseUrl
+  );
+  const cancelUrl = resolveSafeCheckoutUrl(
+    requestBody.cancelUrl || process.env.STRIPE_CHECKOUT_CANCEL_URL,
+    `${defaultPath}?billing=cancel`,
+    baseUrl
+  );
   return { successUrl, cancelUrl };
 }
 
@@ -234,17 +269,14 @@ function billingEndpoints(app) {
           return;
         }
 
-        const { successUrl, cancelUrl } = getCheckoutRedirectUrls({
-          ...body,
-          origin: request.headers.origin || null,
-        });
-        if (
-          !hasValidAbsoluteUrl(successUrl) ||
-          !hasValidAbsoluteUrl(cancelUrl)
-        ) {
+        const { successUrl, cancelUrl } = getCheckoutRedirectUrls(
+          request,
+          body
+        );
+        if (!successUrl || !cancelUrl) {
           response.status(400).json({
             error:
-              "A valid successUrl and cancelUrl are required (or configure STRIPE_CHECKOUT_SUCCESS_URL / STRIPE_CHECKOUT_CANCEL_URL).",
+              "A same-origin successUrl and cancelUrl are required (or configure BILLING_APP_BASE_URL / request.origin).",
           });
           return;
         }
@@ -339,4 +371,10 @@ function billingEndpoints(app) {
   });
 }
 
-module.exports = { billingEndpoints, resolveSubscriptionPeriodEnd };
+module.exports = {
+  billingEndpoints,
+  resolveSubscriptionPeriodEnd,
+  getCheckoutBaseUrl,
+  resolveSafeCheckoutUrl,
+  getCheckoutRedirectUrls,
+};

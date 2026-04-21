@@ -149,6 +149,7 @@ function PricingCard({
               tone={isFeatured ? "featured" : "neutral"}
               checked={showAnnualPrice}
               onCheckedChange={onAnnualChange}
+              aria-label={`${tier.name} annual billing`}
             />
           </div>
         ) : (
