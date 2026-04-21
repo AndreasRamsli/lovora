@@ -29,7 +29,7 @@ describe("Lovora pricing primitives contract", () => {
 
   test("locks the primitive button tokens for neutral and featured variants", () => {
     expect(source).toContain("export const PRICING_BUTTON_VARIANTS");
-    expect(source).toContain("bg-[#d8dfe8]/18");
+    expect(source).toContain("bg-[#d8dfe8]/[.18]");
     expect(source).not.toContain("!bg");
     expect(source).toContain("bg-[#7bb2ff]");
   });
@@ -37,12 +37,12 @@ describe("Lovora pricing primitives contract", () => {
   test("locks the primitive switch tokens for both themes", () => {
     expect(source).toContain("export const PRICING_SWITCH_VARIANTS");
     expect(source).toContain("data-[state=checked]:bg-[#7bb2ff]");
-    expect(source).toContain("bg-[#7bb2ff]/18");
+    expect(source).toContain("bg-[#7bb2ff]/[.18]");
   });
 
   test("locks the primitive divider tokens for both themes", () => {
     expect(source).toContain("export const PRICING_DIVIDER_CLASS");
-    expect(source).toContain("bg-[#c7ced8]/12");
+    expect(source).toContain("bg-[#c7ced8]/[.12]");
     expect(source).toContain("bg-[rgba(7,16,55,0.1)]");
   });
 });
