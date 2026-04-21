@@ -1,7 +1,9 @@
 const PLAN_KEYS = {
   personalEntryMonthly: "personal_entry_monthly",
+  personalEntryAnnual: "personal_entry_annual",
   monthPass: "month_pass",
   monthlySubscription: "monthly_subscription",
+  monthlySubscriptionAnnual: "monthly_subscription_annual",
   studentExam: "student_exam_monthly",
 };
 
@@ -28,6 +30,12 @@ function getPlanCatalog() {
       mode: "subscription",
       priceId: process.env.STRIPE_PRICE_PERSONAL_ENTRY_MONTHLY ?? "",
     },
+    [PLAN_KEYS.personalEntryAnnual]: {
+      key: PLAN_KEYS.personalEntryAnnual,
+      billingPlan: PLAN_KEYS.personalEntryAnnual,
+      mode: "subscription",
+      priceId: process.env.STRIPE_PRICE_PERSONAL_ENTRY_ANNUAL ?? "",
+    },
     [PLAN_KEYS.monthPass]: {
       key: PLAN_KEYS.monthPass,
       billingPlan: PLAN_KEYS.monthPass,
@@ -39,6 +47,12 @@ function getPlanCatalog() {
       billingPlan: PLAN_KEYS.monthlySubscription,
       mode: "subscription",
       priceId: process.env.STRIPE_PRICE_MONTHLY_SUBSCRIPTION ?? "",
+    },
+    [PLAN_KEYS.monthlySubscriptionAnnual]: {
+      key: PLAN_KEYS.monthlySubscriptionAnnual,
+      billingPlan: PLAN_KEYS.monthlySubscriptionAnnual,
+      mode: "subscription",
+      priceId: process.env.STRIPE_PRICE_MONTHLY_SUBSCRIPTION_ANNUAL ?? "",
     },
     [PLAN_KEYS.studentExam]: {
       key: PLAN_KEYS.studentExam,
