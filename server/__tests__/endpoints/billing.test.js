@@ -166,4 +166,31 @@ describe("billing checkout redirects", () => {
       })
     );
   });
+
+  test("rejects body-provided origins when no trusted checkout base is available", async () => {
+    delete process.env.BILLING_APP_BASE_URL;
+
+    const app = express();
+    app.use(express.json());
+    app.use((request, response, next) => {
+      response.locals.user = { id: 9, username: "anna", billingPlan: "free" };
+      next();
+    });
+    billingEndpoints(app);
+
+    const response = await request(app).post("/billing/checkout-session").send({
+      planKey: "personal_entry_annual",
+      workspaceSlug: "arbeidsrett",
+      origin: "https://evil.example",
+      successUrl: "https://evil.example/return",
+      cancelUrl: "https://evil.example/cancel",
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject({
+      error:
+        "A same-origin successUrl and cancelUrl are required (or configure BILLING_APP_BASE_URL / request.origin).",
+    });
+    expect(getStripeClient).not.toHaveBeenCalled();
+  });
 });

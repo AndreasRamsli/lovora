@@ -39,8 +39,6 @@ function getCheckoutBaseUrl(request = {}, requestBody = {}) {
   const candidateBaseUrl =
     getRequestOrigin(request) ||
     request.appBaseUrl ||
-    requestBody.origin ||
-    requestBody.appBaseUrl ||
     process.env.BILLING_APP_BASE_URL ||
     null;
 
