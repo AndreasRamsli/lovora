@@ -371,6 +371,28 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
   const isEmpty =
     chatHistory.length === 0 && !sessionStorage.getItem(PENDING_HOME_MESSAGE);
 
+  function renderComposer(centered = false) {
+    if (showPricingGate) {
+      return (
+        <PricingGate
+          workspaceSlug={workspace.slug}
+          onClose={() => setShowPricingGate(false)}
+          centered={centered}
+        />
+      );
+    }
+
+    return (
+      <PromptInput
+        submit={handleSubmit}
+        isStreaming={loadingResponse}
+        sendCommand={sendCommand}
+        attachments={files}
+        centered={centered}
+      />
+    );
+  }
+
   if (isEmpty) {
     return (
       <div
@@ -386,21 +408,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
               <h1 className="text-white text-xl md:text-2xl mb-11 text-center">
                 {t("main-page.greeting")}
               </h1>
-              {showPricingGate ? (
-                <PricingGate
-                  workspaceSlug={workspace.slug}
-                  onClose={() => setShowPricingGate(false)}
-                  centered={true}
-                />
-              ) : (
-                <PromptInput
-                  submit={handleSubmit}
-                  isStreaming={loadingResponse}
-                  sendCommand={sendCommand}
-                  attachments={files}
-                  centered={true}
-                />
-              )}
+              {renderComposer(true)}
               <QuickActions
                 hasAvailableWorkspace={!!workspace}
                 onCreateAgent={() => navigate(paths.settings.agentSkills())}
@@ -451,20 +459,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
                     regenerateAssistantMessage={regenerateAssistantMessage}
                   />
                 </MetricsProvider>
-                {showPricingGate ? (
-                  <PricingGate
-                    workspaceSlug={workspace.slug}
-                    onClose={() => setShowPricingGate(false)}
-                  />
-                ) : (
-                  <PromptInput
-                    submit={handleSubmit}
-                    isStreaming={loadingResponse}
-                    sendCommand={sendCommand}
-                    attachments={files}
-                    centered={false}
-                  />
-                )}
+                {renderComposer(false)}
               </div>
             </div>
           </DnDFileUploaderWrapper>
