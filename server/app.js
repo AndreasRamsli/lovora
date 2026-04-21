@@ -32,11 +32,11 @@ const { webPushEndpoints } = require("./endpoints/webPush");
 const { billingEndpoints } = require("./endpoints/billing");
 const { betterAuthBridgeEndpoints } = require("./endpoints/betterAuthBridge");
 const { httpLogger } = require("./middleware/httpLogger");
+const isBetterAuthBridgeRequest = require("./utils/auth/isBetterAuthBridgeRequest");
 const { sendReadinessResponse } = require("./utils/moderation/schemaReadiness");
 
 const FILE_LIMIT = "3GB";
 const STRIPE_WEBHOOK_PATH = "/api/billing/stripe/webhook";
-const BETTER_AUTH_BRIDGE_PATH_PREFIX = "/api/auth/bridge/";
 let betterAuthNodeHandlerPromise = null;
 
 async function getBetterAuthNodeHandler() {
@@ -67,7 +67,7 @@ function createApp({ enableWebSockets = true } = {}) {
 
   app.use(cors({ origin: true }));
   app.all("/api/auth/*", async (request, response, next) => {
-    if (request.path?.startsWith(BETTER_AUTH_BRIDGE_PATH_PREFIX)) {
+    if (isBetterAuthBridgeRequest(request)) {
       return next();
     }
 

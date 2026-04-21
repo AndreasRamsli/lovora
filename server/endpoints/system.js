@@ -20,6 +20,9 @@ const { validatedRequest } = require("../utils/middleware/validatedRequest");
 const fs = require("fs");
 const path = require("path");
 const {
+  ensureDefaultWorkspaceMembership,
+} = require("../utils/auth/defaultWorkspaceMembership");
+const {
   getDefaultFilename,
   determineLogoFilepath,
   fetchLogo,
@@ -71,6 +74,33 @@ function setNoStore(response) {
   response.set("Pragma", "no-cache");
   response.set("Expires", "0");
   response.set("Surrogate-Control", "no-store");
+}
+
+async function rollbackMultiUserEnablement({
+  createdLegacyUserId = null,
+  migratedBrowserExtensionKeysUserId = null,
+} = {}) {
+  if (migratedBrowserExtensionKeysUserId) {
+    const restored = await BrowserExtensionApiKey.restoreSharedKeysToSingleUser(
+      Number(migratedBrowserExtensionKeysUserId)
+    );
+    if (!restored) {
+      throw new Error(
+        "Failed to restore shared browser-extension keys during rollback."
+      );
+    }
+  }
+
+  if (createdLegacyUserId) {
+    const deleted = await User.delete({ id: Number(createdLegacyUserId) });
+    if (!deleted) {
+      throw new Error("Failed to delete bootstrap admin during rollback.");
+    }
+  }
+
+  await SystemSettings._updateSettings({
+    multi_user_mode: false,
+  });
 }
 
 function systemEndpoints(app) {
@@ -609,6 +639,9 @@ function systemEndpoints(app) {
     "/system/enable-multi-user",
     [validatedRequest],
     async (request, response) => {
+      let createdLegacyUserId = null;
+      let migratedBrowserExtensionKeysUserId = null;
+
       try {
         if (response.locals.multiUserMode) {
           response.status(200).json({
@@ -632,11 +665,25 @@ function systemEndpoints(app) {
           });
           return;
         }
+        createdLegacyUserId = user.id;
+
+        const createdUser = await User._get({ id: user.id });
+        if (!createdUser) {
+          throw new Error("Failed to reload created admin user.");
+        }
+
+        await ensureDefaultWorkspaceMembership(createdUser);
 
         await SystemSettings._updateSettings({
           multi_user_mode: true,
         });
-        await BrowserExtensionApiKey.migrateApiKeysToMultiUser(user.id);
+        const migratedKeys = await BrowserExtensionApiKey.migrateApiKeysToMultiUser(
+          user.id
+        );
+        if (!migratedKeys) {
+          throw new Error("Failed to migrate shared browser-extension keys.");
+        }
+        migratedBrowserExtensionKeysUserId = user.id;
 
         await updateENV(
           {
@@ -650,11 +697,18 @@ function systemEndpoints(app) {
         await EventLogs.logEvent("multi_user_mode_enabled", {}, user?.id);
         response.status(200).json({ success: !!user, error });
       } catch (e) {
-        await User.delete({});
-        await SystemSettings._updateSettings({
-          multi_user_mode: false,
-        });
-
+        try {
+          await rollbackMultiUserEnablement({
+            createdLegacyUserId,
+            migratedBrowserExtensionKeysUserId,
+          });
+        } catch (rollbackError) {
+          console.error(rollbackError.message, rollbackError);
+          return response.status(500).json({
+            success: false,
+            error: rollbackError.message,
+          });
+        }
         console.error(e.message, e);
         response.sendStatus(500).end();
       }

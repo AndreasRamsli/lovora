@@ -8,7 +8,7 @@ error() {
 main() {
   local root_dir hetzner_dir compose_file
 
-  root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
   hetzner_dir="$root_dir/deploy/hetzner"
   compose_file="$hetzner_dir/docker-compose.yml"
 

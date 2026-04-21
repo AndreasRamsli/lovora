@@ -15,14 +15,23 @@ require_root() {
 main() {
   require_root
 
+  local docker_compose_pkg="docker-compose-plugin"
+  local runtime_uid="${SUDO_UID:-1000}"
+  local runtime_gid="${SUDO_GID:-1000}"
+
   export DEBIAN_FRONTEND=noninteractive
 
   apt-get update
+
+  if ! apt-cache show docker-compose-plugin >/dev/null 2>&1; then
+    docker_compose_pkg="docker-compose-v2"
+  fi
+
   apt-get install -y \
     ca-certificates \
     curl \
     docker.io \
-    docker-compose-plugin \
+    "$docker_compose_pkg" \
     fail2ban \
     git \
     jq \
@@ -36,10 +45,10 @@ main() {
 
   install -d -m 755 /srv/lovora
   # The deploy bundle lives under the nested app repo, so match that runtime layout.
-  install -d -m 755 /srv/lovora/lovora/.data/hetzner/server/storage
-  install -d -m 755 /srv/lovora/lovora/.data/hetzner/collector/hotdir
-  install -d -m 755 /srv/lovora/lovora/.data/hetzner/collector/outputs
-  install -d -m 755 /srv/lovora/backups
+  install -d -m 755 -o "$runtime_uid" -g "$runtime_gid" /srv/lovora/lovora/.data/hetzner/server/storage
+  install -d -m 755 -o "$runtime_uid" -g "$runtime_gid" /srv/lovora/lovora/.data/hetzner/collector/hotdir
+  install -d -m 755 -o "$runtime_uid" -g "$runtime_gid" /srv/lovora/lovora/.data/hetzner/collector/outputs
+  install -d -m 755 -o "$runtime_uid" -g "$runtime_gid" /srv/lovora/backups
 
   cat >/etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
 APT::Periodic::Update-Package-Lists "1";

@@ -138,7 +138,36 @@ docker compose -f docker-compose.yml logs -f app
 docker compose -f docker-compose.yml logs -f caddy
 ```
 
-## 6. Prepare The First Legal Corpus
+## 6. Auth Bootstrap
+
+The production stack expects Better Auth to be configured and a default workspace to exist.
+Keep the bootstrap slug aligned with the workspace created during boot/backfill:
+
+```dotenv
+DEFAULT_WORKSPACE_SLUG='workspace'
+BETTER_AUTH_URL='https://app.lovora.no'
+BETTER_AUTH_SECRET='<random-secret>'
+BETTER_AUTH_TRUSTED_ORIGINS='https://app.lovora.no,https://lovora.no,https://www.lovora.no'
+```
+
+After rollout, confirm the readiness surface instead of relying on health checks alone:
+
+```bash
+curl -fsS "https://$DOMAIN/api/setup-complete" \
+  | jq '.results | { MultiUserMode, BetterAuthConfigured, DefaultWorkspaceSlug, DefaultWorkspaceReady, LegacyUserCount, BetterAuthUserCount }'
+```
+
+If the instance still has a legacy admin without the default workspace membership, reconcile that membership inside the app container. The script only needs the username, and the Hetzner host itself does not install `node`:
+
+```bash
+cd /srv/lovora/lovora/deploy/hetzner
+docker compose -f docker-compose.yml exec app \
+  node /app/server/scripts/reconcile-auth-state.js <legacy-username>
+```
+
+The script prints the reconciled legacy user and workspace slug as JSON. Re-run `scripts/smoke.sh` after this step so the readiness gate still passes.
+
+## 7. Prepare The First Legal Corpus
 
 Run the corpus formatter from the outer project root at `/srv/lovora`, not from the nested app repository or the Hetzner bundle directory:
 
@@ -151,7 +180,7 @@ By default, this writes the prepared sections into `legal_embedding_ready/` and 
 
 If you want to stage only one corpus, use the script flags documented by `--help`.
 
-## 7. Upload The First Corpus
+## 8. Upload The First Corpus
 
 Upload the prepared NL and SF sections into the production workspace:
 
@@ -172,7 +201,7 @@ python3 upload_legal_corpus.py --dry-run
 
 The uploader reads `legal_embedding_ready/_manifest.jsonl` and preserves the source metadata needed for the Lovdata citation icon.
 
-## 8. Smoke And Audit
+## 9. Smoke And Audit
 
 Run the post-deploy smoke checks:
 
@@ -194,7 +223,7 @@ python3 audit_lra_postrun.py \
 
 Repeat the audit with `--folder lovdata-sf` after the SF upload if you want both corpora checked.
 
-## 9. Nightly Backups
+## 10. Nightly Backups
 
 Enable the backup service and timer after the first successful rollout:
 
@@ -214,7 +243,7 @@ bash scripts/backup.sh
 
 Backups are written under `/srv/lovora/backups/` and include the production env file plus the storage and collector data.
 
-## 10. Roll Back
+## 11. Roll Back
 
 If a deploy needs to be undone, stop the stack, restore the latest backup, and bring the stack back up:
 

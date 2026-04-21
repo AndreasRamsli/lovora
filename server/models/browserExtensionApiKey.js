@@ -181,8 +181,37 @@ const BrowserExtensionApiKey = {
         },
       });
       console.log("Successfully migrated API keys to multi-user mode");
+      return true;
     } catch (error) {
       console.error("Error migrating API keys to multi-user mode:", error);
+      return false;
+    }
+  },
+
+  /**
+   * Restores shared browser keys to single-user mode ownership.
+   * This is only safe for the just-created bootstrap admin during setup rollback.
+   * @param {number} userId
+   * @returns {Promise<boolean>}
+   */
+  restoreSharedKeysToSingleUser: async function (userId) {
+    try {
+      await prisma.browser_extension_api_keys.updateMany({
+        where: {
+          user_id: userId,
+        },
+        data: {
+          user_id: null,
+        },
+      });
+      console.log("Successfully restored browser extension API keys to single-user mode");
+      return true;
+    } catch (error) {
+      console.error(
+        "Error restoring browser extension API keys to single-user mode:",
+        error
+      );
+      return false;
     }
   },
 };
