@@ -84,6 +84,9 @@ VOYAGEAI_API_KEY=<real-voyage-api-key>
 EMBEDDING_MODEL_PREF='voyage-law-2'
 FREE_MESSAGE_LIMIT=1
 FREE_MESSAGE_WINDOW_HOURS=24
+STRIPE_SECRET_KEY=<sk_test_or_sk_live>
+STRIPE_WEBHOOK_SECRET=<dashboard-webhook-secret>
+BILLING_APP_BASE_URL=https://lovora.example.com
 ```
 
 Generate secrets locally with a password manager or `openssl`:
@@ -135,6 +138,9 @@ bash scripts/preflight.sh
 ```
 
 Preflight checks the expected commands, required env values, data directories, and the Compose configuration before the first rollout.
+If Stripe billing is configured, it also verifies that Stripe has an enabled webhook endpoint at
+`https://$DOMAIN/api/billing/stripe/webhook` with the required checkout and subscription events.
+That catches the exact failure mode where checkout succeeds but the app never receives billing updates.
 
 ## 5. Deploy
 
