@@ -1,5 +1,8 @@
 const crypto = require("crypto");
 const { User } = require("../../models/user");
+const {
+  ensureDefaultWorkspaceMembership,
+} = require("./defaultWorkspaceMembership");
 
 function fallbackPassword() {
   return `BA-${crypto.randomBytes(24).toString("hex")}`;
@@ -62,6 +65,12 @@ async function getBetterAuthSessionFromRequest(request) {
   });
 }
 
+async function ensureLegacyUserReadyForSession(user = null) {
+  if (!user) return null;
+  await ensureDefaultWorkspaceMembership(user);
+  return user;
+}
+
 async function mapBetterAuthSessionToLegacyUser(session = {}) {
   const baUser = session?.user;
   if (!baUser?.id || !baUser?.email) return null;
@@ -70,7 +79,9 @@ async function mapBetterAuthSessionToLegacyUser(session = {}) {
   const email = String(baUser.email).trim().toLowerCase();
 
   const existingByBetterAuthId = await User._get({ betterAuthUserId });
-  if (existingByBetterAuthId) return existingByBetterAuthId;
+  if (existingByBetterAuthId) {
+    return await ensureLegacyUserReadyForSession(existingByBetterAuthId);
+  }
 
   const existingByEmail = await User._get({ username: email });
   if (existingByEmail) {
@@ -81,7 +92,9 @@ async function mapBetterAuthSessionToLegacyUser(session = {}) {
     if (!updateResult?.user && updateResult?.message) {
       throw new Error(updateResult.message);
     }
-    return await User._get({ id: existingByEmail.id });
+    return await ensureLegacyUserReadyForSession(
+      await User._get({ id: existingByEmail.id })
+    );
   }
 
   let createdUser = null;
@@ -114,7 +127,9 @@ async function mapBetterAuthSessionToLegacyUser(session = {}) {
     throw new Error(updateResult.message);
   }
 
-  return await User._get({ id: createdUser.id });
+  return await ensureLegacyUserReadyForSession(
+    await User._get({ id: createdUser.id })
+  );
 }
 
 module.exports = {

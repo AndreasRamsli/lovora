@@ -1,5 +1,6 @@
 import { describe, expect, test } from "@jest/globals";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import {
   PRICING_LADDER,
   STUDENT_CALLOUT,
@@ -7,6 +8,9 @@ import {
   getDisplayPriceLabel,
   getPrimaryAction,
 } from "./pricingCatalog.js";
+
+const require = createRequire(import.meta.url);
+const { PLAN_KEYS } = require("../../../../../../server/utils/billing/plans");
 
 describe("Lovora pricing catalog", () => {
   test("defines compact visual roles for soft and featured cards", () => {
@@ -83,6 +87,19 @@ describe("Lovora pricing catalog", () => {
       kind: "checkout",
       planKey: "monthly_subscription_annual",
     });
+  });
+
+  test("keeps annual frontend plan keys aligned with the backend resolver", () => {
+    const annualPlanKeys = PRICING_LADDER.filter(
+      (tier) => tier.supportsAnnualBilling
+    )
+      .map((tier) => getPrimaryAction(tier, true)?.planKey)
+      .filter(Boolean);
+
+    expect(annualPlanKeys).toEqual([
+      PLAN_KEYS.personalEntryAnnual,
+      PLAN_KEYS.monthlySubscriptionAnnual,
+    ]);
   });
 
   test("removes the month pass badge from Personal Entry", () => {

@@ -24,25 +24,69 @@ function hasValidAbsoluteUrl(url = "") {
   }
 }
 
-function getCheckoutRedirectUrls(requestBody = {}) {
-  const workspaceSlug = String(requestBody.workspaceSlug || "").trim();
-  const appBaseUrl =
-    requestBody.origin ||
-    requestBody.appBaseUrl ||
+function getRequestOrigin(request = {}) {
+  if (!request) return null;
+
+  if (typeof request.get === "function") {
+    const headerOrigin = request.get("origin");
+    if (headerOrigin) return headerOrigin;
+  }
+
+  return request.headers?.origin || null;
+}
+
+function getCheckoutBaseUrl(request = {}, requestBody = {}) {
+  const candidateBaseUrl =
+    getRequestOrigin(request) ||
+    request.appBaseUrl ||
     process.env.BILLING_APP_BASE_URL ||
     null;
+
+  if (!candidateBaseUrl) return null;
+
+  try {
+    const parsedBaseUrl = new URL(candidateBaseUrl);
+    if (!hasValidAbsoluteUrl(parsedBaseUrl.toString())) return null;
+    return parsedBaseUrl.origin;
+  } catch {
+    return null;
+  }
+}
+
+function resolveSafeCheckoutUrl(candidateUrl, fallbackPath, baseUrl) {
+  if (!baseUrl) return null;
+
+  const safeBaseUrl = new URL(baseUrl);
+  const fallbackUrl = new URL(fallbackPath, safeBaseUrl).toString();
+
+  if (!candidateUrl) return fallbackUrl;
+
+  try {
+    const parsedCandidate = new URL(candidateUrl, safeBaseUrl);
+    if (parsedCandidate.origin !== safeBaseUrl.origin) return fallbackUrl;
+    return parsedCandidate.toString();
+  } catch {
+    return fallbackUrl;
+  }
+}
+
+function getCheckoutRedirectUrls(request = {}, requestBody = {}) {
+  const workspaceSlug = String(requestBody.workspaceSlug || "").trim();
+  const baseUrl = getCheckoutBaseUrl(request, requestBody);
   const defaultPath = workspaceSlug
     ? `/workspace/${workspaceSlug}`
     : "/settings/system/billing";
 
-  const successUrl =
-    requestBody.successUrl ||
-    process.env.STRIPE_CHECKOUT_SUCCESS_URL ||
-    (appBaseUrl ? `${appBaseUrl}${defaultPath}?billing=success` : null);
-  const cancelUrl =
-    requestBody.cancelUrl ||
-    process.env.STRIPE_CHECKOUT_CANCEL_URL ||
-    (appBaseUrl ? `${appBaseUrl}${defaultPath}?billing=cancel` : null);
+  const successUrl = resolveSafeCheckoutUrl(
+    requestBody.successUrl || process.env.STRIPE_CHECKOUT_SUCCESS_URL,
+    `${defaultPath}?billing=success`,
+    baseUrl
+  );
+  const cancelUrl = resolveSafeCheckoutUrl(
+    requestBody.cancelUrl || process.env.STRIPE_CHECKOUT_CANCEL_URL,
+    `${defaultPath}?billing=cancel`,
+    baseUrl
+  );
   return { successUrl, cancelUrl };
 }
 
@@ -60,6 +104,22 @@ function periodEndFromUnixTimestamp(unixTimestamp = null) {
     return null;
   }
   return new Date(unixTimestamp * 1000);
+}
+
+function resolveSubscriptionPeriodEnd(subscription = {}) {
+  const topLevelPeriodEnd = periodEndFromUnixTimestamp(
+    subscription.current_period_end
+  );
+  if (topLevelPeriodEnd) return topLevelPeriodEnd;
+
+  const itemPeriodEnds = Array.isArray(subscription?.items?.data)
+    ? subscription.items.data
+        .map((item) => periodEndFromUnixTimestamp(item?.current_period_end))
+        .filter(Boolean)
+        .sort((left, right) => right.getTime() - left.getTime())
+    : [];
+
+  return itemPeriodEnds[0] ?? null;
 }
 
 async function findWebhookUser({
@@ -148,9 +208,7 @@ async function handleStripeSubscriptionEvent(subscription = {}) {
       subscription.metadata?.planKey ||
       user.billingPlan ||
       PLAN_KEYS.monthlySubscription,
-    billingCurrentPeriodEnd: periodEndFromUnixTimestamp(
-      subscription.current_period_end
-    ),
+    billingCurrentPeriodEnd: resolveSubscriptionPeriodEnd(subscription),
   };
 
   if (subscription.status === "canceled") {
@@ -220,17 +278,14 @@ function billingEndpoints(app) {
           return;
         }
 
-        const { successUrl, cancelUrl } = getCheckoutRedirectUrls({
-          ...body,
-          origin: request.headers.origin || null,
-        });
-        if (
-          !hasValidAbsoluteUrl(successUrl) ||
-          !hasValidAbsoluteUrl(cancelUrl)
-        ) {
+        const { successUrl, cancelUrl } = getCheckoutRedirectUrls(
+          request,
+          body
+        );
+        if (!successUrl || !cancelUrl) {
           response.status(400).json({
             error:
-              "A valid successUrl and cancelUrl are required (or configure STRIPE_CHECKOUT_SUCCESS_URL / STRIPE_CHECKOUT_CANCEL_URL).",
+              "A same-origin successUrl and cancelUrl are required (or configure BILLING_APP_BASE_URL / request.origin).",
           });
           return;
         }
@@ -325,4 +380,11 @@ function billingEndpoints(app) {
   });
 }
 
-module.exports = { billingEndpoints };
+module.exports = {
+  billingEndpoints,
+  resolveSubscriptionPeriodEnd,
+  getRequestOrigin,
+  getCheckoutBaseUrl,
+  resolveSafeCheckoutUrl,
+  getCheckoutRedirectUrls,
+};

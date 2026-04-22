@@ -15,8 +15,7 @@ require_command() {
 
 attempt_checks() {
   local base_url="$1"
-  local api_key="$2"
-  local auth_response workspaces_response
+  local auth_status
   local curl_args
 
   curl_args=(
@@ -30,33 +29,35 @@ attempt_checks() {
     return 1
   fi
 
-  if ! auth_response="$(
-    curl -fsS \
+  if ! curl -fsS "${curl_args[@]}" "$base_url/api/health" | jq -e '.success == true and .ready == true' >/dev/null; then
+    error "health endpoint not ready: $base_url/api/health"
+    return 1
+  fi
+
+  if ! curl -fsS "${curl_args[@]}" "$base_url/v1/api/health" | jq -e '.success == true and .ready == true' >/dev/null; then
+    error "v1 health endpoint not ready: $base_url/v1/api/health"
+    return 1
+  fi
+
+  if ! curl -fsS "${curl_args[@]}" "$base_url/api/setup-complete" | \
+    jq -e '.results.BetterAuthConfigured == true and .results.DefaultWorkspaceReady == true' >/dev/null; then
+    error "setup-complete auth readiness mismatch: $base_url/api/setup-complete"
+    return 1
+  fi
+
+  if ! auth_status="$(
+    curl -sS \
       "${curl_args[@]}" \
-      -H "Authorization: Bearer $api_key" \
-      "$base_url/api/v1/auth"
+      -o /dev/null \
+      -w '%{http_code}' \
+      "$base_url/api/auth/bridge/session"
   )"; then
-    error "auth endpoint not ready: $base_url/api/v1/auth"
+    error "auth bridge not ready: $base_url/api/auth/bridge/session"
     return 1
   fi
 
-  if ! printf '%s' "$auth_response" | jq -e '.authenticated == true' >/dev/null; then
-    error "auth endpoint returned unexpected payload: $auth_response"
-    return 1
-  fi
-
-  if ! workspaces_response="$(
-    curl -fsS \
-      "${curl_args[@]}" \
-      -H "Authorization: Bearer $api_key" \
-      "$base_url/api/v1/workspaces"
-  )"; then
-    error "workspaces endpoint not ready: $base_url/api/v1/workspaces"
-    return 1
-  fi
-
-  if ! printf '%s' "$workspaces_response" | jq -e '.workspaces | type == "array"' >/dev/null; then
-    error "workspaces endpoint returned unexpected payload: $workspaces_response"
+  if [[ "$auth_status" != "401" ]]; then
+    error "auth bridge returned unexpected status: $auth_status"
     return 1
   fi
 
@@ -65,9 +66,8 @@ attempt_checks() {
 
 main() {
   local root_dir hetzner_dir env_file base_url timeout_seconds deadline sleep_seconds attempt remaining
-  local api_key
 
-  root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
   hetzner_dir="$root_dir/deploy/hetzner"
   env_file="$hetzner_dir/anythingllm.env"
   timeout_seconds=900
@@ -92,17 +92,11 @@ main() {
     exit 1
   fi
 
-  if [[ -z "${ANYTHINGLLM_API_KEY:-}" ]]; then
-    error "missing required env var: ANYTHINGLLM_API_KEY"
-    exit 1
-  fi
-
   base_url="https://$DOMAIN"
-  api_key="$ANYTHINGLLM_API_KEY"
   deadline=$((SECONDS + timeout_seconds))
 
   while true; do
-    if attempt_checks "$base_url" "$api_key"; then
+    if attempt_checks "$base_url"; then
       echo "Smoke checks OK."
       return 0
     fi

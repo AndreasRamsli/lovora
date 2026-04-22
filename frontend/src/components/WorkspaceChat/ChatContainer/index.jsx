@@ -34,7 +34,7 @@ import SuggestedMessages from "@/components/lib/SuggestedMessages";
 import TextSizeMenu from "./TextSizeMenu";
 import WorkspaceModelPicker from "./WorkspaceModelPicker";
 import SourcesSidebar, { SourcesSidebarProvider } from "./SourcesSidebar";
-import PricingGate from "./PricingGate";
+import { useBillingShell } from "@/components/UserMenu/BillingShell";
 
 export default function ChatContainer({ workspace, knownHistory = [] }) {
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
   const [chatHistory, setChatHistory] = useState(knownHistory);
   const [socketId, setSocketId] = useState(null);
   const [websocket, setWebsocket] = useState(null);
-  const [showPricingGate, setShowPricingGate] = useState(false);
+  const { openPricingGate } = useBillingShell();
   const { files, parseAttachments } = useContext(DndUploaderContext);
   const { chatHistoryRef } = useChatContainerQuickScroll();
   const pendingMessageChecked = useRef(false);
@@ -263,7 +263,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
             chatResult?.type === "abort" &&
             chatResult?.errorCode === "CHAT_QUOTA_REACHED"
           ) {
-            setShowPricingGate(true);
+            openPricingGate();
           }
           return handleChat(
             chatResult,
@@ -372,16 +372,6 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
     chatHistory.length === 0 && !sessionStorage.getItem(PENDING_HOME_MESSAGE);
 
   function renderComposer(centered = false) {
-    if (showPricingGate) {
-      return (
-        <PricingGate
-          workspaceSlug={workspace.slug}
-          onClose={() => setShowPricingGate(false)}
-          centered={centered}
-        />
-      );
-    }
-
     return (
       <PromptInput
         submit={handleSubmit}

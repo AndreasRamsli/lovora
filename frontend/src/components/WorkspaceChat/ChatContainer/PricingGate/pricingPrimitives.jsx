@@ -69,8 +69,6 @@ export const PricingButton = ({
   ...props
 }) =>
   React.createElement(Button, {
-    variant: "unstyled",
-    size: "unstyled",
     className: cn(
       PRICING_BUTTON_BASE_CLASS,
       resolveButtonVariant(themeName, tone),
@@ -86,7 +84,6 @@ export const PricingSwitch = ({
   ...props
 }) =>
   React.createElement(Switch, {
-    unstyled: true,
     className: cn(
       PRICING_SWITCH_BASE_CLASS,
       resolveSwitchVariant(themeName, tone),
@@ -97,7 +94,6 @@ export const PricingSwitch = ({
 
 export const PricingDivider = ({ themeName = "dark", className, ...props }) =>
   React.createElement(Separator, {
-    unstyled: true,
     className: cn(
       PRICING_DIVIDER_BASE_CLASS,
       resolveDividerVariant(themeName),

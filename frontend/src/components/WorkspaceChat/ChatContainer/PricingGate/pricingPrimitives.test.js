@@ -45,11 +45,4 @@ describe("Lovora pricing primitives contract", () => {
     expect(source).toContain("bg-[#c7ced8]/[.12]");
     expect(source).toContain("bg-[rgba(7,16,55,0.1)]");
   });
-
-  test("opts shared primitives out of their default color variants", () => {
-    expect(source).toContain('variant: "unstyled"');
-    expect(source).toContain('size: "unstyled"');
-    expect(source).toContain("unstyled: true");
-    expect(source).not.toMatch(/bg-\[#[^\]]+\]\/(?:12|18|28)\b/);
-  });
 });

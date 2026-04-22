@@ -16,7 +16,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | \
       gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | \
       tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get update && \
     apt-get install -yq --no-install-recommends nodejs && \
@@ -33,7 +33,7 @@ RUN (getent passwd "$ARG_UID" && userdel -f "$(getent passwd "$ARG_UID" | cut -d
     mkdir -p /app/frontend /app/server /app/collector && \
     chown -R anythingllm:anythingllm /app /home/anythingllm
 
-FROM --platform=$BUILDPLATFORM node:18-slim AS frontend-build
+FROM --platform=$BUILDPLATFORM node:20-slim AS frontend-build
 WORKDIR /app/frontend
 COPY ./frontend/package.json ./frontend/yarn.lock ./
 RUN yarn install --network-timeout 100000 && yarn cache clean

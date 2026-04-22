@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const prisma = require("../prisma");
 const { User } = require("../../models/user");
+const { EventLogs } = require("../../models/eventLogs");
+const { Telemetry } = require("../../models/telemetry");
 const { getBetterAuthRuntime } = require("./betterAuthRuntime");
 
 const JSON_CONTENT_TYPE = "application/json; charset=utf-8";
@@ -101,6 +103,34 @@ async function ensureBetterAuthUserForLegacyUser(legacyUser = {}, password = "")
   };
 }
 
+async function logLegacyLoginFailure(event, request, userId, username) {
+  await EventLogs.logEvent(
+    event,
+    {
+      ip: request?.ip || "Unknown IP",
+      username: username || "Unknown user",
+    },
+    userId
+  );
+}
+
+async function logLegacyLoginSuccess(request, legacyUser) {
+  await Telemetry.sendTelemetry(
+    "login_event",
+    { multiUserMode: false },
+    legacyUser?.id
+  );
+
+  await EventLogs.logEvent(
+    "login_event",
+    {
+      ip: request?.ip || "Unknown IP",
+      username: legacyUser?.username || "Unknown user",
+    },
+    legacyUser?.id
+  );
+}
+
 function getSetCookies(headers) {
   if (typeof headers?.getSetCookie === "function") {
     return headers.getSetCookie();
@@ -157,14 +187,32 @@ async function signInLegacyUserWithBetterAuth(request) {
 
   const legacyUser = await User._get({ username });
   if (!legacyUser) {
+    await logLegacyLoginFailure(
+      "failed_login_invalid_username",
+      request,
+      legacyUser?.id,
+      username
+    );
     return errorResponse(401, "[001] Invalid login credentials.");
   }
 
   if (!bcrypt.compareSync(password, legacyUser.password)) {
+    await logLegacyLoginFailure(
+      "failed_login_invalid_password",
+      request,
+      legacyUser?.id,
+      username
+    );
     return errorResponse(401, "[002] Invalid login credentials.");
   }
 
   if (legacyUser.suspended) {
+    await logLegacyLoginFailure(
+      "failed_login_account_suspended",
+      request,
+      legacyUser?.id,
+      username
+    );
     return errorResponse(403, "[004] Account suspended by admin.");
   }
 
@@ -182,7 +230,12 @@ async function signInLegacyUserWithBetterAuth(request) {
     asResponse: true,
   });
 
-  return toSerializableResponse(signInResponse);
+  const serializableResponse = await toSerializableResponse(signInResponse);
+  if (serializableResponse.status >= 200 && serializableResponse.status < 300) {
+    await logLegacyLoginSuccess(request, legacyUser);
+  }
+
+  return serializableResponse;
 }
 
 module.exports = {

@@ -11,6 +11,16 @@ jest.mock("../../utils/auth/defaultWorkspaceMembership", () => ({
   ensureDefaultWorkspaceMembership: jest.fn(),
 }));
 
+jest.mock("../../models/systemSettings", () => ({
+  SystemSettings: {
+    isMultiUserMode: jest.fn(),
+  },
+}));
+
+jest.mock("../../utils/middleware/simpleSSOEnabled", () => ({
+  simpleSSOLoginDisabled: jest.fn(),
+}));
+
 jest.mock("../../utils/auth/legacyBetterAuthLogin", () => ({
   signInLegacyUserWithBetterAuth: jest.fn(),
 }));
@@ -32,6 +42,10 @@ const {
 const {
   ensureDefaultWorkspaceMembership,
 } = require("../../utils/auth/defaultWorkspaceMembership");
+const { SystemSettings } = require("../../models/systemSettings");
+const {
+  simpleSSOLoginDisabled,
+} = require("../../utils/middleware/simpleSSOEnabled");
 const {
   signInLegacyUserWithBetterAuth,
 } = require("../../utils/auth/legacyBetterAuthLogin");
@@ -181,6 +195,29 @@ describe("betterAuthBridgeEndpoints", () => {
     );
     expect(res.body).toMatchObject({
       token: "better-auth-token",
+    });
+  });
+
+  test("blocks legacy bridge login when credential login is disabled", async () => {
+    const app = express();
+    app.use(express.json());
+    betterAuthBridgeEndpoints(app);
+
+    SystemSettings.isMultiUserMode.mockResolvedValue(true);
+    simpleSSOLoginDisabled.mockReturnValue(true);
+
+    const res = await request(app)
+      .post("/auth/bridge/legacy-login")
+      .send({ username: "admin-user", password: "password" });
+
+    expect(signInLegacyUserWithBetterAuth).not.toHaveBeenCalled();
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject({
+      valid: false,
+      token: null,
+      user: null,
+      message:
+        "[005] Login via credentials has been disabled by the administrator.",
     });
   });
 });

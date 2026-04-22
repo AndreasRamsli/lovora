@@ -27,6 +27,7 @@ main() {
   require_command curl
   require_command jq
   require_command openssl
+  require_command python3
 
   if [[ ! -f "$env_file" ]]; then
     error "missing env file: $env_file"
@@ -85,6 +86,7 @@ main() {
   install -d -m 755 "$data_root/collector/outputs"
 
   docker compose -f "$compose_file" config >/dev/null
+  python3 "$script_dir/verify_stripe_webhook.py"
 
   echo "Hetzner preflight OK."
 }

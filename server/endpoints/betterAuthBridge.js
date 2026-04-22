@@ -7,6 +7,8 @@ const {
 const {
   ensureDefaultWorkspaceMembership,
 } = require("../utils/auth/defaultWorkspaceMembership");
+const { SystemSettings } = require("../models/systemSettings");
+const { simpleSSOLoginDisabled } = require("../utils/middleware/simpleSSOEnabled");
 const {
   signInLegacyUserWithBetterAuth,
 } = require("../utils/auth/legacyBetterAuthLogin");
@@ -101,6 +103,20 @@ function betterAuthBridgeEndpoints(app) {
   app.post("/auth/bridge/legacy-login", async (request, response) => {
     try {
       setNoStore(response);
+
+      if (
+        (await SystemSettings.isMultiUserMode()) &&
+        simpleSSOLoginDisabled()
+      ) {
+        return response.status(403).json({
+          user: null,
+          valid: false,
+          token: null,
+          message:
+            "[005] Login via credentials has been disabled by the administrator.",
+        });
+      }
+
       const result = await signInLegacyUserWithBetterAuth(request);
 
       if (result?.setCookies?.length) {

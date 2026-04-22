@@ -8,6 +8,7 @@ jest.mock("../../../utils/prisma", () => ({
 jest.mock("../../../models/user", () => ({
   User: {
     _update: jest.fn(),
+    _get: jest.fn(),
   },
 }));
 
@@ -15,14 +16,29 @@ jest.mock("../../../utils/auth/betterAuthRuntime", () => ({
   getBetterAuthRuntime: jest.fn(),
 }));
 
+jest.mock("../../../models/eventLogs", () => ({
+  EventLogs: {
+    logEvent: jest.fn(),
+  },
+}));
+
+jest.mock("../../../models/telemetry", () => ({
+  Telemetry: {
+    sendTelemetry: jest.fn(),
+  },
+}));
+
 const prisma = require("../../../utils/prisma");
 const { User } = require("../../../models/user");
+const { EventLogs } = require("../../../models/eventLogs");
+const { Telemetry } = require("../../../models/telemetry");
 const {
   getBetterAuthRuntime,
 } = require("../../../utils/auth/betterAuthRuntime");
 const {
   ensureBetterAuthUserForLegacyUser,
   getSyntheticEmailForLegacyUser,
+  signInLegacyUserWithBetterAuth,
 } = require("../../../utils/auth/legacyBetterAuthLogin");
 
 describe("legacyBetterAuthLogin", () => {
@@ -50,6 +66,9 @@ describe("legacyBetterAuthLogin", () => {
       user: { id: 7 },
       message: null,
     });
+    User._get.mockResolvedValue(null);
+    EventLogs.logEvent.mockResolvedValue({ eventLog: {}, message: null });
+    Telemetry.sendTelemetry.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -141,5 +160,118 @@ describe("legacyBetterAuthLogin", () => {
     expect(
       getSyntheticEmailForLegacyUser({ id: 42, username: "admin@example.com" })
     ).toBe("admin@example.com");
+  });
+
+  test("logs failed login outcomes and success telemetry for legacy bridge logins", async () => {
+    const passwordHash = require("bcryptjs").hashSync("super-secret", 10);
+    User._get.mockResolvedValue({
+      id: 99,
+      username: "admin-user",
+      password: passwordHash,
+      suspended: 0,
+      authProvider: "legacy",
+      betterAuthUserId: null,
+    });
+    context.internalAdapter.createUser.mockResolvedValue({
+      id: "ba_999",
+      email: "legacy-user-99@lovora.local",
+    });
+    context.internalAdapter.findAccounts.mockResolvedValue([]);
+    getBetterAuthRuntime.mockResolvedValue({
+      auth: {
+        $context: Promise.resolve(context),
+        api: {
+          signInEmail: jest.fn().mockResolvedValue({
+            status: 200,
+            headers: {
+              get: jest.fn().mockReturnValue("application/json; charset=utf-8"),
+              getSetCookie: jest.fn().mockReturnValue([
+                "better-auth.session=abc123; Path=/; HttpOnly",
+              ]),
+            },
+            text: jest.fn().mockResolvedValue(JSON.stringify({ ok: true })),
+          }),
+        },
+      },
+    });
+    User._get.mockResolvedValueOnce(null);
+
+    await signInLegacyUserWithBetterAuth({
+      body: { username: "missing-user", password: "whatever" },
+      headers: {},
+      ip: "127.0.0.1",
+    });
+    expect(EventLogs.logEvent).toHaveBeenCalledWith(
+      "failed_login_invalid_username",
+      { ip: "127.0.0.1", username: "missing-user" },
+      undefined
+    );
+
+    EventLogs.logEvent.mockClear();
+    User._get.mockResolvedValue({
+      id: 99,
+      username: "admin-user",
+      password: passwordHash,
+      suspended: 0,
+      authProvider: "legacy",
+      betterAuthUserId: null,
+    });
+    await signInLegacyUserWithBetterAuth({
+      body: { username: "admin-user", password: "wrong-password" },
+      headers: {},
+      ip: "127.0.0.1",
+    });
+    expect(EventLogs.logEvent).toHaveBeenCalledWith(
+      "failed_login_invalid_password",
+      { ip: "127.0.0.1", username: "admin-user" },
+      99
+    );
+
+    EventLogs.logEvent.mockClear();
+    User._get.mockResolvedValue({
+      id: 99,
+      username: "admin-user",
+      password: passwordHash,
+      suspended: 1,
+      authProvider: "legacy",
+      betterAuthUserId: null,
+    });
+    await signInLegacyUserWithBetterAuth({
+      body: { username: "admin-user", password: "super-secret" },
+      headers: {},
+      ip: "127.0.0.1",
+    });
+    expect(EventLogs.logEvent).toHaveBeenCalledWith(
+      "failed_login_account_suspended",
+      { ip: "127.0.0.1", username: "admin-user" },
+      99
+    );
+
+    EventLogs.logEvent.mockClear();
+    Telemetry.sendTelemetry.mockClear();
+    User._get.mockResolvedValue({
+      id: 99,
+      username: "admin-user",
+      password: passwordHash,
+      suspended: 0,
+      authProvider: "legacy",
+      betterAuthUserId: null,
+    });
+    const response = await signInLegacyUserWithBetterAuth({
+      body: { username: "admin-user", password: "super-secret" },
+      headers: {},
+      ip: "127.0.0.1",
+    });
+    expect(Telemetry.sendTelemetry).toHaveBeenCalledWith(
+      "login_event",
+      { multiUserMode: false },
+      99
+    );
+    expect(EventLogs.logEvent).toHaveBeenCalledWith(
+      "login_event",
+      { ip: "127.0.0.1", username: "admin-user" },
+      99
+    );
+    expect(response.status).toBe(200);
   });
 });

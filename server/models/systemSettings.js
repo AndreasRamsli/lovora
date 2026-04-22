@@ -2,7 +2,6 @@ process.env.NODE_ENV === "development"
   ? require("dotenv").config({ path: `.env.${process.env.NODE_ENV}` })
   : require("dotenv").config();
 
-const { default: slugify } = require("slugify");
 const { isValidUrl, safeJsonParse } = require("../utils/http");
 const prisma = require("../utils/prisma");
 const { MetaGenerator } = require("../utils/boot/MetaGenerator");
@@ -206,10 +205,29 @@ const SystemSettings = {
     },
   },
   currentSettings: async function () {
+    const { Workspace } = require("./workspace");
     const { hasVectorCachedFiles } = require("../utils/files");
     const llmProvider = process.env.LLM_PROVIDER;
     const vectorDB = process.env.VECTOR_DB;
     const embeddingEngine = process.env.EMBEDDING_ENGINE ?? "native";
+    const defaultWorkspaceName =
+      String(process.env.DEFAULT_WORKSPACE_SLUG || "workspace").trim() ||
+      "workspace";
+    const normalizedDefaultWorkspaceSlug =
+      Workspace.slugify(defaultWorkspaceName, {
+        lower: true,
+      }) || "workspace";
+    const betterAuthConfigured = Boolean(
+      process.env.BETTER_AUTH_URL && process.env.BETTER_AUTH_SECRET
+    );
+    const [legacyUserCount, betterAuthUserCount, defaultWorkspace] =
+      await Promise.all([
+        prisma.users.count(),
+        prisma.user.count(),
+        prisma.workspaces.findUnique({
+          where: { slug: normalizedDefaultWorkspaceSlug },
+        }),
+      ]);
     return {
       // --------------------------------------------------------
       // General Settings
@@ -218,6 +236,11 @@ const SystemSettings = {
       AuthToken: !!process.env.AUTH_TOKEN,
       JWTSecret: !!process.env.JWT_SECRET,
       StorageDir: process.env.STORAGE_DIR,
+      BetterAuthConfigured: betterAuthConfigured,
+      DefaultWorkspaceSlug: normalizedDefaultWorkspaceSlug,
+      DefaultWorkspaceReady: Boolean(defaultWorkspace),
+      LegacyUserCount: legacyUserCount,
+      BetterAuthUserCount: betterAuthUserCount,
       MultiUserMode: await this.isMultiUserMode(),
       DisableTelemetry: process.env.DISABLE_TELEMETRY || "false",
 

@@ -7,6 +7,19 @@ const eagerLoadContextWindows = require("./eagerLoadContextWindows");
 const markOnboarded = require("./markOnboarded");
 const { PushNotifications } = require("../PushNotifications");
 const { logStartupReadiness } = require("../moderation/schemaReadiness");
+const { ensureProductionAuthState } = require("./ensureProductionAuthState");
+
+async function runBootSequence() {
+  await markOnboarded();
+  await ensureProductionAuthState();
+  await logStartupReadiness();
+  await setupTelemetry();
+  new CommunicationKey(true);
+  new EncryptionManager();
+  new BackgroundService().boot();
+  await eagerLoadContextWindows();
+  await PushNotifications.setupPushNotificationService();
+}
 
 // Testing SSL? You can make a self signed certificate and point the ENVs to that location
 // make a directory in server called 'sslcert' - cd into it
@@ -31,14 +44,7 @@ function bootSSL(app, port = 3001) {
 
     server
       .listen(port, async () => {
-        await logStartupReadiness();
-        await markOnboarded();
-        await setupTelemetry();
-        new CommunicationKey(true);
-        new EncryptionManager();
-        new BackgroundService().boot();
-        await eagerLoadContextWindows();
-        await PushNotifications.setupPushNotificationService();
+        await runBootSequence();
         console.log(`Primary server in HTTPS mode listening on port ${port}`);
       })
       .on("error", catchSigTerms);
@@ -64,14 +70,7 @@ function bootHTTP(app, port = 3001) {
 
   app
     .listen(port, async () => {
-      await logStartupReadiness();
-      await markOnboarded();
-      await setupTelemetry();
-      new CommunicationKey(true);
-      new EncryptionManager();
-      new BackgroundService().boot();
-      await eagerLoadContextWindows();
-      await PushNotifications.setupPushNotificationService();
+      await runBootSequence();
       console.log(`Primary server in HTTP mode listening on port ${port}`);
     })
     .on("error", catchSigTerms);
