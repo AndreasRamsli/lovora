@@ -1,6 +1,8 @@
-# Hetzner Production Runbook
+# Hetzner Canonical Production Deployment Bundle
 
-This bundle runs Lovora on a Hetzner host with Docker Compose, Caddy TLS termination, direct xAI inference, and Voyage embeddings.
+This is the canonical production deployment bundle for Lovora.
+It runs Lovora on a Hetzner host with Docker Compose, Caddy TLS termination, direct xAI inference, and Voyage embeddings.
+The legacy `ramsli-custom` bundle exists only for reference and should not be used for new production deployments.
 
 Production defaults:
 - LLM provider: `xai`
@@ -204,14 +206,14 @@ If you want to stage only one corpus, use the script flags documented by `--help
 
 ## 8. Upload The First Corpus
 
-Upload the prepared NL and SF sections into the production workspace:
+Upload the prepared NL and SF sections into the default production workspace:
 
 ```bash
 cd /srv/lovora
 python3 upload_legal_corpus.py \
   --base-url "https://$DOMAIN" \
   --api-key "$ANYTHINGLLM_API_KEY" \
-  --workspace lovora-alpha
+  --workspace workspace
 ```
 
 For a dry run:
@@ -222,6 +224,7 @@ python3 upload_legal_corpus.py --dry-run
 ```
 
 The uploader reads `legal_embedding_ready/_manifest.jsonl` and preserves the source metadata needed for the Lovdata citation icon.
+Use the same `workspace` slug in audit and upload steps unless you have intentionally changed `DEFAULT_WORKSPACE_SLUG`.
 
 ## 9. Smoke And Audit
 
@@ -239,7 +242,7 @@ cd /srv/lovora
 python3 audit_lra_postrun.py \
   --base-url "https://$DOMAIN" \
   --api-key "$ANYTHINGLLM_API_KEY" \
-  --workspace lovora-alpha \
+  --workspace workspace \
   --folder lovdata-nl
 ```
 
@@ -267,7 +270,7 @@ Backups are written under `/srv/lovora/backups/` and include the production env 
 
 ## 11. Roll Back
 
-If a deploy needs to be undone, stop the stack, restore the latest backup, and bring the stack back up:
+If you need to recover env or runtime data, stop the stack and restore the latest backup:
 
 ```bash
 cd /srv/lovora/lovora/deploy/hetzner
@@ -275,7 +278,9 @@ docker compose -f docker-compose.yml down
 bash scripts/restore.sh latest
 ```
 
-If you need a clean reset instead of a restore, remove `/srv/lovora/lovora/.data/hetzner`, re-run the corpus prep, and upload again:
+If the release itself is bad, redeploy the last known-good code revision or image from the deployment source of truth.
+
+For a clean reset after data recovery, remove `/srv/lovora/lovora/.data/hetzner`, re-run the corpus prep, and upload again:
 
 ```bash
 rm -rf /srv/lovora/lovora/.data/hetzner

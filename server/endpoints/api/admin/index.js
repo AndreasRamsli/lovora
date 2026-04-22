@@ -1,5 +1,6 @@
 const { EventLogs } = require("../../../models/eventLogs");
 const { Invite } = require("../../../models/invite");
+const { CorpusRelease } = require("../../../models/corpusRelease");
 const { SystemSettings } = require("../../../models/systemSettings");
 const { User } = require("../../../models/user");
 const { Workspace } = require("../../../models/workspace");
@@ -324,6 +325,56 @@ function apiAdminEndpoints(app) {
       response.sendStatus(500).end();
     }
   });
+
+  app.get(
+    "/v1/admin/corpus-releases",
+    [validApiKey],
+    async (request, response) => {
+      try {
+        if (!multiUserMode(response)) {
+          response.sendStatus(401).end();
+          return;
+        }
+
+        const workspaceSlug =
+          typeof request.query.workspaceSlug === "string"
+            ? request.query.workspaceSlug.trim()
+            : "";
+        const parsedLimit = Number.parseInt(request.query.limit, 10);
+        const limit = Number.isNaN(parsedLimit)
+          ? 25
+          : Math.min(Math.max(parsedLimit, 1), 100);
+
+        const releases = await CorpusRelease.list(
+          workspaceSlug ? { workspaceSlug } : {},
+          limit
+        );
+        response.status(200).json({ releases });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.get(
+    "/v1/admin/corpus-releases/:workspaceSlug/latest",
+    [validApiKey],
+    async (request, response) => {
+      try {
+        if (!multiUserMode(response)) {
+          response.sendStatus(401).end();
+          return;
+        }
+
+        const release = await CorpusRelease.getCurrent(request.params.workspaceSlug);
+        response.status(200).json({ release });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
 
   app.post("/v1/admin/invite/new", [validApiKey], async (request, response) => {
     /*

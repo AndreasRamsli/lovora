@@ -5,12 +5,17 @@ const {
   ROLES,
   flexUserRoleValid,
 } = require("../utils/middleware/multiUserProtected");
+const { StripeWebhookEvent } = require("../models/stripeWebhookEvent");
 const { getStripeClient } = require("../utils/billing/stripeClient");
 const {
   PLAN_KEYS,
   listResolvedCheckoutPlans,
   resolveCheckoutPlan,
 } = require("../utils/billing/plans");
+const {
+  reconcileBillingState,
+  resolveSubscriptionPeriodEnd,
+} = require("../utils/billing/reconcileBillingState");
 
 const MONTH_PASS_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -90,36 +95,12 @@ function getCheckoutRedirectUrls(request = {}, requestBody = {}) {
   return { successUrl, cancelUrl };
 }
 
-function normalizeSubscriptionStatus(status = "inactive") {
-  if (status === "active") return "active";
-  if (!status) return "inactive";
-  if (["canceled", "incomplete_expired", "unpaid"].includes(status)) {
-    return "inactive";
+async function applyUserUpdate(userId, updates = {}) {
+  const result = await User._update(userId, updates);
+  if (result?.message) {
+    throw new Error(result.message);
   }
-  return status;
-}
-
-function periodEndFromUnixTimestamp(unixTimestamp = null) {
-  if (typeof unixTimestamp !== "number" || Number.isNaN(unixTimestamp)) {
-    return null;
-  }
-  return new Date(unixTimestamp * 1000);
-}
-
-function resolveSubscriptionPeriodEnd(subscription = {}) {
-  const topLevelPeriodEnd = periodEndFromUnixTimestamp(
-    subscription.current_period_end
-  );
-  if (topLevelPeriodEnd) return topLevelPeriodEnd;
-
-  const itemPeriodEnds = Array.isArray(subscription?.items?.data)
-    ? subscription.items.data
-        .map((item) => periodEndFromUnixTimestamp(item?.current_period_end))
-        .filter(Boolean)
-        .sort((left, right) => right.getTime() - left.getTime())
-    : [];
-
-  return itemPeriodEnds[0] ?? null;
+  return result;
 }
 
 async function findWebhookUser({
@@ -173,7 +154,7 @@ async function handleCheckoutSessionCompleted(session = {}) {
     updates.billingCurrentPeriodEnd = new Date(
       Date.now() + MONTH_PASS_DURATION_MS
     );
-    await User._update(user.id, updates);
+    await applyUserUpdate(user.id, updates);
     return;
   }
 
@@ -182,7 +163,7 @@ async function handleCheckoutSessionCompleted(session = {}) {
     updates.stripeSubscriptionId = session.subscription
       ? String(session.subscription)
       : null;
-    await User._update(user.id, updates);
+    await applyUserUpdate(user.id, updates);
   }
 }
 
@@ -199,25 +180,17 @@ async function handleStripeSubscriptionEvent(subscription = {}) {
   });
   if (!user) return;
 
-  const normalizedStatus = normalizeSubscriptionStatus(subscription.status);
-  const updates = {
-    stripeCustomerId: customerId,
-    stripeSubscriptionId: subscriptionId,
-    billingStatus: normalizedStatus,
-    billingPlan:
-      subscription.metadata?.planKey ||
-      user.billingPlan ||
-      PLAN_KEYS.monthlySubscription,
-    billingCurrentPeriodEnd: resolveSubscriptionPeriodEnd(subscription),
-  };
-
-  if (subscription.status === "canceled") {
-    updates.billingStatus = "inactive";
-    updates.billingPlan = "free";
-    updates.stripeSubscriptionId = null;
+  const reconciliation = reconcileBillingState({
+    user,
+    stripeCustomer: customerId ? { id: customerId } : null,
+    stripeSubscription: subscription,
+    now: new Date(),
+  });
+  if (!reconciliation.changed) {
+    return;
   }
 
-  await User._update(user.id, updates);
+  await applyUserUpdate(user.id, reconciliation.updates);
 }
 
 function billingEndpoints(app) {
@@ -301,7 +274,7 @@ function billingEndpoints(app) {
             },
           });
           stripeCustomerId = customer.id;
-          await User._update(user.id, { stripeCustomerId });
+          await applyUserUpdate(user.id, { stripeCustomerId });
         }
 
         const metadata = {
@@ -359,7 +332,14 @@ function billingEndpoints(app) {
       return;
     }
 
+    let claimedEvent = null;
     try {
+      claimedEvent = await StripeWebhookEvent.claim(event);
+      if (!claimedEvent?.claimed) {
+        response.status(200).json({ received: true });
+        return;
+      }
+
       switch (event.type) {
         case "checkout.session.completed":
           await handleCheckoutSessionCompleted(event.data.object);
@@ -372,8 +352,12 @@ function billingEndpoints(app) {
         default:
           break;
       }
+      await StripeWebhookEvent.markProcessed(claimedEvent.event.id);
       response.status(200).json({ received: true });
     } catch (error) {
+      if (claimedEvent?.claimed && claimedEvent?.event?.id) {
+        await StripeWebhookEvent.markFailed(claimedEvent.event.id, error);
+      }
       console.error(error);
       response.status(500).json({ error: error.message });
     }
