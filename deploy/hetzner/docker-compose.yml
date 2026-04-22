@@ -1,26 +1,36 @@
 name: lovora-hetzner
 
+x-lovora-runtime: &lovora-runtime
+  build:
+    context: ../..
+    dockerfile: deploy/hetzner/Dockerfile
+    args:
+      ARG_UID: ${UID:-1000}
+      ARG_GID: ${GID:-1000}
+  image: lovora-hetzner-runtime:latest
+  cap_add:
+    - SYS_ADMIN
+  env_file:
+    - ./anythingllm.env
+  environment:
+    NODE_ENV: production
+    ANYTHING_LLM_RUNTIME: docker
+    STORAGE_DIR: /app/server/storage
+  volumes:
+    - ./anythingllm.env:/app/server/.env
+    - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/server/storage:/app/server/storage
+    - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/collector/hotdir:/app/collector/hotdir
+    - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/collector/outputs:/app/collector/outputs
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+  restart: unless-stopped
+
 services:
-  app:
-    build:
-      context: ../..
-      dockerfile: deploy/hetzner/Dockerfile
-      args:
-        ARG_UID: ${UID:-1000}
-        ARG_GID: ${GID:-1000}
-    cap_add:
-      - SYS_ADMIN
-    env_file:
-      - ./anythingllm.env
-    environment:
-      NODE_ENV: production
-      ANYTHING_LLM_RUNTIME: docker
-      STORAGE_DIR: /app/server/storage
-    volumes:
-      - ./anythingllm.env:/app/server/.env
-      - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/server/storage:/app/server/storage
-      - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/collector/hotdir:/app/collector/hotdir
-      - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/collector/outputs:/app/collector/outputs
+  server:
+    <<: *lovora-runtime
     expose:
       - "3001"
     healthcheck:
@@ -29,17 +39,22 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "5"
-    restart: unless-stopped
+
+  collector:
+    <<: *lovora-runtime
+    entrypoint: ["/bin/bash", "-lc"]
+    command: "cd /app/collector && exec node index.js"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8888/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   caddy:
     image: caddy:2.8
     depends_on:
-      app:
+      server:
         condition: service_healthy
     env_file:
       - ./anythingllm.env

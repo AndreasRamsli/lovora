@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lovora.local/schemas/legal-corpus-manifest/v1",
+  "title": "Lovora legal corpus manifest record",
+  "description": "Versioned newline-delimited JSON record used to trace prepared legal corpus chunks from source files to upload-ready Markdown artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifestVersion",
+    "generatedAt",
+    "sourceDatasetVersion",
+    "corpus",
+    "upload_folder",
+    "doc_id",
+    "sectionIndex",
+    "title",
+    "shortTitle",
+    "documentId",
+    "url",
+    "chunkSource",
+    "department",
+    "effectiveDate",
+    "lastChanged",
+    "chapter",
+    "subchapter",
+    "section",
+    "sourcePath",
+    "sourceSha256",
+    "outputPath",
+    "outputSha256"
+  ],
+  "properties": {
+    "manifestVersion": {
+      "type": "string",
+      "const": "lovora.legal-corpus.record/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+    },
+    "sourceDatasetVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "corpus": {
+      "type": "string",
+      "enum": [
+        "NL",
+        "SF"
+      ]
+    },
+    "upload_folder": {
+      "type": "string",
+      "minLength": 1
+    },
+    "doc_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sectionIndex": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": {
+      "type": "string"
+    },
+    "shortTitle": {
+      "type": "string"
+    },
+    "documentId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "url": {
+      "type": "string",
+      "minLength": 1
+    },
+    "chunkSource": {
+      "type": "string",
+      "minLength": 1
+    },
+    "department": {
+      "type": "string"
+    },
+    "effectiveDate": {
+      "type": "string"
+    },
+    "lastChanged": {
+      "type": "string"
+    },
+    "chapter": {
+      "type": "string"
+    },
+    "subchapter": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string"
+    },
+    "sourcePath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "outputPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "outputSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

@@ -103,6 +103,22 @@ model users {
   @@index([billingStatus])
 }
 
+model stripe_webhook_events {
+  id            Int      @id @default(autoincrement())
+  stripeEventId String   @unique
+  eventType     String
+  livemode      Boolean  @default(false)
+  status        String   @default("processing")
+  payload       String?
+  processedAt   DateTime?
+  lastError     String?
+  createdAt     DateTime @default(now())
+  lastUpdatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([eventType])
+}
+
 model recovery_codes {
   id        Int      @id @default(autoincrement())
   user_id   Int
@@ -162,6 +178,35 @@ model workspaces {
   prompt_history               prompt_history[]
   workspace_parsed_files       workspace_parsed_files[]
   conversation_flags           conversation_flags[]
+  corpus_releases              corpus_releases[]
+}
+
+model corpus_releases {
+  id                   Int        @id @default(autoincrement())
+  releaseId            String     @unique
+  version              String
+  workspaceSlug        String
+  sourceDatasetVersion String
+  manifestVersion      String
+  manifestPath         String?
+  manifestChecksum     String
+  manifestRecordCount  Int?
+  documentCount        Int
+  sectionCount         Int
+  embeddingModel       String
+  chunkSize            Int
+  chunkOverlap         Int        @default(0)
+  status               String     @default("pending")
+  evaluationSummary    String?
+  uploadedAt           DateTime?
+  activatedAt          DateTime?
+  createdAt            DateTime   @default(now())
+  lastUpdatedAt        DateTime   @updatedAt
+  workspace            workspaces @relation(fields: [workspaceSlug], references: [slug], onDelete: Cascade)
+
+  @@index([workspaceSlug, status])
+  @@index([workspaceSlug, createdAt])
+  @@index([status, activatedAt])
 }
 
 model workspace_threads {

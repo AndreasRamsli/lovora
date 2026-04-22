@@ -1,6 +1,11 @@
 const { Prisma } = require("@prisma/client");
 const prisma = require("../utils/prisma");
 const { EventLogs } = require("./eventLogs");
+const {
+  hasAdminBypass,
+  hasActivePaidAccess,
+  resolveAccessDecision,
+} = require("../utils/billing/accessDecision");
 
 /**
  * @typedef {Object} User
@@ -399,47 +404,24 @@ const User = {
   },
 
   hasActivePaidAccess: function (user = null) {
-    if (!user) return false;
-    if (user.billingStatus !== "active") return false;
-    if (!user.billingCurrentPeriodEnd) return false;
-    return new Date(user.billingCurrentPeriodEnd).getTime() > Date.now();
+    return hasActivePaidAccess(user);
   },
 
   getChatAccessState: async function (user = null) {
-    const { ROLES } = require("../utils/middleware/multiUserProtected");
-
     if (!user) {
-      return {
-        allowed: false,
-        reason: "no_user",
-        quota: null,
-      };
+      return resolveAccessDecision({ user });
     }
 
-    if (user.role === ROLES.admin || user.role === "admin") {
-      return {
-        allowed: true,
-        reason: "admin_bypass",
-        quota: null,
-      };
+    if (hasAdminBypass(user)) {
+      return resolveAccessDecision({ user });
     }
 
     if (this.hasActivePaidAccess(user)) {
-      return {
-        allowed: true,
-        reason: "paid_access",
-        quota: null,
-      };
+      return resolveAccessDecision({ user });
     }
 
     const { WorkspaceChats } = require("./workspaceChats");
     const { limit, windowHours } = this.getEffectiveFreeQuotaConfig();
-    const parsedCustomLimit =
-      user.dailyMessageLimit === null ? limit : Number(user.dailyMessageLimit);
-    const effectiveLimit =
-      Number.isNaN(parsedCustomLimit) || parsedCustomLimit < 1
-        ? limit
-        : Math.floor(parsedCustomLimit);
     const windowStart = new Date(Date.now() - windowHours * 60 * 60 * 1000);
 
     const used = await WorkspaceChats.count({
@@ -448,21 +430,14 @@ const User = {
         gte: windowStart,
       },
     });
-    const remaining = Math.max(effectiveLimit - used, 0);
-    const baseQuota = {
-      limit: effectiveLimit,
-      windowHours,
+    const provisionalAccessDecision = resolveAccessDecision({
+      user,
       used,
-      remaining,
-      nextResetAt: null,
-    };
-
-    if (used < effectiveLimit) {
-      return {
-        allowed: true,
-        reason: "within_quota",
-        quota: baseQuota,
-      };
+      defaultLimit: limit,
+      windowHours,
+    });
+    if (provisionalAccessDecision.allowed) {
+      return provisionalAccessDecision;
     }
 
     const oldestInWindow = await WorkspaceChats.where(
@@ -475,22 +450,13 @@ const User = {
       1,
       { createdAt: "asc" }
     );
-    const oldestCreatedAt = oldestInWindow?.[0]?.createdAt
-      ? new Date(oldestInWindow[0].createdAt).getTime()
-      : null;
-    const nextResetAt =
-      oldestCreatedAt !== null
-        ? new Date(oldestCreatedAt + windowHours * 60 * 60 * 1000).toISOString()
-        : null;
-
-    return {
-      allowed: false,
-      reason: "quota_reached",
-      quota: {
-        ...baseQuota,
-        nextResetAt,
-      },
-    };
+    return resolveAccessDecision({
+      user,
+      used,
+      defaultLimit: limit,
+      windowHours,
+      oldestInWindowCreatedAt: oldestInWindow?.[0]?.createdAt ?? null,
+    });
   },
 
   /**

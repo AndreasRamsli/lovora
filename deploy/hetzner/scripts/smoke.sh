@@ -13,8 +13,47 @@ require_command() {
   fi
 }
 
+require_service_status() {
+  local hetzner_dir="$1"
+  local service_name="$2"
+  local container_id container_status health_status
+
+  if ! container_id="$(docker compose -f "$hetzner_dir/docker-compose.yml" ps -q "$service_name" 2>/dev/null)"; then
+    error "unable to query docker compose service id for: $service_name"
+    return 1
+  fi
+
+  if [[ -z "$container_id" ]]; then
+    error "docker compose service not found: $service_name"
+    return 1
+  fi
+
+  if ! container_status="$(docker inspect --format '{{.State.Status}}' "$container_id" 2>/dev/null)"; then
+    error "unable to inspect container state for: $service_name"
+    return 1
+  fi
+
+  if [[ "$container_status" != "running" ]]; then
+    error "docker compose service not running: $service_name ($container_status)"
+    return 1
+  fi
+
+  if ! health_status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container_id" 2>/dev/null)"; then
+    error "unable to inspect container health for: $service_name"
+    return 1
+  fi
+
+  if [[ -n "$health_status" && "$health_status" != "healthy" ]]; then
+    error "docker compose service not healthy: $service_name ($health_status)"
+    return 1
+  fi
+
+  return 0
+}
+
 attempt_checks() {
   local base_url="$1"
+  local hetzner_dir="$2"
   local auth_status
   local curl_args
 
@@ -23,6 +62,18 @@ attempt_checks() {
     --max-time 15
     --retry 0
   )
+
+  if ! require_service_status "$hetzner_dir" "server"; then
+    return 1
+  fi
+
+  if ! require_service_status "$hetzner_dir" "collector"; then
+    return 1
+  fi
+
+  if ! require_service_status "$hetzner_dir" "caddy"; then
+    return 1
+  fi
 
   if ! curl -fsS "${curl_args[@]}" "$base_url/" >/dev/null; then
     error "base URL not ready: $base_url/"
@@ -75,6 +126,7 @@ main() {
   attempt=1
 
   require_command curl
+  require_command docker
   require_command jq
 
   if [[ ! -f "$env_file" ]]; then
@@ -96,7 +148,7 @@ main() {
   deadline=$((SECONDS + timeout_seconds))
 
   while true; do
-    if attempt_checks "$base_url"; then
+    if attempt_checks "$base_url" "$hetzner_dir"; then
       echo "Smoke checks OK."
       return 0
     fi
