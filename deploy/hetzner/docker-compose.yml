@@ -16,6 +16,7 @@ x-lovora-runtime: &lovora-runtime
     NODE_ENV: production
     ANYTHING_LLM_RUNTIME: docker
     STORAGE_DIR: /app/server/storage
+    COLLECTOR_ENDPOINT: http://collector:8888
   volumes:
     - ./anythingllm.env:/app/server/.env
     - ${LOVORA_DATA_ROOT:-../../.data/hetzner}/server/storage:/app/server/storage
