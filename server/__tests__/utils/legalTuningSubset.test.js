@@ -174,4 +174,43 @@ describe("legalTuningSubset", () => {
       contracterRecord.doc_id
     );
   });
+
+  test("selectTargetedRecords reports selected count and token budget", () => {
+    const meaningfulDistractors = [
+      {
+        doc_id: "nl-19000101-003",
+        corpus: "NL",
+        docType: "act",
+        segmentType: "legal_section",
+        title: "Lov om contracter",
+        section: "3 Art",
+        outputPath: "/tmp/contracter-stats-distractor.md",
+        textLength: 700,
+      },
+      {
+        doc_id: "sf-19000101-0003",
+        corpus: "SF",
+        docType: "regulation",
+        segmentType: "legal_section",
+        title: "Forskrift om Kongeflaget",
+        section: "§ 2",
+        outputPath: "/tmp/kongeflaget-stats-distractor.md",
+        textLength: 700,
+      },
+    ];
+
+    const result = selectTargetedRecords({
+      records: [...records, ...meaningfulDistractors],
+      benchmark,
+      maxEstimatedTokens: 10_000,
+      maxDistractorsPerCase: 1,
+    });
+
+    expect(result.stats).toMatchObject({
+      benchmarkCaseCount: 2,
+      expectedDocumentCount: 2,
+      selectedRecordCount: 4,
+      maxEstimatedTokens: 10_000,
+    });
+  });
 });
