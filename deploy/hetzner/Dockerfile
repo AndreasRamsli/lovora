@@ -1,3 +1,5 @@
+ARG BUILDPLATFORM=linux/amd64
+
 FROM ubuntu:noble-20251013 AS base
 
 ARG ARG_UID=1000
