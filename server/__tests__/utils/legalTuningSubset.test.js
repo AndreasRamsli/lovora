@@ -105,4 +105,26 @@ describe("legalTuningSubset", () => {
     expect(result.stats.expectedRecordCount).toBe(2);
     expect(result.stats.estimatedTokens).toBeLessThanOrEqual(1500);
   });
+
+  test("selectTargetedRecords throws when expected records exceed token budget", () => {
+    expect(() =>
+      selectTargetedRecords({
+        records,
+        benchmark,
+        maxEstimatedTokens: 100,
+      })
+    ).toThrow(/Expected records exceed token budget.*estimated=.*max=/);
+  });
+
+  test("selectTargetedRecords does not select appendix amending records from metadata alone", () => {
+    const result = selectTargetedRecords({
+      records,
+      benchmark: [benchmark[0]],
+      maxDistractorsPerCase: 25,
+    });
+
+    expect(result.records.map((record) => record.doc_id)).not.toContain(
+      "nl-20251219-113"
+    );
+  });
 });

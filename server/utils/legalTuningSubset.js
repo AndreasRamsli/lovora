@@ -73,8 +73,6 @@ function scoreRecordForBenchmark(record = {}, benchmarkCase = {}) {
   for (const term of queryTerms) {
     if (haystack.has(term)) score += 5;
   }
-  if (record.segmentType === "appendix") score += 1;
-  if (record.docType === "amending_act") score += 1;
   return score;
 }
 
@@ -100,6 +98,16 @@ function selectTargetedRecords({
   const expectedRecords = records.filter((record) =>
     expectedIds.has(normalizeText(record.doc_id))
   );
+  const expectedEstimatedTokens = uniqueRecords(expectedRecords).reduce(
+    (total, record) => total + estimateTokensFromChars(record.textLength || 0),
+    0
+  );
+  if (expectedEstimatedTokens > maxEstimatedTokens) {
+    throw new Error(
+      `Expected records exceed token budget: estimated=${expectedEstimatedTokens}, max=${maxEstimatedTokens}`
+    );
+  }
+
   const distractors = [];
   for (const benchmarkCase of benchmark) {
     const ranked = records
