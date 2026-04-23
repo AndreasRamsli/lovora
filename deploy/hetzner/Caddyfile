@@ -12,5 +12,5 @@
 		X-Frame-Options "SAMEORIGIN"
 	}
 
-	reverse_proxy app:3001
+	reverse_proxy server:3001
 }
