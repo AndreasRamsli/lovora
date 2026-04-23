@@ -6,6 +6,10 @@ const {
   rankOfFirstMatch,
   isRetryableStatus,
 } = require("../../utils/legalRemoteEval");
+const {
+  parseArgs: parseRemoteEvalArgs,
+  runEvaluation,
+} = require("../../../scripts/remote-vector-eval.cjs");
 
 describe("legalRemoteEval", () => {
   test("buildConfigs creates stable config IDs", () => {
@@ -67,5 +71,76 @@ describe("legalRemoteEval", () => {
     expect(isRetryableStatus(429)).toBe(true);
     expect(isRetryableStatus(503)).toBe(true);
     expect(isRetryableStatus(403)).toBe(false);
+  });
+
+  test("remote eval parseArgs supports split keys and legacy fallback key", () => {
+    const originalEnv = {
+      ANYTHINGLLM_API_KEY: process.env.ANYTHINGLLM_API_KEY,
+      ANYTHINGLLM_MANAGEMENT_API_KEY: process.env.ANYTHINGLLM_MANAGEMENT_API_KEY,
+      ANYTHINGLLM_SEARCH_API_KEY: process.env.ANYTHINGLLM_SEARCH_API_KEY,
+    };
+
+    delete process.env.ANYTHINGLLM_API_KEY;
+    delete process.env.ANYTHINGLLM_MANAGEMENT_API_KEY;
+    delete process.env.ANYTHINGLLM_SEARCH_API_KEY;
+
+    try {
+      const splitArgs = parseRemoteEvalArgs([
+        "--workspace",
+        "legal",
+        "--management-api-key",
+        "management-key",
+        "--search-api-key",
+        "search-key",
+      ]);
+
+      expect(splitArgs.managementApiKey).toBe("management-key");
+      expect(splitArgs.searchApiKey).toBe("search-key");
+
+      const fallbackArgs = parseRemoteEvalArgs(["--workspace", "legal", "--api-key", "legacy-key"]);
+      expect(fallbackArgs.managementApiKey).toBe("legacy-key");
+      expect(fallbackArgs.searchApiKey).toBe("legacy-key");
+    } finally {
+      for (const [key, value] of Object.entries(originalEnv)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
+
+  test("runEvaluation restores the original vectorSearchMode after vector search failure", async () => {
+    const updateWorkspaceMode = jest.fn().mockResolvedValue();
+    const vectorSearchError = new Error("vector search denied");
+
+    await expect(
+      runEvaluation(
+        {
+          workspace: "legal",
+          benchmark: "/tmp/benchmark.json",
+          modes: ["rerank"],
+          topNs: [4],
+          thresholds: [0.2],
+          reportJson: "/tmp/report.json",
+          reportMd: "/tmp/report.md",
+        },
+        {
+          loadBenchmark: jest.fn().mockReturnValue([
+            {
+              id: "case-1",
+              query: "kan en mindreårig inngå avtale",
+              expect: { lovdataId: "nl-16870415-000", corpus: "NL" },
+            },
+          ]),
+          getWorkspace: jest.fn().mockResolvedValue({ vectorSearchMode: "default" }),
+          updateWorkspaceMode,
+          vectorSearch: jest.fn().mockRejectedValue(vectorSearchError),
+          writeReports: jest.fn(),
+          logger: { log: jest.fn(), error: jest.fn() },
+        }
+      )
+    ).rejects.toThrow("vector search denied");
+
+    expect(updateWorkspaceMode).toHaveBeenNthCalledWith(1, expect.any(Object), "rerank");
+    expect(updateWorkspaceMode).toHaveBeenNthCalledWith(2, expect.any(Object), "default");
   });
 });
