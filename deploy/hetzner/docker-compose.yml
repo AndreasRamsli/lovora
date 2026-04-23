@@ -43,7 +43,7 @@ services:
   collector:
     <<: *lovora-runtime
     entrypoint: ["/bin/bash", "-lc"]
-    command: "cd /app/collector && exec node index.js"
+    command: ["cd /app/collector && exec node index.js"]
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8888/ >/dev/null || exit 1"]
       interval: 30s

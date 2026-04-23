@@ -17,7 +17,7 @@ class RuntimeSplitTests(unittest.TestCase):
         self.assertNotRegex(text, r"(?m)^  app:\n")
         self.assertRegex(
             text,
-            re.escape('command: "cd /app/collector && exec node index.js"'),
+            re.escape('command: ["cd /app/collector && exec node index.js"]'),
         )
         self.assertNotRegex(text, re.escape("exec yarn start"))
 
