@@ -127,6 +127,10 @@ class RolloutScriptTests(unittest.TestCase):
             self.assertIn("--build-arg ARG_UID=1234", build_call)
             self.assertIn("--build-arg ARG_GID=2345", build_call)
 
+    def test_rollout_recreates_caddy_after_runtime_deploy(self):
+        text = ROLLOUT_SCRIPT.read_text()
+        self.assertIn("--force-recreate --no-deps caddy", text)
+
     def test_rollout_build_defaults_uid_gid_when_not_exported(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
