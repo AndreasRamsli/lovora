@@ -35,6 +35,21 @@ describe("legalRemoteEval", () => {
         url: "https://lovdata.no/dokument/NL/lov/1687-04-15-0#section-0001",
       })
     ).toBe("nl-16870415-000");
+    expect(
+      deriveLovdataId({
+        url: "https://lovdata.no/dokument/NL/LOV-1687-04-15-0",
+      })
+    ).toBe("nl-16870415-000");
+    expect(
+      deriveLovdataId({
+        url: "https://lovdata.no/dokument/SF/FOR-1905-11-15-2",
+      })
+    ).toBe("sf-19051115-0002");
+    expect(
+      deriveLovdataId({
+        url: "https://lovdata.no/dokument/SF/forskrift/1905-12-30-1",
+      })
+    ).toBe("sf-19051230-0001");
   });
 
   test("rankOfFirstMatch finds expected Lovdata ID", () => {
@@ -44,6 +59,17 @@ describe("legalRemoteEval", () => {
         { metadata: { url: "https://lovdata.no/dokument/NL/lov/1687-04-15-0" } },
       ],
       { lovdataId: "nl-16870415-000", corpus: "NL" }
+    );
+    expect(rank).toBe(2);
+  });
+
+  test("rankOfFirstMatch matches live SF Lovdata metadata URLs", () => {
+    const rank = rankOfFirstMatch(
+      [
+        { metadata: { url: "https://lovdata.no/dokument/NL/LOV-1687-04-15-0" } },
+        { metadata: { url: "https://lovdata.no/dokument/SF/FOR-1905-11-15-2" } },
+      ],
+      { lovdataId: "sf-19051115-0002", corpus: "SF" }
     );
     expect(rank).toBe(2);
   });

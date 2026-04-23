@@ -32,23 +32,48 @@ function round(value, decimals = 4) {
   return Math.round(value * factor) / factor;
 }
 
+function formatStatuteLovdataId(corpus, year, month, day, sequence) {
+  const sequenceWidth = corpus === "SF" ? 4 : 3;
+  return `${corpus.toLowerCase()}-${year}${month}${day}-${sequence.padStart(sequenceWidth, "0")}`;
+}
+
 function canonicalDocument(value = "") {
-  const match = String(value)
-    .toLowerCase()
-    .match(/\/dokument\/(hrstr|trr|emdn|nl|sf)\/(avgjorelse|lov|forskrift)\/([a-z0-9-]+)(?=[/?#]|$)/);
-  if (!match) return null;
-  const [, rawCorpus, documentType, documentId] = match;
-  const corpus = rawCorpus === "hrstr" ? "HRA" : rawCorpus.toUpperCase();
-  const statuteMatch = documentId.match(/^(\d{4})-(\d{2})-(\d{2})-(\d+)$/);
+  const source = String(value).toLowerCase();
+  const match = source.match(
+    /\/dokument\/(hrstr|trr|emdn|nl|sf)\/(avgjorelse|lov|forskrift)\/([a-z0-9-]+)(?=[/?#]|$)/
+  );
+  if (match) {
+    const [, rawCorpus, documentType, documentId] = match;
+    const corpus = rawCorpus === "hrstr" ? "HRA" : rawCorpus.toUpperCase();
+    const statuteMatch = documentId.match(/^(\d{4})-(\d{2})-(\d{2})-(\d+)$/);
+    return {
+      corpus,
+      documentType,
+      lovdataId:
+        corpus === "HRA" || corpus === "TRR" || corpus === "EMDN"
+          ? documentId
+          : statuteMatch
+            ? formatStatuteLovdataId(
+                corpus,
+                statuteMatch[1],
+                statuteMatch[2],
+                statuteMatch[3],
+                statuteMatch[4]
+              )
+            : null,
+    };
+  }
+
+  const prefixedStatuteMatch = source.match(
+    /\/dokument\/(nl|sf)\/(lov|for)-(\d{4})-(\d{2})-(\d{2})-(\d+)(?=[/?#]|$)/
+  );
+  if (!prefixedStatuteMatch) return null;
+  const [, rawCorpus, documentPrefix, year, month, day, sequence] = prefixedStatuteMatch;
+  const corpus = rawCorpus.toUpperCase();
   return {
     corpus,
-    documentType,
-    lovdataId:
-      corpus === "HRA" || corpus === "TRR" || corpus === "EMDN"
-        ? documentId
-        : statuteMatch
-          ? `${corpus.toLowerCase()}-${statuteMatch[1]}${statuteMatch[2]}${statuteMatch[3]}-${statuteMatch[4].padStart(3, "0")}`
-          : null,
+    documentType: documentPrefix === "lov" ? "lov" : "forskrift",
+    lovdataId: formatStatuteLovdataId(corpus, year, month, day, sequence),
   };
 }
 
