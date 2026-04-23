@@ -1,3 +1,6 @@
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
 const {
   estimateTokensFromChars,
   expectedLovdataIds,
@@ -5,6 +8,7 @@ const {
   scoreRecordForBenchmark,
   selectTargetedRecords,
 } = require("../../utils/legalTuningSubset");
+const { readJsonlManifest } = require("../../../scripts/build-legal-tuning-subset.cjs");
 
 describe("legalTuningSubset", () => {
   const benchmark = [
@@ -212,5 +216,26 @@ describe("legalTuningSubset", () => {
       selectedRecordCount: 4,
       maxEstimatedTokens: 10_000,
     });
+  });
+
+  test("readJsonlManifest normalizes relative outputPath values to absolute paths", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "legal-tuning-subset-"));
+    const manifestPath = path.join(tempDir, "_manifest.jsonl");
+    const docPath = path.join(tempDir, "doc.md");
+
+    try {
+      fs.writeFileSync(docPath, "Legal tuning subset text.\n");
+      fs.writeFileSync(
+        manifestPath,
+        `${JSON.stringify({ doc_id: "doc-1", outputPath: "doc.md" })}\n`
+      );
+
+      const [record] = readJsonlManifest(manifestPath);
+
+      expect(path.isAbsolute(record.outputPath)).toBe(true);
+      expect(record.outputPath).toBe(docPath);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

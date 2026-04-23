@@ -102,7 +102,7 @@ function readJsonlManifest(manifestPath) {
       ? record.outputPath
       : path.resolve(manifestDir, record.outputPath);
     const text = fs.readFileSync(outputPath, "utf8");
-    records.push({ ...record, textLength: text.length });
+    records.push({ ...record, outputPath, textLength: text.length });
   }
 
   return records;
@@ -224,9 +224,13 @@ function main() {
   );
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error);
-  process.exit(1);
+if (require.main === module) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+} else {
+  module.exports = { readJsonlManifest };
 }
