@@ -127,4 +127,51 @@ describe("legalTuningSubset", () => {
       "nl-20251219-113"
     );
   });
+
+  test("selectTargetedRecords excludes same-corpus distractors with only generic Norske overlap", () => {
+    const unrelatedNorskeRecord = {
+      doc_id: "nl-19000101-001",
+      corpus: "NL",
+      docType: "act",
+      segmentType: "legal_section",
+      title: "Lov om Norske foreninger",
+      section: "1 Art",
+      outputPath: "/tmp/norske-distractor.md",
+      textLength: 700,
+    };
+
+    const result = selectTargetedRecords({
+      records: [...records, unrelatedNorskeRecord],
+      benchmark: [benchmark[0]],
+      maxDistractorsPerCase: 25,
+    });
+
+    expect(result.records.map((record) => record.doc_id)).not.toContain(
+      unrelatedNorskeRecord.doc_id
+    );
+  });
+
+  test("selectTargetedRecords includes same-corpus distractors with meaningful contracter overlap", () => {
+    const contracterRecord = {
+      doc_id: "nl-19000101-002",
+      corpus: "NL",
+      docType: "act",
+      segmentType: "legal_section",
+      title: "Lov om contracter",
+      section: "2 Art",
+      outputPath: "/tmp/contracter-distractor.md",
+      textLength: 700,
+    };
+
+    const result = selectTargetedRecords({
+      records: [...records, contracterRecord],
+      benchmark: [benchmark[0]],
+      maxEstimatedTokens: 10_000,
+      maxDistractorsPerCase: 25,
+    });
+
+    expect(result.records.map((record) => record.doc_id)).toContain(
+      contracterRecord.doc_id
+    );
+  });
 });

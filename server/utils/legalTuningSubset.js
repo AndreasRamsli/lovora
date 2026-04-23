@@ -19,6 +19,19 @@ const STOP_WORDS = new Set([
   "av",
 ]);
 
+const GENERIC_DISTRACTOR_TERMS = new Set([
+  "norske",
+  "norsk",
+  "lovdata",
+  "lov",
+  "loven",
+  "forskrift",
+  "forskriften",
+  "kapittel",
+  "paragraf",
+  "vedlegg",
+]);
+
 function normalizeText(value = "") {
   return String(value).toLowerCase();
 }
@@ -50,16 +63,8 @@ function keywordSet(value = "") {
   return new Set(words);
 }
 
-function scoreRecordForBenchmark(record = {}, benchmarkCase = {}) {
-  let score = 0;
-  const expect = benchmarkCase.expect || {};
-  const recordId = normalizeText(record.doc_id);
-  const corpus = String(record.corpus || "").toUpperCase();
-  const expectedCorpus = String(expect.corpus || "").toUpperCase();
-  if (expectedCorpus && corpus === expectedCorpus) score += 10;
-  if (recordId && collectExpectationIds(expect).has(recordId)) score += 1000;
-  const queryTerms = keywordSet(benchmarkCase.query || "");
-  const haystack = keywordSet(
+function recordMetadataTerms(record = {}) {
+  return keywordSet(
     [
       record.title,
       record.shortTitle,
@@ -70,6 +75,34 @@ function scoreRecordForBenchmark(record = {}, benchmarkCase = {}) {
       record.segmentType,
     ].join(" ")
   );
+}
+
+function meaningfulQueryTerms(value = "") {
+  return new Set(
+    [...keywordSet(value)].filter((term) => !GENERIC_DISTRACTOR_TERMS.has(term))
+  );
+}
+
+function hasMeaningfulQueryOverlap(record = {}, benchmarkCase = {}) {
+  const queryTerms = meaningfulQueryTerms(benchmarkCase.query || "");
+  if (queryTerms.size === 0) return false;
+  const haystack = recordMetadataTerms(record);
+  for (const term of queryTerms) {
+    if (haystack.has(term)) return true;
+  }
+  return false;
+}
+
+function scoreRecordForBenchmark(record = {}, benchmarkCase = {}) {
+  let score = 0;
+  const expect = benchmarkCase.expect || {};
+  const recordId = normalizeText(record.doc_id);
+  const corpus = String(record.corpus || "").toUpperCase();
+  const expectedCorpus = String(expect.corpus || "").toUpperCase();
+  if (expectedCorpus && corpus === expectedCorpus) score += 10;
+  if (recordId && collectExpectationIds(expect).has(recordId)) score += 1000;
+  const queryTerms = keywordSet(benchmarkCase.query || "");
+  const haystack = recordMetadataTerms(record);
   for (const term of queryTerms) {
     if (haystack.has(term)) score += 5;
   }
@@ -116,7 +149,10 @@ function selectTargetedRecords({
         record,
         score: scoreRecordForBenchmark(record, benchmarkCase),
       }))
-      .filter((item) => item.score > 10)
+      .filter(
+        (item) =>
+          item.score > 0 && hasMeaningfulQueryOverlap(item.record, benchmarkCase)
+      )
       .sort((left, right) => {
         if (right.score !== left.score) return right.score - left.score;
         return Number(left.record.textLength || 0) - Number(right.record.textLength || 0);
