@@ -70,7 +70,10 @@ const {
 } = require("../utils/moderation/schemaReadiness");
 
 function setNoStore(response) {
-  response.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  response.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
   response.set("Pragma", "no-cache");
   response.set("Expires", "0");
   response.set("Surrogate-Control", "no-store");
@@ -677,9 +680,8 @@ function systemEndpoints(app) {
         await SystemSettings._updateSettings({
           multi_user_mode: true,
         });
-        const migratedKeys = await BrowserExtensionApiKey.migrateApiKeysToMultiUser(
-          user.id
-        );
+        const migratedKeys =
+          await BrowserExtensionApiKey.migrateApiKeysToMultiUser(user.id);
         if (!migratedKeys) {
           throw new Error("Failed to migrate shared browser-extension keys.");
         }

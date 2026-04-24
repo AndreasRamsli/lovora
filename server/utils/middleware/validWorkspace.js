@@ -64,7 +64,11 @@ async function validWorkspaceSlugByMembership(request, response, next) {
   next();
 }
 
-async function validWorkspaceAndThreadSlugByMembership(request, response, next) {
+async function validWorkspaceAndThreadSlugByMembership(
+  request,
+  response,
+  next
+) {
   const { slug, threadSlug } = request.params;
   const user = await userFromSession(request, response);
   const workspace = multiUserMode(response)

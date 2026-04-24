@@ -52,7 +52,10 @@ function defaultWorkspaceAttachResult() {
   };
 }
 
-async function attachDocumentToWorkspaces(addToWorkspaces = "", docLocation = null) {
+async function attachDocumentToWorkspaces(
+  addToWorkspaces = "",
+  docLocation = null
+) {
   if (!addToWorkspaces) return defaultWorkspaceAttachResult();
 
   try {
@@ -327,8 +330,12 @@ function apiDocumentEndpoints(app) {
           fs.mkdirSync(targetFolderPath, { recursive: true });
 
         const existingDocument =
-          typeof metadata?.chunkSource === "string" && metadata.chunkSource.length
-            ? await findDocumentByChunkSourceInFolder(folder, metadata.chunkSource)
+          typeof metadata?.chunkSource === "string" &&
+          metadata.chunkSource.length
+            ? await findDocumentByChunkSourceInFolder(
+                folder,
+                metadata.chunkSource
+              )
             : null;
         if (existingDocument) {
           const workspaceAttach = await attachDocumentToWorkspaces(

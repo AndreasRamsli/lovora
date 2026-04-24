@@ -7,10 +7,7 @@ const { reqBody, multiUserMode } = require("../../../utils/http");
 const { VALID_CHAT_MODE } = require("../../../utils/chats/stream");
 const { Telemetry } = require("../../../models/telemetry");
 const { EventLogs } = require("../../../models/eventLogs");
-const {
-  writeResponseChunk,
-} = require("../../../utils/helpers/chat/responses");
-const { WorkspaceChats } = require("../../../models/workspaceChats");
+const { writeResponseChunk } = require("../../../utils/helpers/chat/responses");
 const { User } = require("../../../models/user");
 const { ApiChatHandler } = require("../../../utils/chats/apiChatHandler");
 const { getModelTag } = require("../../utils");

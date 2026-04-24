@@ -42,7 +42,9 @@ class VoyageAiEmbedder {
 
     // If given an array return the native Array[Array] format since that should be the outcome.
     // But if given a single string, we need to flatten it so that we have a 1D array.
-    return (Array.isArray(textInput) ? result : result.flat?.() ?? result) || [];
+    return (
+      (Array.isArray(textInput) ? result : result.flat?.() ?? result) || []
+    );
   }
 
   async embedChunks(textChunks = []) {
@@ -83,7 +85,10 @@ class VoyageAiEmbedder {
     if (!response.ok) {
       const error = payload?.detail || payload?.message || response.statusText;
       const message = String(error);
-      if (response.status === 429 || message.toLowerCase().includes("rate limit"))
+      if (
+        response.status === 429 ||
+        message.toLowerCase().includes("rate limit")
+      )
         throw new Error("Voyage AI failed to embed: Rate limit reached");
       throw new Error(`Voyage AI failed to embed: ${message}`);
     }

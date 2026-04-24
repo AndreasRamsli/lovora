@@ -60,14 +60,27 @@ function resolveApiKeyPrincipal(apiKey = null) {
   const apiKeyId = parseStrictInteger(apiKey.id);
   if (apiKeyId === null) return null;
 
-  const hasPrincipalType = apiKey.principalType !== null && apiKey.principalType !== undefined && apiKey.principalType !== "";
-  const principalType = hasPrincipalType ? String(apiKey.principalType) : "management";
-  if (hasPrincipalType && !["management", "workspace_service"].includes(principalType)) {
+  const hasPrincipalType =
+    apiKey.principalType !== null &&
+    apiKey.principalType !== undefined &&
+    apiKey.principalType !== "";
+  const principalType = hasPrincipalType
+    ? String(apiKey.principalType)
+    : "management";
+  if (
+    hasPrincipalType &&
+    !["management", "workspace_service"].includes(principalType)
+  ) {
     return null;
   }
 
   const createdByUserId = parseStrictInteger(apiKey.createdBy);
-  if (apiKey.createdBy !== null && apiKey.createdBy !== undefined && apiKey.createdBy !== "" && createdByUserId === null) {
+  if (
+    apiKey.createdBy !== null &&
+    apiKey.createdBy !== undefined &&
+    apiKey.createdBy !== "" &&
+    createdByUserId === null
+  ) {
     return null;
   }
 
@@ -95,8 +108,11 @@ function resolveApiKeyPrincipal(apiKey = null) {
 
 function principalCan(principal = null, capability = "") {
   if (!principal || !capability) return false;
-  if (!["management", "workspace_service"].includes(principal.kind)) return false;
-  return Array.isArray(principal.scopes) && principal.scopes.includes(capability);
+  if (!["management", "workspace_service"].includes(principal.kind))
+    return false;
+  return (
+    Array.isArray(principal.scopes) && principal.scopes.includes(capability)
+  );
 }
 
 function isWorkspaceServicePrincipal(principal = null, workspaceId = null) {

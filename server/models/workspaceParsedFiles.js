@@ -276,8 +276,7 @@ const WorkspaceParsedFiles = {
           directUploadsPath,
           path.basename(location)
         );
-        if (!fs.existsSync(sourceFile))
-          return buildUnavailableSource(identity);
+        if (!fs.existsSync(sourceFile)) return buildUnavailableSource(identity);
 
         const content = fs.readFileSync(sourceFile, "utf-8");
         const data = safeJsonParse(content, null);

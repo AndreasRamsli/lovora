@@ -8,7 +8,9 @@ const {
   ensureDefaultWorkspaceMembership,
 } = require("../utils/auth/defaultWorkspaceMembership");
 const { SystemSettings } = require("../models/systemSettings");
-const { simpleSSOLoginDisabled } = require("../utils/middleware/simpleSSOEnabled");
+const {
+  simpleSSOLoginDisabled,
+} = require("../utils/middleware/simpleSSOEnabled");
 const {
   signInLegacyUserWithBetterAuth,
 } = require("../utils/auth/legacyBetterAuthLogin");

@@ -25,7 +25,7 @@ function apiUserManagementEndpoints(app) {
       },
       [validApiKey],
       async (request, response) => {
-    /*
+        /*
       #swagger.tags = ['User Management']
       #swagger.description = 'List all users'
       #swagger.responses[200] = {
@@ -60,23 +60,23 @@ function apiUserManagementEndpoints(app) {
       description: "Instance is not in Multi-User mode. Permission denied.",
     }
       */
-    try {
-      if (!multiUserMode(response))
-        return response
-          .status(401)
-          .send("Instance is not in Multi-User mode. Permission denied.");
+        try {
+          if (!multiUserMode(response))
+            return response
+              .status(401)
+              .send("Instance is not in Multi-User mode. Permission denied.");
 
-      const users = await User.where();
-      const filteredUsers = users.map((user) => ({
-        id: user.id,
-        username: user.username,
-        role: user.role,
-      }));
-      response.status(200).json({ users: filteredUsers });
-    } catch (e) {
-      console.error(e.message, e);
-      response.sendStatus(500).end();
-    }
+          const users = await User.where();
+          const filteredUsers = users.map((user) => ({
+            id: user.id,
+            username: user.username,
+            role: user.role,
+          }));
+          response.status(200).json({ users: filteredUsers });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
     )
   );
@@ -95,7 +95,7 @@ function apiUserManagementEndpoints(app) {
       },
       [validApiKey, simpleSSOEnabled],
       async (_request, response) => {
-      /*
+        /*
       #swagger.tags = ['User Management']
       #swagger.description = 'This route is permanently disabled for API keys and always returns a denial response.'
       #swagger.parameters['id'] = {
@@ -111,9 +111,9 @@ function apiUserManagementEndpoints(app) {
         }
       }
       */
-      response.status(403).json({
-        error: "API keys cannot issue user auth tokens.",
-      });
+        response.status(403).json({
+          error: "API keys cannot issue user auth tokens.",
+        });
       }
     )
   );

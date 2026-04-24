@@ -151,11 +151,15 @@ function selectTargetedRecords({
       }))
       .filter(
         (item) =>
-          item.score > 0 && hasMeaningfulQueryOverlap(item.record, benchmarkCase)
+          item.score > 0 &&
+          hasMeaningfulQueryOverlap(item.record, benchmarkCase)
       )
       .sort((left, right) => {
         if (right.score !== left.score) return right.score - left.score;
-        return Number(left.record.textLength || 0) - Number(right.record.textLength || 0);
+        return (
+          Number(left.record.textLength || 0) -
+          Number(right.record.textLength || 0)
+        );
       })
       .slice(0, maxDistractorsPerCase)
       .map((item) => item.record);
@@ -167,7 +171,8 @@ function selectTargetedRecords({
   for (const record of uniqueRecords([...expectedRecords, ...distractors])) {
     const recordTokens = estimateTokensFromChars(record.textLength || 0);
     const isExpected = expectedIds.has(normalizeText(record.doc_id));
-    if (!isExpected && estimatedTokens + recordTokens > maxEstimatedTokens) continue;
+    if (!isExpected && estimatedTokens + recordTokens > maxEstimatedTokens)
+      continue;
     selected.push(record);
     estimatedTokens += recordTokens;
   }

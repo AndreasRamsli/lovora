@@ -367,7 +367,9 @@ function apiAdminEndpoints(app) {
           return;
         }
 
-        const release = await CorpusRelease.getCurrent(request.params.workspaceSlug);
+        const release = await CorpusRelease.getCurrent(
+          request.params.workspaceSlug
+        );
         response.status(200).json({ release });
       } catch (e) {
         console.error(e);

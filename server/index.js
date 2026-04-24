@@ -3,7 +3,7 @@ process.env.NODE_ENV === "development"
   : require("dotenv").config();
 
 const { createApp } = require("./app");
-const { bootHTTP, bootSSL } = require("./utils/boot");
+const { bootHTTP } = require("./utils/boot");
 const app = createApp();
 
 // In non-https mode we need to boot at the end since the server has not yet

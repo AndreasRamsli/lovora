@@ -48,9 +48,7 @@ function parseArgs(argv = []) {
 
   if (!args.workspace) throw new Error("Missing required --workspace");
   if (!args.folder) throw new Error("Missing required --folder");
-  if (
-    !["verify-only", "dedupe-only", "reattach-missing"].includes(args.mode)
-  ) {
+  if (!["verify-only", "dedupe-only", "reattach-missing"].includes(args.mode)) {
     throw new Error(
       `Invalid --mode '${args.mode}'. Use verify-only, dedupe-only, or reattach-missing.`
     );
@@ -166,7 +164,8 @@ async function buildState(workspace, folder) {
   for (const doc of folderDocs) {
     const chunkSourceKey = doc.chunkSource || `__missing__:${doc.location}`;
     const urlKey = doc.url || `__missing__:${doc.location}`;
-    if (!byChunkSource.has(chunkSourceKey)) byChunkSource.set(chunkSourceKey, []);
+    if (!byChunkSource.has(chunkSourceKey))
+      byChunkSource.set(chunkSourceKey, []);
     if (!byUrl.has(urlKey)) byUrl.set(urlKey, []);
     byChunkSource.get(chunkSourceKey).push(doc);
     byUrl.get(urlKey).push(doc);
@@ -202,7 +201,9 @@ async function buildState(workspace, folder) {
     return acc;
   }, new Map());
 
-  const duplicateWorkspaceDocpaths = Array.from(workspaceDocpathCounts.entries())
+  const duplicateWorkspaceDocpaths = Array.from(
+    workspaceDocpathCounts.entries()
+  )
     .filter(([, count]) => count > 1)
     .map(([docpath, count]) => ({ docpath, count }))
     .sort((a, b) => a.docpath.localeCompare(b.docpath));
@@ -349,7 +350,10 @@ async function main() {
   }
 
   if (args.mode === "dedupe-only") {
-    const { operations, finalState } = await dedupeFolder(workspace, args.folder);
+    const { operations, finalState } = await dedupeFolder(
+      workspace,
+      args.folder
+    );
     const report = { mode: args.mode, state: finalState, operations };
     if (args.json) console.log(JSON.stringify(report, null, 2));
     else printHumanReport(report);

@@ -24,7 +24,11 @@ function createRequestSecurityContext({
   plane = "control",
   principal = null,
 } = {}) {
-  if (!isValidRequestId(requestId) || !isValidRouteId(routeId) || !isValidPlane(plane)) {
+  if (
+    !isValidRequestId(requestId) ||
+    !isValidRouteId(routeId) ||
+    !isValidPlane(plane)
+  ) {
     throw invalidRequestContextError();
   }
 
@@ -61,7 +65,9 @@ function assertContentPlane(ctx = null) {
   assertRequestSecurityContext(ctx);
 
   if (ctx.plane !== "content") {
-    const error = new Error("Control-plane route attempted to access chat content.");
+    const error = new Error(
+      "Control-plane route attempted to access chat content."
+    );
     error.status = 403;
     throw error;
   }

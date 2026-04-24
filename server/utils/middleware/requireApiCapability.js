@@ -22,7 +22,8 @@ function requireApiCapability(_request, response, next) {
     return;
   }
 
-  const requiredCapabilities = routePolicy.principalAccess[principal?.kind] || null;
+  const requiredCapabilities =
+    routePolicy.principalAccess[principal?.kind] || null;
   if (!requiredCapabilities) {
     deny(response, capabilityDenyMessage(routePolicy));
     return;

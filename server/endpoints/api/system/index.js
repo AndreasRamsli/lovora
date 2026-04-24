@@ -147,15 +147,11 @@ function apiSystemEndpoints(app) {
     }
   );
 
-  app.get(
-    "/v1/system/export-chats",
-    [validApiKey],
-    async (_, response) => {
-      response
-        .status(403)
-        .json({ success: false, error: "Raw chat export is disabled." });
-    }
-  );
+  app.get("/v1/system/export-chats", [validApiKey], async (_, response) => {
+    response
+      .status(403)
+      .json({ success: false, error: "Raw chat export is disabled." });
+  });
   app.delete(
     "/v1/system/remove-documents",
     [validApiKey],

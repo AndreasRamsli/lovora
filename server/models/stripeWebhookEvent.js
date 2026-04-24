@@ -32,7 +32,9 @@ const StripeWebhookEvent = {
     if (!record?.lastUpdatedAt) return true;
     const lastUpdatedAt = new Date(record.lastUpdatedAt);
     if (Number.isNaN(lastUpdatedAt.getTime())) return true;
-    return now.getTime() - lastUpdatedAt.getTime() > this.getProcessingLeaseMs();
+    return (
+      now.getTime() - lastUpdatedAt.getTime() > this.getProcessingLeaseMs()
+    );
   },
 
   getByStripeEventId: async function (stripeEventId = "") {
@@ -60,7 +62,11 @@ const StripeWebhookEvent = {
     };
   },
 
-  reclaimExisting: async function (existing = null, data = {}, now = new Date()) {
+  reclaimExisting: async function (
+    existing = null,
+    data = {},
+    now = new Date()
+  ) {
     if (!existing) return { claimed: false, event: null };
 
     if (existing.status === this.statuses.processed) {

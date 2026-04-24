@@ -74,7 +74,11 @@ class TextSplitter {
     return Math.min(preferred, limit);
   }
 
-  static determineChunkSize(metadata = {}, preferred = null, embedderLimit = 1000) {
+  static determineChunkSize(
+    metadata = {},
+    preferred = null,
+    embedderLimit = 1000
+  ) {
     return this.shouldUseLegalParagraphMode(metadata)
       ? this.determineLegalChunkSize(metadata, embedderLimit)
       : this.determineMaxChunkSize(preferred, embedderLimit);
@@ -379,7 +383,8 @@ class LegalParagraphSplitter {
   }
 
   extractPreamble(paragraphs = []) {
-    if (paragraphs.length < 2) return { preamble: "", bodyParagraphs: paragraphs };
+    if (paragraphs.length < 2)
+      return { preamble: "", bodyParagraphs: paragraphs };
     const [titleBlock, metadataBlock, ...bodyParagraphs] = paragraphs;
     const looksLikeTitle = !titleBlock.includes(":");
     const looksLikeMetadata = /^Kilde:\s+/m.test(metadataBlock);
@@ -398,7 +403,9 @@ class LegalParagraphSplitter {
     if (paragraphs.length === 0) return [];
 
     const { preamble, bodyParagraphs } = this.extractPreamble(paragraphs);
-    const normalizedParagraphs = bodyParagraphs.length ? bodyParagraphs : paragraphs;
+    const normalizedParagraphs = bodyParagraphs.length
+      ? bodyParagraphs
+      : paragraphs;
     const firstChunkLimit =
       preamble && preamble.length + 2 < this.chunkSize
         ? this.chunkSize - (preamble.length + 2)
@@ -409,7 +416,9 @@ class LegalParagraphSplitter {
 
     for (const paragraph of normalizedParagraphs) {
       const currentText = current.join("\n\n");
-      const nextText = currentText ? `${currentText}\n\n${paragraph}` : paragraph;
+      const nextText = currentText
+        ? `${currentText}\n\n${paragraph}`
+        : paragraph;
       const activeLimit =
         preamble && chunks.length === 0 ? firstChunkLimit : this.chunkSize;
 

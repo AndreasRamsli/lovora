@@ -1,13 +1,9 @@
-const {
-  createRequestSecurityContext,
-} = require("./requestSecurityContext");
+const { createRequestSecurityContext } = require("./requestSecurityContext");
 const {
   installControlPlaneResponseGuard,
 } = require("./controlPlaneResponseGuard");
 const { validApiKey } = require("../middleware/validApiKey");
-const {
-  requireApiCapability,
-} = require("../middleware/requireApiCapability");
+const { requireApiCapability } = require("../middleware/requireApiCapability");
 
 const declaredPolicies = new Map();
 

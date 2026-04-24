@@ -68,7 +68,8 @@ function canonicalDocument(value = "") {
     /\/dokument\/(nl|sf)\/(lov|for)-(\d{4})-(\d{2})-(\d{2})-(\d+)(?=[/?#]|$)/
   );
   if (!prefixedStatuteMatch) return null;
-  const [, rawCorpus, documentPrefix, year, month, day, sequence] = prefixedStatuteMatch;
+  const [, rawCorpus, documentPrefix, year, month, day, sequence] =
+    prefixedStatuteMatch;
   const corpus = rawCorpus.toUpperCase();
   return {
     corpus,
@@ -80,7 +81,12 @@ function canonicalDocument(value = "") {
 function deriveLovdataId(result = {}) {
   if (result.lovdataId) return String(result.lovdataId).toLowerCase();
   const metadata = result.metadata || {};
-  for (const value of [metadata.chunkSource, metadata.url, result.chunkSource, result.url]) {
+  for (const value of [
+    metadata.chunkSource,
+    metadata.url,
+    result.chunkSource,
+    result.url,
+  ]) {
     const doc = canonicalDocument(value);
     if (doc?.lovdataId) return doc.lovdataId;
   }
@@ -94,7 +100,12 @@ function deriveCorpus(result = {}) {
   const lovdataId = deriveLovdataId(result);
   if (lovdataId?.startsWith("nl-")) return "NL";
   if (lovdataId?.startsWith("sf-")) return "SF";
-  for (const value of [metadata.chunkSource, metadata.url, result.chunkSource, result.url]) {
+  for (const value of [
+    metadata.chunkSource,
+    metadata.url,
+    result.chunkSource,
+    result.url,
+  ]) {
     const doc = canonicalDocument(value);
     if (doc?.corpus) return doc.corpus;
   }
@@ -115,9 +126,25 @@ function normalizeRemoteResult(result = {}) {
 
 function matchesSingleExpectation(result, expect = {}) {
   if (expect.corpus && result.corpus !== expect.corpus) return false;
-  if (expect.lovdataId && result.lovdataId !== String(expect.lovdataId).toLowerCase()) return false;
-  if (expect.urlIncludes && !String(result.url).toLowerCase().includes(String(expect.urlIncludes).toLowerCase())) return false;
-  if (expect.titleIncludes && !String(result.title).toLowerCase().includes(String(expect.titleIncludes).toLowerCase())) return false;
+  if (
+    expect.lovdataId &&
+    result.lovdataId !== String(expect.lovdataId).toLowerCase()
+  )
+    return false;
+  if (
+    expect.urlIncludes &&
+    !String(result.url)
+      .toLowerCase()
+      .includes(String(expect.urlIncludes).toLowerCase())
+  )
+    return false;
+  if (
+    expect.titleIncludes &&
+    !String(result.title)
+      .toLowerCase()
+      .includes(String(expect.titleIncludes).toLowerCase())
+  )
+    return false;
   return true;
 }
 
@@ -130,7 +157,8 @@ function matchesExpectation(result, expect = {}) {
 
 function rankOfFirstMatch(results = [], expect = {}) {
   for (let index = 0; index < results.length; index++) {
-    if (matchesExpectation(normalizeRemoteResult(results[index]), expect)) return index + 1;
+    if (matchesExpectation(normalizeRemoteResult(results[index]), expect))
+      return index + 1;
   }
   return null;
 }
@@ -138,9 +166,15 @@ function rankOfFirstMatch(results = [], expect = {}) {
 function computeMetrics(caseResults = [], topN = 4) {
   const total = caseResults.length;
   const hitAt1 = caseResults.filter((item) => item.rank === 1).length;
-  const hitAt3 = caseResults.filter((item) => item.rank !== null && item.rank <= 3).length;
-  const hitAtK = caseResults.filter((item) => item.rank !== null && item.rank <= topN).length;
-  const reciprocalRanks = caseResults.map((item) => (item.rank ? 1 / item.rank : 0));
+  const hitAt3 = caseResults.filter(
+    (item) => item.rank !== null && item.rank <= 3
+  ).length;
+  const hitAtK = caseResults.filter(
+    (item) => item.rank !== null && item.rank <= topN
+  ).length;
+  const reciprocalRanks = caseResults.map((item) =>
+    item.rank ? 1 / item.rank : 0
+  );
   const mrr = reciprocalRanks.reduce((sum, value) => sum + value, 0) / total;
   return {
     total,
