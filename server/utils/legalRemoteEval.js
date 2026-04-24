@@ -147,7 +147,9 @@ function matchesSingleExpectation(result, expect = {}) {
   if (
     expect.urlIncludes &&
     ![result.url, result.chunkSource].some((value) =>
-      String(value).toLowerCase().includes(String(expect.urlIncludes).toLowerCase())
+      String(value)
+        .toLowerCase()
+        .includes(String(expect.urlIncludes).toLowerCase())
     )
   )
     return false;
