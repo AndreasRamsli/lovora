@@ -10,6 +10,9 @@ const {
   parseArgs: parseRemoteEvalArgs,
   runEvaluation,
 } = require("../../../scripts/remote-vector-eval.cjs");
+const {
+  rankOfFirstMatch: rankOfFirstLocalEvalMatch,
+} = require("../../../scripts/evaluate-retrieval.cjs");
 
 describe("legalRemoteEval", () => {
   test("buildConfigs creates stable config IDs", () => {
@@ -72,6 +75,99 @@ describe("legalRemoteEval", () => {
       { lovdataId: "sf-19051115-0002", corpus: "SF" }
     );
     expect(rank).toBe(2);
+  });
+
+  test("rankOfFirstMatch matches direct ingest LTI metadata", () => {
+    const rank = rankOfFirstMatch(
+      [
+        {
+          metadata: {
+            url: "https://lovdata.no/dokument/LTI/lov/2025-12-22-127",
+            lovdataId: "nl-20251222-127",
+            corpus: "NL",
+          },
+        },
+      ],
+      {
+        lovdataId: "nl-20251222-127",
+        corpus: "NL",
+        urlIncludes: "/dokument/LTI/lov/2025-12-22-127",
+      }
+    );
+    expect(rank).toBe(1);
+  });
+
+  test("rankOfFirstMatch derives corpus from LTI metadata and accepts chunkSource URLs", () => {
+    const rank = rankOfFirstMatch(
+      [
+        {
+          metadata: {
+            chunkSource:
+              "link://https://lovdata.no/dokument/LTI/forskrift/2025-10-29-2134#bundled-document-part-1",
+            corpus: "LTI",
+          },
+        },
+      ],
+      {
+        lovdataId: "sf-20251029-2134",
+        corpus: "SF",
+        urlIncludes: "/dokument/LTI/forskrift/2025-10-29-2134",
+      }
+    );
+    expect(rank).toBe(1);
+  });
+
+  test("rankOfFirstMatch rejects matching documents when expected text is absent", () => {
+    const rank = rankOfFirstMatch(
+      [
+        {
+          text: "Lov om endringer i husleieloven uten den reparerte paragrafteksten.",
+          metadata: {
+            url: "https://lovdata.no/dokument/LTI/lov/2025-12-22-127",
+            lovdataId: "nl-20251222-127",
+            corpus: "NL",
+          },
+        },
+      ],
+      {
+        lovdataId: "nl-20251222-127",
+        corpus: "NL",
+        textIncludes: "Husleietvistutvalget behandler tvister etter loven her",
+      }
+    );
+    expect(rank).toBeNull();
+  });
+
+  test("local retrieval eval matches LTI statute text expectations", () => {
+    const statuteRank = rankOfFirstLocalEvalMatch(
+      [
+        {
+          text: "Husleietvistutvalget behandler tvister etter loven her.",
+          url: "https://lovdata.no/dokument/LTI/lov/2025-12-22-127",
+        },
+      ],
+      {
+        lovdataId: "nl-20251222-127",
+        corpus: "NL",
+        textIncludes: "Husleietvistutvalget behandler tvister etter loven her",
+      }
+    );
+    expect(statuteRank).toBe(1);
+
+    const regulationRank = rankOfFirstLocalEvalMatch(
+      [
+        {
+          chunkSource:
+            "link://https://lovdata.no/dokument/LTI/forskrift/2025-10-29-2134#bundled-document-part-1",
+          corpus: "LTI",
+        },
+      ],
+      {
+        lovdataId: "sf-20251029-2134",
+        corpus: "SF",
+      }
+    );
+    expect(regulationRank).toBe(1);
   });
 
   test("computeMetrics reports hit rates and mrr", () => {

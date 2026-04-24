@@ -14,16 +14,21 @@ function loadDotenv() {
   return require(path.join(serverRoot, "node_modules", "dotenv"));
 }
 
-const dotenv = loadDotenv();
+function loadRuntimeDependencies() {
+  const dotenv = loadDotenv();
+  dotenv.config({ path: path.join(serverRoot, ".env") });
+  dotenv.config({
+    path: path.join(serverRoot, ".env.development"),
+    override: false,
+  });
 
-dotenv.config({ path: path.join(serverRoot, ".env") });
-dotenv.config({ path: path.join(serverRoot, ".env.development"), override: false });
-
-const { getVectorDbClass, getLLMProvider } = require(path.join(
-  serverRoot,
-  "utils/helpers"
-));
-const { Workspace } = require(path.join(serverRoot, "models/workspace"));
+  const { getVectorDbClass, getLLMProvider } = require(path.join(
+    serverRoot,
+    "utils/helpers"
+  ));
+  const { Workspace } = require(path.join(serverRoot, "models/workspace"));
+  return { getVectorDbClass, getLLMProvider, Workspace };
+}
 
 function printHelp() {
   console.log(`Usage:
@@ -57,7 +62,7 @@ Benchmark case shape:
 ]
 
 Any subset of the following expectation keys can be used:
-  corpus, lovdataId, chunkSourceIncludes, urlIncludes, titleIncludes, titleExact
+  corpus, lovdataId, chunkSourceIncludes, urlIncludes, textIncludes, titleIncludes, titleExact
 
 You can also use:
   "expect": {
@@ -174,41 +179,88 @@ function toLower(value) {
   return typeof value === "string" ? value.toLowerCase() : "";
 }
 
+function formatStatuteLovdataId(corpus, year, month, day, sequence) {
+  const sequenceWidth = corpus === "SF" ? 4 : 3;
+  return `${corpus.toLowerCase()}-${year}${month}${day}-${sequence.padStart(sequenceWidth, "0")}`;
+}
+
 function extractCanonicalLovdataDocument(value = "") {
   const match = String(value)
     .toLowerCase()
     .match(
-      /\/dokument\/(hrstr|trr|emdn|nl|sf)\/(avgjorelse|lov|forskrift)\/([a-z0-9-]+)(?=[/?#]|$)/
+      /\/dokument\/(hrstr|trr|emdn|nl|sf|lti)\/(avgjorelse|lov|forskrift)\/([a-z0-9-]+)(?=[/?#]|$)/
     );
-  if (!match) return null;
+  if (match) {
+    const [, rawCorpus, documentType, documentId] = match;
+    const corpus =
+      rawCorpus === "hrstr"
+        ? "HRA"
+        : rawCorpus === "lti"
+          ? documentType === "forskrift"
+            ? "SF"
+            : "NL"
+          : rawCorpus.toUpperCase();
+    const statuteMatch = documentId.match(
+      /^(\d{4})-(\d{2})-(\d{2})-(\d+)$/
+    );
+    return {
+      corpus,
+      documentType,
+      lovdataId:
+        corpus === "HRA" || corpus === "TRR" || corpus === "EMDN"
+          ? `${documentId}`.toLowerCase()
+          : statuteMatch
+            ? formatStatuteLovdataId(
+                corpus,
+                statuteMatch[1],
+                statuteMatch[2],
+                statuteMatch[3],
+                statuteMatch[4]
+              )
+            : null,
+    };
+  }
 
-  const [, rawCorpus, documentType, documentId] = match;
-  const corpus = rawCorpus === "hrstr" ? "HRA" : rawCorpus.toUpperCase();
-  const statuteMatch = documentId.match(
-    /^(\d{4})-(\d{2})-(\d{2})-(\d+)$/
-  );
+  const prefixedStatuteMatch = String(value)
+    .toLowerCase()
+    .match(
+      /\/dokument\/(nl|sf)\/(lov|for)-(\d{4})-(\d{2})-(\d{2})-(\d+)(?=[/?#]|$)/
+    );
+  if (!prefixedStatuteMatch) return null;
+
+  const [, rawCorpus, documentPrefix, year, month, day, sequence] =
+    prefixedStatuteMatch;
+  const corpus = rawCorpus.toUpperCase();
   return {
     corpus,
-    documentType,
-    lovdataId:
-      corpus === "HRA" || corpus === "TRR" || corpus === "EMDN"
-        ? `${documentId}`.toLowerCase()
-        : statuteMatch
-          ? `${corpus.toLowerCase()}-${statuteMatch[1]}${statuteMatch[2]}${statuteMatch[3]}-${statuteMatch[4].padStart(3, "0")}`
-          : null,
+    documentType: documentPrefix === "lov" ? "lov" : "forskrift",
+    lovdataId: formatStatuteLovdataId(corpus, year, month, day, sequence),
   };
 }
 
 function deriveLovdataId(result = {}) {
   if (result.lovdataId) return toLower(result.lovdataId);
+  const metadata = result.metadata || {};
+  if (metadata.lovdataId) return toLower(metadata.lovdataId);
 
-  const canonicalDocument = [result.chunkSource, result.url]
+  const canonicalDocument = [
+    metadata.chunkSource,
+    metadata.url,
+    result.chunkSource,
+    result.url,
+  ]
     .filter(Boolean)
     .map(extractCanonicalLovdataDocument)
     .find(Boolean);
-  if (canonicalDocument) return canonicalDocument.lovdataId;
+  if (canonicalDocument?.lovdataId) return canonicalDocument.lovdataId;
 
-  const candidates = [result.chunkSource, result.url, result.title]
+  const candidates = [
+    metadata.chunkSource,
+    metadata.url,
+    result.chunkSource,
+    result.url,
+    result.title,
+  ]
     .filter(Boolean)
     .map(String);
 
@@ -224,20 +276,36 @@ function deriveLovdataId(result = {}) {
 }
 
 function deriveCorpus(result = {}) {
-  if (result.corpus) return String(result.corpus).toUpperCase();
-  if (result.lovdataId) {
-    const normalizedId = toLower(result.lovdataId);
-    if (normalizedId.startsWith("nl-")) return "NL";
-    if (normalizedId.startsWith("sf-")) return "SF";
-  }
+  const resultCorpus = result.corpus ? String(result.corpus).toUpperCase() : "";
+  if (resultCorpus && resultCorpus !== "LTI") return resultCorpus;
 
-  const canonicalDocument = [result.chunkSource, result.url]
+  const metadata = result.metadata || {};
+  const metadataCorpus = metadata.corpus
+    ? String(metadata.corpus).toUpperCase()
+    : "";
+  const normalizedId = deriveLovdataId(result);
+  if (normalizedId?.startsWith("nl-")) return "NL";
+  if (normalizedId?.startsWith("sf-")) return "SF";
+  if (metadataCorpus && metadataCorpus !== "LTI") return metadataCorpus;
+
+  const canonicalDocument = [
+    metadata.chunkSource,
+    metadata.url,
+    result.chunkSource,
+    result.url,
+  ]
     .filter(Boolean)
     .map(extractCanonicalLovdataDocument)
     .find(Boolean);
   if (canonicalDocument) return canonicalDocument.corpus;
 
-  const candidates = [result.chunkSource, result.url, result.title]
+  const candidates = [
+    metadata.chunkSource,
+    metadata.url,
+    result.chunkSource,
+    result.url,
+    result.title,
+  ]
     .filter(Boolean)
     .map((value) => String(value).toUpperCase());
 
@@ -252,11 +320,13 @@ function deriveCorpus(result = {}) {
 }
 
 function normalizeResult(result = {}) {
+  const metadata = result.metadata || {};
   return {
     ...result,
-    title: result.title || "",
-    url: result.url || "",
-    chunkSource: result.chunkSource || "",
+    text: result.text || result.chunk || metadata.text || "",
+    title: result.title || metadata.title || "",
+    url: result.url || metadata.url || "",
+    chunkSource: result.chunkSource || metadata.chunkSource || "",
     corpus: deriveCorpus(result),
     lovdataId: deriveLovdataId(result),
   };
@@ -272,7 +342,14 @@ function matchesSingleExpectation(result, expect) {
     return false;
   if (
     expect.urlIncludes &&
-    !toLower(result.url).includes(toLower(expect.urlIncludes))
+    ![result.url, result.chunkSource].some((value) =>
+      toLower(value).includes(toLower(expect.urlIncludes))
+    )
+  )
+    return false;
+  if (
+    expect.textIncludes &&
+    !toLower(result.text).includes(toLower(expect.textIncludes))
   )
     return false;
   if (
@@ -479,6 +556,8 @@ async function evaluateConfig({
 }
 
 async function main() {
+  const { getVectorDbClass, getLLMProvider, Workspace } =
+    loadRuntimeDependencies();
   const args = parseArgs(process.argv.slice(2));
   const benchmarkCases = filterBenchmark(
     loadBenchmark(args.benchmark),
@@ -550,7 +629,19 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  buildConfigs,
+  computeMetrics,
+  deriveCorpus,
+  deriveLovdataId,
+  extractCanonicalLovdataDocument,
+  normalizeResult,
+  rankOfFirstMatch,
+};

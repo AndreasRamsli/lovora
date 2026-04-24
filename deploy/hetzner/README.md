@@ -140,6 +140,9 @@ bash scripts/preflight.sh
 ```
 
 Preflight checks the expected commands, required env values, data directories, and the Compose configuration before the first rollout.
+It also checks the persisted SQLite database, when present, for unresolved
+Prisma migrations and the `workspace_users(user_id, workspace_id)` uniqueness
+index required by the production auth/workspace repair.
 If Stripe billing is configured, it also verifies that Stripe has an enabled webhook endpoint at
 `https://$DOMAIN/api/billing/stripe/webhook` with the required checkout and subscription events.
 That catches the exact failure mode where checkout succeeds but the app never receives billing updates.
