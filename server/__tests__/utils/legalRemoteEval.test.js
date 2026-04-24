@@ -10,6 +10,9 @@ const {
   parseArgs: parseRemoteEvalArgs,
   runEvaluation,
 } = require("../../../scripts/remote-vector-eval.cjs");
+const {
+  rankOfFirstMatch: rankOfFirstLocalEvalMatch,
+} = require("../../../scripts/evaluate-retrieval.cjs");
 
 describe("legalRemoteEval", () => {
   test("buildConfigs creates stable config IDs", () => {
@@ -133,6 +136,38 @@ describe("legalRemoteEval", () => {
       }
     );
     expect(rank).toBeNull();
+  });
+
+  test("local retrieval eval matches LTI statute text expectations", () => {
+    const statuteRank = rankOfFirstLocalEvalMatch(
+      [
+        {
+          text: "Husleietvistutvalget behandler tvister etter loven her.",
+          url: "https://lovdata.no/dokument/LTI/lov/2025-12-22-127",
+        },
+      ],
+      {
+        lovdataId: "nl-20251222-127",
+        corpus: "NL",
+        textIncludes: "Husleietvistutvalget behandler tvister etter loven her",
+      }
+    );
+    expect(statuteRank).toBe(1);
+
+    const regulationRank = rankOfFirstLocalEvalMatch(
+      [
+        {
+          chunkSource:
+            "link://https://lovdata.no/dokument/LTI/forskrift/2025-10-29-2134#bundled-document-part-1",
+          corpus: "LTI",
+        },
+      ],
+      {
+        lovdataId: "sf-20251029-2134",
+        corpus: "SF",
+      }
+    );
+    expect(regulationRank).toBe(1);
   });
 
   test("computeMetrics reports hit rates and mrr", () => {
