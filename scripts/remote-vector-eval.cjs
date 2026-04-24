@@ -156,10 +156,13 @@ function summarizeCase(results, benchmarkCase) {
     expected: benchmarkCase.expect,
     matched: rank !== null,
     rank,
-    topResults: results.slice(0, 5).map((result, index) => ({
-      rank: index + 1,
-      ...normalizeRemoteResult(result),
-    })),
+    topResults: results.slice(0, 5).map((result, index) => {
+      const { text: _text, ...normalized } = normalizeRemoteResult(result);
+      return {
+        rank: index + 1,
+        ...normalized,
+      };
+    }),
   };
 }
 

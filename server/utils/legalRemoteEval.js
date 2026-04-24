@@ -127,6 +127,7 @@ function deriveCorpus(result = {}) {
 function normalizeRemoteResult(result = {}) {
   const metadata = result.metadata || {};
   return {
+    text: result.text || metadata.text || "",
     title: metadata.title || result.title || "",
     url: metadata.url || result.url || "",
     chunkSource: metadata.chunkSource || result.chunkSource || "",
@@ -148,6 +149,13 @@ function matchesSingleExpectation(result, expect = {}) {
     ![result.url, result.chunkSource].some((value) =>
       String(value).toLowerCase().includes(String(expect.urlIncludes).toLowerCase())
     )
+  )
+    return false;
+  if (
+    expect.textIncludes &&
+    !String(result.text)
+      .toLowerCase()
+      .includes(String(expect.textIncludes).toLowerCase())
   )
     return false;
   if (

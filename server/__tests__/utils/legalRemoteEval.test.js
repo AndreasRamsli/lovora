@@ -114,6 +114,27 @@ describe("legalRemoteEval", () => {
     expect(rank).toBe(1);
   });
 
+  test("rankOfFirstMatch rejects matching documents when expected text is absent", () => {
+    const rank = rankOfFirstMatch(
+      [
+        {
+          text: "Lov om endringer i husleieloven uten den reparerte paragrafteksten.",
+          metadata: {
+            url: "https://lovdata.no/dokument/LTI/lov/2025-12-22-127",
+            lovdataId: "nl-20251222-127",
+            corpus: "NL",
+          },
+        },
+      ],
+      {
+        lovdataId: "nl-20251222-127",
+        corpus: "NL",
+        textIncludes: "Husleietvistutvalget behandler tvister etter loven her",
+      }
+    );
+    expect(rank).toBeNull();
+  });
+
   test("computeMetrics reports hit rates and mrr", () => {
     expect(
       computeMetrics(

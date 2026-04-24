@@ -57,7 +57,7 @@ Benchmark case shape:
 ]
 
 Any subset of the following expectation keys can be used:
-  corpus, lovdataId, chunkSourceIncludes, urlIncludes, titleIncludes, titleExact
+  corpus, lovdataId, chunkSourceIncludes, urlIncludes, textIncludes, titleIncludes, titleExact
 
 You can also use:
   "expect": {
@@ -254,6 +254,7 @@ function deriveCorpus(result = {}) {
 function normalizeResult(result = {}) {
   return {
     ...result,
+    text: result.text || result.chunk || "",
     title: result.title || "",
     url: result.url || "",
     chunkSource: result.chunkSource || "",
@@ -272,7 +273,14 @@ function matchesSingleExpectation(result, expect) {
     return false;
   if (
     expect.urlIncludes &&
-    !toLower(result.url).includes(toLower(expect.urlIncludes))
+    ![result.url, result.chunkSource].some((value) =>
+      toLower(value).includes(toLower(expect.urlIncludes))
+    )
+  )
+    return false;
+  if (
+    expect.textIncludes &&
+    !toLower(result.text).includes(toLower(expect.textIncludes))
   )
     return false;
   if (

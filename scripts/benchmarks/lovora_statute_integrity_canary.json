@@ -7,7 +7,8 @@
     "expect": {
       "lovdataId": "nl-20251222-127",
       "corpus": "NL",
-      "urlIncludes": "/dokument/LTI/lov/2025-12-22-127"
+      "urlIncludes": "/dokument/LTI/lov/2025-12-22-127",
+      "textIncludes": "Husleietvistutvalget behandler tvister etter loven her"
     }
   },
   {
