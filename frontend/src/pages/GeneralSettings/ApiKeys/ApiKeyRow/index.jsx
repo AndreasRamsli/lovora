@@ -5,6 +5,7 @@ import { Trash } from "@phosphor-icons/react";
 import { userFromStorage } from "@/utils/request";
 import System from "@/models/system";
 import { useTranslation } from "react-i18next";
+import { describeApiKeyBinding } from "../apiKeyFormState";
 
 export default function ApiKeyRow({ apiKey, removeApiKey }) {
   const { t } = useTranslation();
@@ -14,16 +15,30 @@ export default function ApiKeyRow({ apiKey, removeApiKey }) {
 
     const user = userFromStorage();
     const Model = !!user ? Admin : System;
-    await Model.deleteApiKey(apiKey.id);
-    showToast(t("api_keys.row.deleted"), "info");
-    removeApiKey(apiKey.id);
+    const success = await Model.deleteApiKey(apiKey.id);
+    if (success) {
+      showToast(t("api_keys.row.deleted"), "info");
+      removeApiKey(apiKey.id);
+      return true;
+    }
+
+    showToast("Failed to delete API key", "error");
+    return false;
   };
 
-  const copyApiKey = () => {
-    if (!apiKey) return false;
-    window.navigator.clipboard.writeText(apiKey.secret);
-    showToast(t("api_keys.row.copied"), "success");
-    setCopied(true);
+  const copyApiKey = async () => {
+    if (!apiKey?.secret) return false;
+
+    try {
+      await window.navigator.clipboard.writeText(apiKey.secret);
+      showToast(t("api_keys.row.copied"), "success");
+      setCopied(true);
+      return true;
+    } catch (error) {
+      console.error(error);
+      showToast("Failed to copy API key", "error");
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -40,17 +55,22 @@ export default function ApiKeyRow({ apiKey, removeApiKey }) {
     <>
       <tr className="bg-transparent text-white text-opacity-80 text-xs font-medium border-b border-white/10 h-10">
         <td scope="row" className="px-6 whitespace-nowrap">
-          {apiKey.secret}
+          {apiKey.name || apiKey.secret || "--"}
         </td>
         <td className="px-6 text-left">{apiKey.createdBy?.username || "--"}</td>
+        <td className="px-6 text-left">{describeApiKeyBinding(apiKey)}</td>
         <td className="px-6">{apiKey.createdAt}</td>
         <td className="px-6 flex items-center gap-x-6 h-full mt-1">
           <button
             onClick={copyApiKey}
-            disabled={copied}
+            disabled={copied || !apiKey.secret}
             className="text-xs font-medium text-blue-300 rounded-lg hover:text-white hover:light:text-blue-500 hover:text-opacity-60 hover:underline"
           >
-            {copied ? t("common.copied") : t("api_keys.row.copy")}
+            {copied
+              ? t("common.copied")
+              : apiKey.secret
+                ? t("api_keys.row.copy")
+                : "Secret unavailable"}
           </button>
           <button
             onClick={handleDelete}

@@ -1,7 +1,8 @@
 const { WorkspaceUser } = require("../../models/workspaceUsers");
-const {
-  ensureDefaultWorkspaceExists,
-} = require("../boot/ensureProductionAuthState");
+
+function ensureDefaultWorkspaceExists() {
+  return require("../boot/ensureProductionAuthState").ensureDefaultWorkspaceExists();
+}
 
 async function ensureDefaultWorkspaceMembership(user = null) {
   if (!user?.id) {

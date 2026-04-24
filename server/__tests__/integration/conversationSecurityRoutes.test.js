@@ -46,6 +46,17 @@ describe("conversation security routes", () => {
     expect(adminChats.body.chats[0].prompt).toBeUndefined();
     expect(adminChats.body.chats[0].response).toBeUndefined();
     expect(managerFlags.body.flags[0].prompt).toBeUndefined();
+    expect(
+      managerFlags.body.flags.find(
+        (flag) => flag.id === fixtures.flags.openApiFlag.id
+      )
+    ).toEqual(
+      expect.objectContaining({
+        id: fixtures.flags.openApiFlag.id,
+        userId: null,
+        reviewAvailable: true,
+      })
+    );
 
     expectNoRawContentLeak(adminChats.body, [
       fixtures.chats.flaggedDefaultChat.prompt,
@@ -54,33 +65,39 @@ describe("conversation security routes", () => {
     ]);
   });
 
-  test("open flagged review returns only the flagged default-thread conversation and logs access", async () => {
+  test("open flagged review returns metadata only and logs access without raw content", async () => {
     const response = await request(app)
       .get(`/api/system/conversation-flags/${fixtures.flags.openDefaultFlag.id}/review`)
       .set("Authorization", fixtures.auth.admin);
 
     expect(response.status).toBe(200);
     expect(response.body.review.caseId).toBe(fixtures.flags.openDefaultFlag.id);
-    expect(response.body.review.messages).toHaveLength(5);
-    expect(response.body.review.messages.map((message) => message.prompt)).toEqual(
-      expect.arrayContaining([
-        fixtures.chats.safeChat.prompt,
-        fixtures.chats.flaggedDefaultContextChat.prompt,
-        fixtures.chats.flaggedDefaultChat.prompt,
-        fixtures.chats.dismissedChat.prompt,
-        fixtures.chats.resolvedChat.prompt,
-      ])
+    expect(response.body.review.flag).toEqual(
+      expect.objectContaining({
+        id: fixtures.flags.openDefaultFlag.id,
+        chatId: fixtures.chats.flaggedDefaultChat.id,
+        riskLevel: "review",
+        categories: ["prompt_injection"],
+      })
     );
-    expect(
-      response.body.review.messages.some(
-        (message) => message.prompt === fixtures.chats.namedThreadContextChat.prompt
-      )
-    ).toBe(false);
-    expect(
-      response.body.review.messages.some(
-        (message) => message.prompt === fixtures.chats.flaggedApiSessionChat.prompt
-      )
-    ).toBe(false);
+    expect(response.body.review.workspace).toEqual(
+      expect.objectContaining({
+        id: fixtures.workspaces.assignedWorkspace.id,
+        slug: fixtures.workspaces.assignedWorkspace.slug,
+      })
+    );
+    expect(response.body.review.messages).toBeUndefined();
+    expect(response.body.review.content).toBeUndefined();
+    expectNoRawContentLeak(response.body, [
+      fixtures.chats.safeChat.prompt,
+      fixtures.chats.flaggedDefaultContextChat.prompt,
+      fixtures.chats.flaggedDefaultChat.prompt,
+      fixtures.chats.namedThreadContextChat.prompt,
+      fixtures.chats.flaggedApiSessionChat.prompt,
+      "Flagged default thread response",
+      "super-secret-payload",
+      "secret.txt",
+    ]);
 
     const accessLog = await prisma.event_logs.findFirst({
       where: { event: "flagged_conversation_viewed" },
@@ -106,25 +123,32 @@ describe("conversation security routes", () => {
 
     expect(namedThreadResponse.status).toBe(200);
     expect(apiSessionResponse.status).toBe(200);
-    expect(namedThreadResponse.body.review.messages).toHaveLength(2);
-    expect(apiSessionResponse.body.review.messages).toHaveLength(2);
-
-    expect(
-      namedThreadResponse.body.review.messages.map((message) => message.prompt)
-    ).toEqual(
-      expect.arrayContaining([
-        fixtures.chats.namedThreadContextChat.prompt,
-        fixtures.chats.flaggedNamedThreadChat.prompt,
-      ])
+    expect(namedThreadResponse.body.review.thread).toEqual(
+      expect.objectContaining({
+        id: fixtures.threads.namedThread.id,
+      })
     );
-    expect(
-      apiSessionResponse.body.review.messages.map((message) => message.prompt)
-    ).toEqual(
-      expect.arrayContaining([
-        fixtures.chats.apiSessionContextChat.prompt,
-        fixtures.chats.flaggedApiSessionChat.prompt,
-      ])
+    expect(apiSessionResponse.body.review.flag).toEqual(
+      expect.objectContaining({
+        id: fixtures.flags.openApiFlag.id,
+        chatId: fixtures.chats.flaggedApiSessionChat.id,
+        userId: null,
+      })
     );
+    expect(apiSessionResponse.body.review.messages).toBeUndefined();
+    expect(apiSessionResponse.body.review.content).toBeUndefined();
+    expect(namedThreadResponse.body.review.messages).toBeUndefined();
+    expectNoRawContentLeak(namedThreadResponse.body, [
+      fixtures.chats.namedThreadContextChat.prompt,
+      fixtures.chats.flaggedNamedThreadChat.prompt,
+      "Flagged named thread response",
+    ]);
+    expectNoRawContentLeak(apiSessionResponse.body, [
+      fixtures.chats.flaggedApiSessionChat.prompt,
+      "Flagged API session response",
+      "super-secret-payload",
+      "secret.txt",
+    ]);
   });
 
   test("dismissed and resolved flags cannot be reopened", async () => {
@@ -230,6 +254,12 @@ describe("conversation security routes", () => {
       .send({ reviewNote: "appeal accepted" });
     expect(unsuspendResponse.status).toBe(200);
 
+    const secondUnsuspendResponse = await request(app)
+      .post(`/api/system/conversation-flags/${suspendedFlag.id}/unsuspend-user`)
+      .set("Authorization", fixtures.auth.admin)
+      .send({ reviewNote: "replay attempt" });
+    expect(secondUnsuspendResponse.status).toBe(404);
+
     const refreshedDismissedFlag = await prisma.conversation_flags.findUnique({
       where: { id: fixtures.flags.openDefaultFlag.id },
     });
@@ -243,7 +273,7 @@ describe("conversation security routes", () => {
     expect(refreshedDismissedFlag.status).toBe("dismissed");
     expect(refreshedDismissedFlag.resolution).toBe("not_actionable");
     expect(refreshedSuspendedFlag.status).toBe("resolved");
-    expect(refreshedSuspendedFlag.resolution).toBe("suspended");
+    expect(refreshedSuspendedFlag.resolution).toBe("unsuspended");
     expect(refreshedUser.suspended).toBe(0);
 
     const events = await prisma.event_logs.findMany({
@@ -264,5 +294,27 @@ describe("conversation security routes", () => {
       "user_suspended_from_flag",
       "user_unsuspended",
     ]);
+  });
+
+  test("invalid moderation transitions return 404", async () => {
+    const [dismissResolved, suspendResolved, unsuspendDismissed] =
+      await Promise.all([
+        request(app)
+          .post(`/api/system/conversation-flags/${fixtures.flags.resolvedFlag.id}/dismiss`)
+          .set("Authorization", fixtures.auth.manager)
+          .send({ reviewNote: "cannot dismiss resolved" }),
+        request(app)
+          .post(`/api/system/conversation-flags/${fixtures.flags.resolvedFlag.id}/suspend-user`)
+          .set("Authorization", fixtures.auth.admin)
+          .send({ reviewNote: "cannot suspend resolved" }),
+        request(app)
+          .post(`/api/system/conversation-flags/${fixtures.flags.dismissedFlag.id}/unsuspend-user`)
+          .set("Authorization", fixtures.auth.admin)
+          .send({ reviewNote: "cannot unsuspend dismissed" }),
+      ]);
+
+    expect(dismissResolved.status).toBe(404);
+    expect(suspendResolved.status).toBe(404);
+    expect(unsuspendDismissed.status).toBe(404);
   });
 });

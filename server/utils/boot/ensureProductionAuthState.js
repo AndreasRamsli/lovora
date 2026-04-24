@@ -1,6 +1,12 @@
 const prisma = require("../prisma");
-const { Workspace } = require("../../models/workspace");
-const { SystemSettings } = require("../../models/systemSettings");
+
+function workspaceModel() {
+  return require("../../models/workspace").Workspace;
+}
+
+function systemSettingsModel() {
+  return require("../../models/systemSettings").SystemSettings;
+}
 
 function defaultWorkspaceName() {
   return (
@@ -10,6 +16,7 @@ function defaultWorkspaceName() {
 }
 
 function defaultWorkspaceSlug() {
+  const Workspace = workspaceModel();
   return (
     Workspace.slugify(defaultWorkspaceName(), {
       lower: true,
@@ -26,6 +33,7 @@ async function ensureSystemSetting(label, value) {
 }
 
 async function ensureDefaultWorkspaceExists() {
+  const Workspace = workspaceModel();
   const slug = defaultWorkspaceSlug();
   const existingWorkspace = await Workspace.get({ slug });
   if (existingWorkspace) return existingWorkspace;
@@ -43,6 +51,7 @@ async function ensureDefaultWorkspaceExists() {
 }
 
 async function ensureProductionAuthState() {
+  const SystemSettings = systemSettingsModel();
   await Promise.all([
     ensureSystemSetting("multi_user_mode", "false"),
     ensureSystemSetting("onboarding_complete", "false"),

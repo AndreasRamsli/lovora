@@ -12,6 +12,7 @@ const {
 const { reqBody, safeJsonParse } = require("../../../utils/http");
 const { EventLogs } = require("../../../models/eventLogs");
 const { CollectorApi } = require("../../../utils/collectorApi");
+const { withRoutePolicy } = require("../../../utils/privacy/routePolicy");
 const fs = require("fs");
 const path = require("path");
 const { Document } = require("../../../models/documents");
@@ -20,6 +21,14 @@ const documentsPath =
   process.env.NODE_ENV === "development"
     ? path.resolve(__dirname, "../../../storage/documents")
     : path.resolve(process.env.STORAGE_DIR, `documents`);
+
+const managementMetadataReadAccess = {
+  management: ["management:metadata:read"],
+};
+
+const managementMetadataWriteAccess = {
+  management: ["management:metadata:write"],
+};
 
 /**
  * Runs a simple validation check on the addToWorkspaces query parameter to ensure it is a string of comma-separated workspace slugs.
@@ -81,6 +90,7 @@ async function attachDocumentToWorkspaces(
 function apiDocumentShape(document = {}, location = null) {
   const {
     cached: _cached,
+    pageContent: _pageContent,
     pinnedWorkspaces: _pinnedWorkspaces,
     watched: _watched,
     ...metadata
@@ -93,14 +103,30 @@ function apiDocumentShape(document = {}, location = null) {
   };
 }
 
+function apiDocumentsShape(documents = []) {
+  return documents.map((document) =>
+    apiDocumentShape(document, document?.location || null)
+  );
+}
+
 function apiDocumentEndpoints(app) {
   if (!app) return;
 
   app.post(
     "/v1/document/upload",
-    [validApiKey, handleAPIFileUpload, validateWorkspaceSlugQuery],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/document/upload",
+        routeId: "api.document.upload",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey, handleAPIFileUpload, validateWorkspaceSlugQuery],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Documents']
     #swagger.description = 'Upload a new file to AnythingLLM to be parsed and prepared for embedding, with optional metadata.'
     #swagger.requestBody = {
@@ -166,66 +192,83 @@ function apiDocumentEndpoints(app) {
       }
     }
     */
-      try {
-        const Collector = new CollectorApi();
-        const { originalname } = request.file;
-        const { addToWorkspaces = "", metadata: _metadata = {} } =
-          reqBody(request);
-        const metadata =
-          typeof _metadata === "string"
-            ? safeJsonParse(_metadata, {})
-            : _metadata;
-        const processingOnline = await Collector.online();
+        try {
+          const Collector = new CollectorApi();
+          const { originalname } = request.file;
+          const { addToWorkspaces = "", metadata: _metadata = {} } =
+            reqBody(request);
+          const metadata =
+            typeof _metadata === "string"
+              ? safeJsonParse(_metadata, {})
+              : _metadata;
+          const processingOnline = await Collector.online();
 
-        if (!processingOnline) {
-          response
-            .status(500)
-            .json({
-              success: false,
-              error: `Document processing API is not online. Document ${originalname} will not be processed automatically.`,
-            })
-            .end();
-          return;
-        }
+          if (!processingOnline) {
+            response
+              .status(500)
+              .json({
+                success: false,
+                error: `Document processing API is not online. Document ${originalname} will not be processed automatically.`,
+              })
+              .end();
+            return;
+          }
 
-        const { success, reason, documents } = await Collector.processDocument(
-          originalname,
-          metadata
-        );
+          const { success, reason, documents } =
+            await Collector.processDocument(originalname, metadata);
 
-        if (!success) {
-          return response
-            .status(500)
-            .json({ success: false, error: reason, documents })
-            .end();
-        }
+          if (!success) {
+            return response
+              .status(500)
+              .json({
+                success: false,
+                error: reason,
+                documents: apiDocumentsShape(documents),
+              })
+              .end();
+          }
 
-        Collector.log(
-          `Document ${originalname} uploaded processed and successfully. It is now available in documents.`
-        );
-        await Telemetry.sendTelemetry("document_uploaded");
-        await EventLogs.logEvent("api_document_uploaded", {
-          documentName: originalname,
-        });
-
-        if (!!addToWorkspaces)
-          await Document.api.uploadToWorkspace(
-            addToWorkspaces,
-            documents?.[0].location
+          Collector.log(
+            `Document ${originalname} uploaded processed and successfully. It is now available in documents.`
           );
-        response.status(200).json({ success: true, error: null, documents });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+          await Telemetry.sendTelemetry("document_uploaded");
+          await EventLogs.logEvent("api_document_uploaded", {
+            documentName: originalname,
+          });
+
+          if (!!addToWorkspaces)
+            await Document.api.uploadToWorkspace(
+              addToWorkspaces,
+              documents?.[0].location
+            );
+          response.status(200).json({
+            success: true,
+            error: null,
+            documents: apiDocumentsShape(documents),
+          });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.post(
     "/v1/document/upload/:folderName",
-    [validApiKey, handleAPIFileUpload, validateWorkspaceSlugQuery],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/document/upload/:folderName",
+        routeId: "api.document.upload-folder",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey, handleAPIFileUpload, validateWorkspaceSlugQuery],
+      async (request, response) => {
+        /*
       #swagger.tags = ['Documents']
       #swagger.description = 'Upload a new file to a specific folder in AnythingLLM to be parsed and prepared for embedding. If the folder does not exist, it will be created.'
       #swagger.parameters['folderName'] = {
@@ -309,134 +352,150 @@ function apiDocumentEndpoints(app) {
         }
       }
       */
-      try {
-        const { originalname } = request.file;
-        const { addToWorkspaces = "", metadata: _metadata = {} } =
-          reqBody(request);
-        const metadata =
-          typeof _metadata === "string"
-            ? safeJsonParse(_metadata, {})
-            : _metadata;
+        try {
+          const { originalname } = request.file;
+          const { addToWorkspaces = "", metadata: _metadata = {} } =
+            reqBody(request);
+          const metadata =
+            typeof _metadata === "string"
+              ? safeJsonParse(_metadata, {})
+              : _metadata;
 
-        let folder = request.params?.folderName || "custom-documents";
-        folder = normalizePath(folder);
-        const targetFolderPath = path.join(documentsPath, folder);
+          let folder = request.params?.folderName || "custom-documents";
+          folder = normalizePath(folder);
+          const targetFolderPath = path.join(documentsPath, folder);
 
-        if (
-          !isWithin(path.resolve(documentsPath), path.resolve(targetFolderPath))
-        )
-          throw new Error("Invalid folder name");
-        if (!fs.existsSync(targetFolderPath))
-          fs.mkdirSync(targetFolderPath, { recursive: true });
+          if (
+            !isWithin(
+              path.resolve(documentsPath),
+              path.resolve(targetFolderPath)
+            )
+          )
+            throw new Error("Invalid folder name");
+          if (!fs.existsSync(targetFolderPath))
+            fs.mkdirSync(targetFolderPath, { recursive: true });
 
-        const existingDocument =
-          typeof metadata?.chunkSource === "string" &&
-          metadata.chunkSource.length
-            ? await findDocumentByChunkSourceInFolder(
-                folder,
-                metadata.chunkSource
+          const existingDocument =
+            typeof metadata?.chunkSource === "string" &&
+            metadata.chunkSource.length
+              ? await findDocumentByChunkSourceInFolder(
+                  folder,
+                  metadata.chunkSource
+                )
+              : null;
+          if (existingDocument) {
+            const workspaceAttach = await attachDocumentToWorkspaces(
+              addToWorkspaces,
+              existingDocument.location
+            );
+
+            return response.status(200).json({
+              success: true,
+              deduped: true,
+              error: null,
+              documents: [
+                apiDocumentShape(existingDocument, existingDocument.location),
+              ],
+              workspaceAttach,
+            });
+          }
+
+          const Collector = new CollectorApi();
+          const processingOnline = await Collector.online();
+          if (!processingOnline) {
+            return response
+              .status(500)
+              .json({
+                success: false,
+                error: `Document processing API is not online. Document ${originalname} will not be processed automatically.`,
+              })
+              .end();
+          }
+
+          // Process the uploaded document with metadata
+          const { success, reason, documents } =
+            await Collector.processDocument(originalname, metadata);
+          if (!success) {
+            return response
+              .status(500)
+              .json({
+                success: false,
+                error: reason,
+                documents: apiDocumentsShape(documents),
+              })
+              .end();
+          }
+
+          // For each processed document, check if it is already in the desired folder.
+          // If not, move it using similar logic as in the move-files endpoint.
+          for (const doc of documents) {
+            const currentFolder = path.dirname(doc.location);
+            if (currentFolder !== folder) {
+              const sourcePath = path.join(
+                documentsPath,
+                normalizePath(doc.location)
+              );
+              const destinationPath = path.join(
+                targetFolderPath,
+                path.basename(doc.location)
+              );
+
+              if (
+                !isWithin(documentsPath, sourcePath) ||
+                !isWithin(documentsPath, destinationPath)
               )
-            : null;
-        if (existingDocument) {
-          const workspaceAttach = await attachDocumentToWorkspaces(
-            addToWorkspaces,
-            existingDocument.location
+                throw new Error("Invalid file location");
+
+              fs.renameSync(sourcePath, destinationPath);
+              doc.location = path.join(folder, path.basename(doc.location));
+              doc.name = path.basename(doc.location);
+            }
+          }
+
+          Collector.log(
+            `Document ${originalname} uploaded, processed, and moved to folder ${folder} successfully.`
           );
 
-          return response.status(200).json({
+          await Telemetry.sendTelemetry("document_uploaded");
+          await EventLogs.logEvent("api_document_uploaded", {
+            documentName: originalname,
+            folder,
+          });
+
+          const workspaceAttach = await attachDocumentToWorkspaces(
+            addToWorkspaces,
+            documents?.[0]?.location
+          );
+          response.status(200).json({
             success: true,
-            deduped: true,
+            deduped: false,
             error: null,
-            documents: [
-              apiDocumentShape(existingDocument, existingDocument.location),
-            ],
+            documents: apiDocumentsShape(documents),
             workspaceAttach,
           });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
         }
-
-        const Collector = new CollectorApi();
-        const processingOnline = await Collector.online();
-        if (!processingOnline) {
-          return response
-            .status(500)
-            .json({
-              success: false,
-              error: `Document processing API is not online. Document ${originalname} will not be processed automatically.`,
-            })
-            .end();
-        }
-
-        // Process the uploaded document with metadata
-        const { success, reason, documents } = await Collector.processDocument(
-          originalname,
-          metadata
-        );
-        if (!success) {
-          return response
-            .status(500)
-            .json({ success: false, error: reason, documents })
-            .end();
-        }
-
-        // For each processed document, check if it is already in the desired folder.
-        // If not, move it using similar logic as in the move-files endpoint.
-        for (const doc of documents) {
-          const currentFolder = path.dirname(doc.location);
-          if (currentFolder !== folder) {
-            const sourcePath = path.join(
-              documentsPath,
-              normalizePath(doc.location)
-            );
-            const destinationPath = path.join(
-              targetFolderPath,
-              path.basename(doc.location)
-            );
-
-            if (
-              !isWithin(documentsPath, sourcePath) ||
-              !isWithin(documentsPath, destinationPath)
-            )
-              throw new Error("Invalid file location");
-
-            fs.renameSync(sourcePath, destinationPath);
-            doc.location = path.join(folder, path.basename(doc.location));
-            doc.name = path.basename(doc.location);
-          }
-        }
-
-        Collector.log(
-          `Document ${originalname} uploaded, processed, and moved to folder ${folder} successfully.`
-        );
-
-        await Telemetry.sendTelemetry("document_uploaded");
-        await EventLogs.logEvent("api_document_uploaded", {
-          documentName: originalname,
-          folder,
-        });
-
-        const workspaceAttach = await attachDocumentToWorkspaces(
-          addToWorkspaces,
-          documents?.[0]?.location
-        );
-        response.status(200).json({
-          success: true,
-          deduped: false,
-          error: null,
-          documents,
-          workspaceAttach,
-        });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/document/upload-link",
-    [validApiKey, validateWorkspaceSlugQuery],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/document/upload-link",
+        routeId: "api.document.upload-link",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey, validateWorkspaceSlugQuery],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Documents']
     #swagger.description = 'Upload a valid URL for AnythingLLM to scrape and prepare for embedding. Optionally, specify a comma-separated list of workspace slugs to embed the document into post-upload.'
     #swagger.requestBody = {
@@ -499,68 +558,87 @@ function apiDocumentEndpoints(app) {
       }
     }
     */
-      try {
-        const Collector = new CollectorApi();
-        const {
-          link,
-          addToWorkspaces = "",
-          scraperHeaders = {},
-          metadata: _metadata = {},
-        } = reqBody(request);
-        const metadata =
-          typeof _metadata === "string"
-            ? safeJsonParse(_metadata, {})
-            : _metadata;
-        const processingOnline = await Collector.online();
+        try {
+          const Collector = new CollectorApi();
+          const {
+            link,
+            addToWorkspaces = "",
+            scraperHeaders = {},
+            metadata: _metadata = {},
+          } = reqBody(request);
+          const metadata =
+            typeof _metadata === "string"
+              ? safeJsonParse(_metadata, {})
+              : _metadata;
+          const processingOnline = await Collector.online();
 
-        if (!processingOnline) {
-          return response
-            .status(500)
-            .json({
-              success: false,
-              error: `Document processing API is not online. Link ${link} will not be processed automatically.`,
-            })
-            .end();
-        }
+          if (!processingOnline) {
+            return response
+              .status(500)
+              .json({
+                success: false,
+                error: `Document processing API is not online. Link ${link} will not be processed automatically.`,
+              })
+              .end();
+          }
 
-        const { success, reason, documents } = await Collector.processLink(
-          link,
-          scraperHeaders,
-          metadata
-        );
-        if (!success) {
-          return response
-            .status(500)
-            .json({ success: false, error: reason, documents })
-            .end();
-        }
-
-        Collector.log(
-          `Link ${link} uploaded processed and successfully. It is now available in documents.`
-        );
-        await Telemetry.sendTelemetry("link_uploaded");
-        await EventLogs.logEvent("api_link_uploaded", {
-          link,
-        });
-
-        if (!!addToWorkspaces)
-          await Document.api.uploadToWorkspace(
-            addToWorkspaces,
-            documents?.[0].location
+          const { success, reason, documents } = await Collector.processLink(
+            link,
+            scraperHeaders,
+            metadata
           );
-        response.status(200).json({ success: true, error: null, documents });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+          if (!success) {
+            return response
+              .status(500)
+              .json({
+                success: false,
+                error: reason,
+                documents: apiDocumentsShape(documents),
+              })
+              .end();
+          }
+
+          Collector.log(
+            `Link ${link} uploaded processed and successfully. It is now available in documents.`
+          );
+          await Telemetry.sendTelemetry("link_uploaded");
+          await EventLogs.logEvent("api_link_uploaded", {
+            link,
+          });
+
+          if (!!addToWorkspaces)
+            await Document.api.uploadToWorkspace(
+              addToWorkspaces,
+              documents?.[0].location
+            );
+          response.status(200).json({
+            success: true,
+            error: null,
+            documents: apiDocumentsShape(documents),
+          });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.post(
     "/v1/document/raw-text",
-    [validApiKey, validateWorkspaceSlugQuery],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/document/raw-text",
+        routeId: "api.document.raw-text",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey, validateWorkspaceSlugQuery],
+      async (request, response) => {
+        /*
      #swagger.tags = ['Documents']
      #swagger.description = 'Upload a file by specifying its raw text content and metadata values without having to upload a file.'
      #swagger.requestBody = {
@@ -619,89 +697,111 @@ function apiDocumentEndpoints(app) {
        }
      }
      */
-      try {
-        const Collector = new CollectorApi();
-        const requiredMetadata = ["title"];
-        const {
-          textContent,
-          metadata: _metadata = {},
-          addToWorkspaces = "",
-        } = reqBody(request);
-        const metadata =
-          typeof _metadata === "string"
-            ? safeJsonParse(_metadata, {})
-            : _metadata;
-        const processingOnline = await Collector.online();
+        try {
+          const Collector = new CollectorApi();
+          const requiredMetadata = ["title"];
+          const {
+            textContent,
+            metadata: _metadata = {},
+            addToWorkspaces = "",
+          } = reqBody(request);
+          const metadata =
+            typeof _metadata === "string"
+              ? safeJsonParse(_metadata, {})
+              : _metadata;
+          const processingOnline = await Collector.online();
 
-        if (!processingOnline) {
-          return response
-            .status(500)
-            .json({
-              success: false,
-              error: `Document processing API is not online. Request will not be processed.`,
-            })
-            .end();
-        }
+          if (!processingOnline) {
+            return response
+              .status(500)
+              .json({
+                success: false,
+                error: `Document processing API is not online. Request will not be processed.`,
+              })
+              .end();
+          }
 
-        if (
-          !requiredMetadata.every(
-            (reqKey) =>
-              Object.keys(metadata).includes(reqKey) && !!metadata[reqKey]
-          )
-        ) {
-          return response
-            .status(422)
-            .json({
-              success: false,
-              error: `You are missing required metadata key:value pairs in your request. Required metadata key:values are ${requiredMetadata
-                .map((v) => `'${v}'`)
-                .join(", ")}`,
-            })
-            .end();
-        }
+          if (
+            !requiredMetadata.every(
+              (reqKey) =>
+                Object.keys(metadata).includes(reqKey) && !!metadata[reqKey]
+            )
+          ) {
+            return response
+              .status(422)
+              .json({
+                success: false,
+                error: `You are missing required metadata key:value pairs in your request. Required metadata key:values are ${requiredMetadata
+                  .map((v) => `'${v}'`)
+                  .join(", ")}`,
+              })
+              .end();
+          }
 
-        if (!textContent || textContent?.length === 0) {
-          return response
-            .status(422)
-            .json({
-              success: false,
-              error: `The 'textContent' key cannot have an empty value.`,
-            })
-            .end();
-        }
+          if (!textContent || textContent?.length === 0) {
+            return response
+              .status(422)
+              .json({
+                success: false,
+                error: `The 'textContent' key cannot have an empty value.`,
+              })
+              .end();
+          }
 
-        const { success, reason, documents } = await Collector.processRawText(
-          textContent,
-          metadata
-        );
-        if (!success) {
-          return response
-            .status(500)
-            .json({ success: false, error: reason, documents })
-            .end();
-        }
-
-        Collector.log(
-          `Document created successfully. It is now available in documents.`
-        );
-        await Telemetry.sendTelemetry("raw_document_uploaded");
-        await EventLogs.logEvent("api_raw_document_uploaded");
-
-        if (!!addToWorkspaces)
-          await Document.api.uploadToWorkspace(
-            addToWorkspaces,
-            documents?.[0].location
+          const { success, reason, documents } = await Collector.processRawText(
+            textContent,
+            metadata
           );
-        response.status(200).json({ success: true, error: null, documents });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+          if (!success) {
+            return response
+              .status(500)
+              .json({
+                success: false,
+                error: reason,
+                documents: apiDocumentsShape(documents),
+              })
+              .end();
+          }
+
+          Collector.log(
+            `Document created successfully. It is now available in documents.`
+          );
+          await Telemetry.sendTelemetry("raw_document_uploaded");
+          await EventLogs.logEvent("api_raw_document_uploaded");
+
+          if (!!addToWorkspaces)
+            await Document.api.uploadToWorkspace(
+              addToWorkspaces,
+              documents?.[0].location
+            );
+          response.status(200).json({
+            success: true,
+            error: null,
+            documents: apiDocumentsShape(documents),
+          });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
-  app.get("/v1/documents", [validApiKey], async (_, response) => {
-    /*
+  app.get(
+    "/v1/documents",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/documents",
+        routeId: "api.documents.list",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      async (_, response) => {
+        /*
     #swagger.tags = ['Documents']
     #swagger.description = 'List of all locally-stored documents in instance'
     #swagger.responses[200] = {
@@ -735,20 +835,32 @@ function apiDocumentEndpoints(app) {
       }
     }
     */
-    try {
-      const localFiles = await viewLocalFiles();
-      response.status(200).json({ localFiles });
-    } catch (e) {
-      console.error(e.message, e);
-      response.sendStatus(500).end();
-    }
-  });
+        try {
+          const localFiles = await viewLocalFiles();
+          response.status(200).json({ localFiles });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
+      }
+    )
+  );
 
   app.get(
     "/v1/documents/folder/:folderName",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/documents/folder/:folderName",
+        routeId: "api.documents.folder",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Documents']
     #swagger.description = 'Get all documents stored in a specific folder.'
     #swagger.parameters['folderName'] = {
@@ -793,26 +905,37 @@ function apiDocumentEndpoints(app) {
       }
     }
     */
-      try {
-        const { folderName } = request.params;
-        const result = await getDocumentsByFolder(folderName);
-        response.status(result.code).json({
-          folder: result.folder,
-          documents: result.documents,
-          error: result.error,
-        });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+        try {
+          const { folderName } = request.params;
+          const result = await getDocumentsByFolder(folderName);
+          response.status(result.code).json({
+            folder: result.folder,
+            documents: result.documents,
+            error: result.error,
+          });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.get(
     "/v1/document/accepted-file-types",
-    [validApiKey],
-    async (_, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/document/accepted-file-types",
+        routeId: "api.document.accepted-file-types",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      async (_, response) => {
+        /*
     #swagger.tags = ['Documents']
     #swagger.description = 'Check available filetypes and MIMEs that can be uploaded.'
     #swagger.responses[200] = {
@@ -850,26 +973,37 @@ function apiDocumentEndpoints(app) {
       }
     }
     */
-      try {
-        const types = await new CollectorApi().acceptedFileTypes();
-        if (!types) {
-          response.sendStatus(404).end();
-          return;
-        }
+        try {
+          const types = await new CollectorApi().acceptedFileTypes();
+          if (!types) {
+            response.sendStatus(404).end();
+            return;
+          }
 
-        response.status(200).json({ types });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+          response.status(200).json({ types });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.get(
     "/v1/document/metadata-schema",
-    [validApiKey],
-    async (_, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/document/metadata-schema",
+        routeId: "api.document.metadata-schema",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      async (_, response) => {
+        /*
     #swagger.tags = ['Documents']
     #swagger.description = 'Get the known available metadata schema for when doing a raw-text upload and the acceptable type of value for each key.'
     #swagger.responses[200] = {
@@ -895,30 +1029,44 @@ function apiDocumentEndpoints(app) {
       }
     }
     */
-      try {
-        response.status(200).json({
-          schema: {
-            // If you are updating this be sure to update the collector METADATA_KEYS constant in /processRawText.
-            url: "string | nullable",
-            title: "string",
-            docAuthor: "string | nullable",
-            description: "string | nullable",
-            docSource: "string | nullable",
-            chunkSource: "string | nullable",
-            published: "epoch timestamp in ms | nullable",
-          },
-        });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+        try {
+          response.status(200).json({
+            schema: {
+              // If you are updating this be sure to update the collector METADATA_KEYS constant in /processRawText.
+              url: "string | nullable",
+              title: "string",
+              docAuthor: "string | nullable",
+              description: "string | nullable",
+              docSource: "string | nullable",
+              chunkSource: "string | nullable",
+              published: "epoch timestamp in ms | nullable",
+            },
+          });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   // Be careful and place as last route to prevent override of the other /document/ GET
   // endpoints!
-  app.get("/v1/document/:docName", [validApiKey], async (request, response) => {
-    /*
+  app.get(
+    "/v1/document/:docName",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/document/:docName",
+        routeId: "api.document.get",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Documents']
     #swagger.description = 'Get a single document by its unique AnythingLLM document name'
     #swagger.parameters['docName'] = {
@@ -958,25 +1106,37 @@ function apiDocumentEndpoints(app) {
       }
     }
     */
-    try {
-      const { docName } = request.params;
-      const document = await findDocumentInDocuments(docName);
-      if (!document) {
-        response.sendStatus(404).end();
-        return;
+        try {
+          const { docName } = request.params;
+          const document = await findDocumentInDocuments(docName);
+          if (!document) {
+            response.sendStatus(404).end();
+            return;
+          }
+          response.status(200).json({ document });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-      response.status(200).json({ document });
-    } catch (e) {
-      console.error(e.message, e);
-      response.sendStatus(500).end();
-    }
-  });
+    )
+  );
 
   app.post(
     "/v1/document/create-folder",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/document/create-folder",
+        routeId: "api.document.create-folder",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
       #swagger.tags = ['Documents']
       #swagger.description = 'Create a new folder inside the documents storage directory.'
       #swagger.requestBody = {
@@ -1012,37 +1172,48 @@ function apiDocumentEndpoints(app) {
         }
       }
       */
-      try {
-        const { name } = reqBody(request);
-        const storagePath = path.join(documentsPath, normalizePath(name));
-        if (!isWithin(path.resolve(documentsPath), path.resolve(storagePath)))
-          throw new Error("Invalid path name");
+        try {
+          const { name } = reqBody(request);
+          const storagePath = path.join(documentsPath, normalizePath(name));
+          if (!isWithin(path.resolve(documentsPath), path.resolve(storagePath)))
+            throw new Error("Invalid path name");
 
-        if (fs.existsSync(storagePath)) {
+          if (fs.existsSync(storagePath)) {
+            response.status(500).json({
+              success: false,
+              message: "Folder by that name already exists",
+            });
+            return;
+          }
+
+          fs.mkdirSync(storagePath, { recursive: true });
+          response.status(200).json({ success: true, message: null });
+        } catch (e) {
+          console.error(e);
           response.status(500).json({
             success: false,
-            message: "Folder by that name already exists",
+            message: `Failed to create folder: ${e.message}`,
           });
-          return;
         }
-
-        fs.mkdirSync(storagePath, { recursive: true });
-        response.status(200).json({ success: true, message: null });
-      } catch (e) {
-        console.error(e);
-        response.status(500).json({
-          success: false,
-          message: `Failed to create folder: ${e.message}`,
-        });
       }
-    }
+    )
   );
 
   app.delete(
     "/v1/document/remove-folder",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/v1/document/remove-folder",
+        routeId: "api.document.remove-folder",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
       #swagger.tags = ['Documents']
       #swagger.description = 'Remove a folder and all its contents from the documents storage directory.'
       #swagger.requestBody = {
@@ -1081,27 +1252,38 @@ function apiDocumentEndpoints(app) {
         }
       }
       */
-      try {
-        const { name } = reqBody(request);
-        await purgeFolder(name);
-        response
-          .status(200)
-          .json({ success: true, message: "Folder removed successfully" });
-      } catch (e) {
-        console.error(e);
-        response.status(500).json({
-          success: false,
-          message: `Failed to remove folder: ${e.message}`,
-        });
+        try {
+          const { name } = reqBody(request);
+          await purgeFolder(name);
+          response
+            .status(200)
+            .json({ success: true, message: "Folder removed successfully" });
+        } catch (e) {
+          console.error(e);
+          response.status(500).json({
+            success: false,
+            message: `Failed to remove folder: ${e.message}`,
+          });
+        }
       }
-    }
+    )
   );
 
   app.post(
     "/v1/document/move-files",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/document/move-files",
+        routeId: "api.document.move-files",
+        plane: "control",
+        category: "documents",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
       #swagger.tags = ['Documents']
       #swagger.description = 'Move files within the documents storage directory.'
       #swagger.requestBody = {
@@ -1142,62 +1324,64 @@ function apiDocumentEndpoints(app) {
         }
       }
       */
-      try {
-        const { files } = reqBody(request);
-        const docpaths = files.map(({ from }) => from);
-        const documents = await Document.where({ docpath: { in: docpaths } });
-        const embeddedFiles = documents.map((doc) => doc.docpath);
-        const moveableFiles = files.filter(
-          ({ from }) => !embeddedFiles.includes(from)
-        );
-        const movePromises = moveableFiles.map(({ from, to }) => {
-          const sourcePath = path.join(documentsPath, normalizePath(from));
-          const destinationPath = path.join(documentsPath, normalizePath(to));
-          return new Promise((resolve, reject) => {
-            if (
-              !isWithin(documentsPath, sourcePath) ||
-              !isWithin(documentsPath, destinationPath)
-            )
-              return reject("Invalid file location");
+        try {
+          const { files } = reqBody(request);
+          const docpaths = files.map(({ from }) => from);
+          const documents = await Document.where({ docpath: { in: docpaths } });
+          const embeddedFiles = documents.map((doc) => doc.docpath);
+          const moveableFiles = files.filter(
+            ({ from }) => !embeddedFiles.includes(from)
+          );
+          const movePromises = moveableFiles.map(({ from, to }) => {
+            const sourcePath = path.join(documentsPath, normalizePath(from));
+            const destinationPath = path.join(documentsPath, normalizePath(to));
+            return new Promise((resolve, reject) => {
+              if (
+                !isWithin(documentsPath, sourcePath) ||
+                !isWithin(documentsPath, destinationPath)
+              )
+                return reject("Invalid file location");
 
-            fs.rename(sourcePath, destinationPath, (err) => {
-              if (err) {
-                console.error(`Error moving file ${from} to ${to}:`, err);
-                reject(err);
-              } else {
-                resolve();
-              }
+              fs.rename(sourcePath, destinationPath, (err) => {
+                if (err) {
+                  console.error(`Error moving file ${from} to ${to}:`, err);
+                  reject(err);
+                } else {
+                  resolve();
+                }
+              });
             });
           });
-        });
-        Promise.all(movePromises)
-          .then(() => {
-            const unmovableCount = files.length - moveableFiles.length;
-            if (unmovableCount > 0) {
-              response.status(200).json({
-                success: true,
-                message: `${unmovableCount}/${files.length} files not moved. Unembed them from all workspaces.`,
+          Promise.all(movePromises)
+            .then(() => {
+              const unmovableCount = files.length - moveableFiles.length;
+              if (unmovableCount > 0) {
+                response.status(200).json({
+                  success: true,
+                  message: `${unmovableCount}/${files.length} files not moved. Unembed them from all workspaces.`,
+                });
+              } else {
+                response.status(200).json({
+                  success: true,
+                  message: null,
+                });
+              }
+            })
+            .catch((err) => {
+              console.error("Error moving files:", err);
+              response.status(500).json({
+                success: false,
+                message: "Failed to move some files.",
               });
-            } else {
-              response.status(200).json({
-                success: true,
-                message: null,
-              });
-            }
-          })
-          .catch((err) => {
-            console.error("Error moving files:", err);
-            response
-              .status(500)
-              .json({ success: false, message: "Failed to move some files." });
-          });
-      } catch (e) {
-        console.error(e);
-        response
-          .status(500)
-          .json({ success: false, message: "Failed to move files." });
+            });
+        } catch (e) {
+          console.error(e);
+          response
+            .status(500)
+            .json({ success: false, message: "Failed to move files." });
+        }
       }
-    }
+    )
   );
 }
 

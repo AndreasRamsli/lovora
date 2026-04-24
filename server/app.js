@@ -53,6 +53,7 @@ async function getBetterAuthNodeHandler() {
 function createApp({ enableWebSockets = true } = {}) {
   const app = express();
   const apiRouter = express.Router();
+  app.locals.apiRouter = apiRouter;
 
   if (
     process.env.NODE_ENV === "development" &&

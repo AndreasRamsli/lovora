@@ -20,3 +20,5 @@ collector/.env.development
 playwright-report/
 test-results/
 tmp-*.png
+storage/
+server/__tests__/storage/

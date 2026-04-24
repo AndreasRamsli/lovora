@@ -570,13 +570,26 @@ const System = {
       })
       .catch((e) => {
         console.error(e);
-        return { apiKey: null, error: e.message };
+        return { apiKeys: [], error: e.message };
       });
   },
-  generateApiKey: async function () {
+  getApiKeyWorkspaces: async function () {
+    return fetch(`${API_BASE}/system/api-key-workspaces`, {
+      method: "GET",
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .then((res) => res?.workspaces || [])
+      .catch((e) => {
+        console.error(e);
+        return [];
+      });
+  },
+  generateApiKey: async function (payload = {}) {
     return fetch(`${API_BASE}/system/generate-api-key`, {
       method: "POST",
       headers: baseHeaders(),
+      body: JSON.stringify(payload),
     })
       .then((res) => {
         if (!res.ok) {

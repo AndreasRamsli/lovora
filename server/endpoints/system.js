@@ -33,9 +33,13 @@ const {
 } = require("../utils/files/logo");
 const { Telemetry } = require("../models/telemetry");
 const { ApiKey } = require("../models/apiKeys");
+const { Workspace } = require("../models/workspace");
 const { getCustomModels } = require("../utils/helpers/customModels");
 const { WorkspaceChats } = require("../models/workspaceChats");
 const { ConversationFlags } = require("../models/conversationFlags");
+const {
+  ChatMetadataRepository,
+} = require("../repositories/chatMetadataRepository");
 const {
   flexUserRoleValid,
   ROLES,
@@ -68,6 +72,7 @@ const {
   handleModerationSchemaRouteError,
   sendReadinessResponse,
 } = require("../utils/moderation/schemaReadiness");
+const { withRoutePolicy } = require("../utils/privacy/routePolicy");
 
 function setNoStore(response) {
   response.set(
@@ -1039,79 +1044,164 @@ function systemEndpoints(app) {
     }
   );
 
-  app.get("/system/api-keys", [validatedRequest], async (_, response) => {
-    try {
-      if (response.locals.multiUserMode) {
-        return response.sendStatus(401).end();
-      }
+  app.get(
+    "/system/api-keys",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/system/api-keys",
+        routeId: "system.api-keys.list",
+        plane: "control",
+        category: "api_keys",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest],
+      async (_, response) => {
+        try {
+          if (response.locals.multiUserMode) {
+            return response.sendStatus(401).end();
+          }
 
-      const apiKeys = await ApiKey.where({});
-      return response.status(200).json({
-        apiKeys,
-        error: null,
-      });
-    } catch (error) {
-      console.error(error);
-      response.status(500).json({
-        apiKey: null,
-        error: "Could not find an API Key.",
-      });
-    }
-  });
+          const apiKeys = await ApiKey.whereWithUser({});
+          return response.status(200).json({
+            apiKeys,
+            error: null,
+          });
+        } catch (error) {
+          console.error(error);
+          response.status(500).json({
+            apiKey: null,
+            error: "Could not find an API Key.",
+          });
+        }
+      }
+    )
+  );
+
+  app.get(
+    "/system/api-key-workspaces",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/system/api-key-workspaces",
+        routeId: "system.api-keys.workspaces",
+        plane: "control",
+        category: "api_keys",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest],
+      async (_, response) => {
+        try {
+          if (response.locals.multiUserMode) {
+            return response.sendStatus(401).end();
+          }
+
+          const workspaces = (
+            await Workspace.where({}, null, { name: "asc" })
+          ).map(({ id, name, slug }) => ({ id, name, slug }));
+          return response.status(200).json({
+            workspaces,
+            error: null,
+          });
+        } catch (error) {
+          console.error(error);
+          response.status(500).json({
+            workspaces: [],
+            error: "Could not list api key workspaces.",
+          });
+        }
+      }
+    )
+  );
 
   app.post(
     "/system/generate-api-key",
-    [validatedRequest],
-    async (_, response) => {
-      try {
-        if (response.locals.multiUserMode) {
-          return response.sendStatus(401).end();
-        }
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/system/generate-api-key",
+        routeId: "system.api-keys.create",
+        plane: "control",
+        category: "api_keys",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest],
+      async (request, response) => {
+        try {
+          if (response.locals.multiUserMode) {
+            return response.sendStatus(401).end();
+          }
 
-        const { apiKey, error } = await ApiKey.create();
-        await EventLogs.logEvent(
-          "api_key_created",
-          {},
-          response?.locals?.user?.id
-        );
-        return response.status(200).json({
-          apiKey,
-          error,
-        });
-      } catch (error) {
-        console.error(error);
-        response.status(500).json({
-          apiKey: null,
-          error: "Error generating api key.",
-        });
+          const {
+            name = null,
+            principalType = null,
+            workspaceId = null,
+          } = reqBody(request);
+          const { apiKey, error } = await ApiKey.create(null, {
+            name,
+            principalType,
+            workspaceId,
+          });
+          if (apiKey) {
+            await EventLogs.logEvent(
+              "api_key_created",
+              {
+                principalType:
+                  apiKey?.principalType || principalType || "management",
+                workspaceId: apiKey?.workspaceId || null,
+              },
+              response?.locals?.user?.id
+            );
+          }
+          return response.status(200).json({
+            apiKey,
+            error,
+          });
+        } catch (error) {
+          console.error(error);
+          response.status(500).json({
+            apiKey: null,
+            error: "Error generating api key.",
+          });
+        }
       }
-    }
+    )
   );
 
   // TODO: This endpoint is replicated in the admin endpoints file.
   // and should be consolidated to be a single endpoint with flexible role protection.
   app.delete(
     "/system/api-key/:id",
-    [validatedRequest],
-    async (request, response) => {
-      try {
-        if (response.locals.multiUserMode)
-          return response.sendStatus(401).end();
-        const { id } = request.params;
-        if (!id || isNaN(Number(id))) return response.sendStatus(400).end();
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/system/api-key/:id",
+        routeId: "system.api-keys.delete",
+        plane: "control",
+        category: "api_keys",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest],
+      async (request, response) => {
+        try {
+          if (response.locals.multiUserMode)
+            return response.sendStatus(401).end();
+          const { id } = request.params;
+          if (!id || isNaN(Number(id))) return response.sendStatus(400).end();
 
-        await ApiKey.delete({ id: Number(id) });
-        await EventLogs.logEvent(
-          "api_key_deleted",
-          { deletedBy: response.locals?.user?.username },
-          response?.locals?.user?.id
-        );
-        return response.status(200).end();
-      } catch (error) {
-        console.error(error);
-        response.status(500).end();
+          await ApiKey.delete({ id: Number(id) });
+          await EventLogs.logEvent(
+            "api_key_deleted",
+            { deletedBy: response.locals?.user?.username },
+            response?.locals?.user?.id
+          );
+          return response.status(200).end();
+        } catch (error) {
+          console.error(error);
+          response.status(500).end();
+        }
       }
-    }
+    )
   );
 
   app.post(
@@ -1177,312 +1267,401 @@ function systemEndpoints(app) {
 
   app.post(
     "/system/workspace-chats",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/system/workspace-chats"
-      );
-      if (!guard.ok) return;
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/system/workspace-chats",
+        routeId: "system.workspace-chats",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/system/workspace-chats"
+        );
+        if (!guard.ok) return;
 
-      try {
-        const { offset = 0, limit = 20 } = reqBody(request);
-        const chats = await ConversationFlags.listMetadata({
-          limit,
-          offset: offset * limit,
-        });
-        const totalChats = await WorkspaceChats.count();
-        const hasPages = totalChats > (offset + 1) * limit;
+        try {
+          const { offset = 0, limit = 20 } = reqBody(request);
+          const chats = await ChatMetadataRepository.listWorkspaceChats({
+            requestContext: response.locals.createRouteSecurityContext?.(),
+            limit,
+            offset: offset * limit,
+          });
+          const totalChats = await WorkspaceChats.count();
+          const hasPages = totalChats > (offset + 1) * limit;
 
-        response.status(200).json({ chats: chats, hasPages, totalChats });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/system/workspace-chats"
-          )
-        ) {
-          return;
+          response.status(200).json({ chats: chats, hasPages, totalChats });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/system/workspace-chats"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/system/conversation-flags",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/system/conversation-flags"
-      );
-      if (!guard.ok) return;
-
-      try {
-        const { offset = 0, limit = 20, status = "open" } = reqBody(request);
-        const flags = await ConversationFlags.listReviewCases({
-          status,
-          limit,
-          offset: offset * limit,
-        });
-        const totalFlags = await ConversationFlags.count(
-          status === "all" ? {} : { status }
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/system/conversation-flags",
+        routeId: "system.conversation-flags",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/system/conversation-flags"
         );
-        const hasPages = totalFlags > (offset + 1) * limit;
+        if (!guard.ok) return;
 
-        response.status(200).json({ flags, hasPages, totalFlags });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/system/conversation-flags"
-          )
-        ) {
-          return;
+        try {
+          const actor = await userFromSession(request, response);
+          const { offset = 0, limit = 20, status = "open" } = reqBody(request);
+          const flags = await ChatMetadataRepository.listReviewCases({
+            requestContext: response.locals.createRouteSecurityContext?.(),
+            actor,
+            status,
+            limit,
+            offset: offset * limit,
+          });
+          const totalFlags = await ConversationFlags.count(
+            status === "all" ? {} : { status }
+          );
+          const hasPages = totalFlags > (offset + 1) * limit;
+
+          response.status(200).json({ flags, hasPages, totalFlags });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/system/conversation-flags"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/system/conversation-flags/:id/dismiss",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/system/conversation-flags/:id/dismiss"
-      );
-      if (!guard.ok) return;
-
-      try {
-        const user = await userFromSession(request, response);
-        const { id } = request.params;
-        const { reviewNote = "" } = reqBody(request);
-        const flag = await ConversationFlags.dismiss(id, user?.id, reviewNote);
-
-        if (!flag) {
-          return response
-            .status(404)
-            .json({ success: false, error: "Flag not found." });
-        }
-
-        await EventLogs.logEvent(
-          "conversation_flag_dismissed",
-          {
-            caseId: flag.id,
-            chatId: flag.chatId,
-            reviewNote,
-          },
-          user?.id
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/system/conversation-flags/:id/dismiss",
+        routeId: "system.conversation-flags.dismiss",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/system/conversation-flags/:id/dismiss"
         );
+        if (!guard.ok) return;
 
-        response.status(200).json({ success: true, error: null });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/system/conversation-flags/:id/dismiss"
-          )
-        ) {
-          return;
+        try {
+          const user = await userFromSession(request, response);
+          const { id } = request.params;
+          const { reviewNote = "" } = reqBody(request);
+          const flag = await ConversationFlags.dismiss(
+            id,
+            user?.id,
+            reviewNote
+          );
+
+          if (!flag) {
+            return response
+              .status(404)
+              .json({ success: false, error: "Flag not found." });
+          }
+
+          await EventLogs.logEvent(
+            "conversation_flag_dismissed",
+            {
+              caseId: flag.id,
+              chatId: flag.chatId,
+              reviewNote,
+            },
+            user?.id
+          );
+
+          response.status(200).json({ success: true, error: null });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/system/conversation-flags/:id/dismiss"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.delete(
     "/system/workspace-chats/:id",
-    [validatedRequest, flexUserRoleValid([ROLES.admin])],
-    async (_, response) => {
-      response
-        .status(403)
-        .json({ success: false, error: "Raw chat deletion is disabled." });
-    }
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/system/workspace-chats/:id",
+        routeId: "system.workspace-chats.delete",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "deny_raw_content",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin])],
+      async (_, response) => {
+        response
+          .status(403)
+          .json({ success: false, error: "Raw chat deletion is disabled." });
+      }
+    )
   );
 
   app.post(
     "/system/conversation-flags/:id/suspend-user",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/system/conversation-flags/:id/suspend-user"
-      );
-      if (!guard.ok) return;
-
-      try {
-        const user = await userFromSession(request, response);
-        const { id } = request.params;
-        const { reviewNote = "" } = reqBody(request);
-        const flag = await ConversationFlags.suspendUser(
-          id,
-          user?.id,
-          reviewNote
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/system/conversation-flags/:id/suspend-user",
+        routeId: "system.conversation-flags.suspend-user",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/system/conversation-flags/:id/suspend-user"
         );
+        if (!guard.ok) return;
 
-        if (!flag) {
-          return response
-            .status(404)
-            .json({ success: false, error: "Flag or user not found." });
+        try {
+          const user = await userFromSession(request, response);
+          const { id } = request.params;
+          const { reviewNote = "" } = reqBody(request);
+          const flag = await ConversationFlags.suspendUser(
+            id,
+            user?.id,
+            reviewNote
+          );
+
+          if (!flag) {
+            return response
+              .status(404)
+              .json({ success: false, error: "Flag or user not found." });
+          }
+
+          await EventLogs.logEvent(
+            "user_suspended_from_flag",
+            {
+              caseId: flag.id,
+              chatId: flag.chatId,
+              reviewNote,
+            },
+            user?.id
+          );
+
+          response.json({ success: true, error: null });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/system/conversation-flags/:id/suspend-user"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-
-        await EventLogs.logEvent(
-          "user_suspended_from_flag",
-          {
-            caseId: flag.id,
-            chatId: flag.chatId,
-            reviewNote,
-          },
-          user?.id
-        );
-
-        response.json({ success: true, error: null });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/system/conversation-flags/:id/suspend-user"
-          )
-        ) {
-          return;
-        }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/system/conversation-flags/:id/unsuspend-user",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/system/conversation-flags/:id/unsuspend-user"
-      );
-      if (!guard.ok) return;
-
-      try {
-        const user = await userFromSession(request, response);
-        const { id } = request.params;
-        const { reviewNote = "" } = reqBody(request);
-        const flag = await ConversationFlags.unsuspendUser(
-          id,
-          user?.id,
-          reviewNote
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/system/conversation-flags/:id/unsuspend-user",
+        routeId: "system.conversation-flags.unsuspend-user",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/system/conversation-flags/:id/unsuspend-user"
         );
+        if (!guard.ok) return;
 
-        if (!flag) {
-          return response
-            .status(404)
-            .json({ success: false, error: "Flag or user not found." });
+        try {
+          const user = await userFromSession(request, response);
+          const { id } = request.params;
+          const { reviewNote = "" } = reqBody(request);
+          const flag = await ConversationFlags.unsuspendUser(
+            id,
+            user?.id,
+            reviewNote
+          );
+
+          if (!flag) {
+            return response
+              .status(404)
+              .json({ success: false, error: "Flag or user not found." });
+          }
+
+          await EventLogs.logEvent(
+            "user_unsuspended",
+            {
+              caseId: flag.id,
+              chatId: flag.chatId,
+              reviewNote,
+            },
+            user?.id
+          );
+
+          response.json({ success: true, error: null });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/system/conversation-flags/:id/unsuspend-user"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-
-        await EventLogs.logEvent(
-          "user_unsuspended",
-          {
-            caseId: flag.id,
-            chatId: flag.chatId,
-            reviewNote,
-          },
-          user?.id
-        );
-
-        response.json({ success: true, error: null });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/system/conversation-flags/:id/unsuspend-user"
-          )
-        ) {
-          return;
-        }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.get(
     "/system/conversation-flags/:id/review",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/system/conversation-flags/:id/review"
-      );
-      if (!guard.ok) return;
-
-      try {
-        const actor = await userFromSession(request, response);
-        const review = await ConversationFlags.getReviewConversation(
-          request.params.id
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/system/conversation-flags/:id/review",
+        routeId: "system.review-case",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/system/conversation-flags/:id/review"
         );
+        if (!guard.ok) return;
 
-        if (
-          !review ||
-          !ConversationFlags.canViewFlaggedConversation(actor, review.flag)
-        ) {
-          return response.status(404).json({
-            success: false,
-            error: "Flagged conversation not available.",
+        try {
+          const actor = await userFromSession(request, response);
+          const review = await ChatMetadataRepository.getReviewCase({
+            requestContext: response.locals.createRouteSecurityContext?.(),
+            id: request.params.id,
           });
-        }
 
-        await EventLogs.logEvent(
-          "flagged_conversation_viewed",
-          {
-            caseId: review.caseId,
-            sourceType: review.flag.sourceType,
-            chatId: review.flag.chatId,
-            workspaceId: review.flag.workspaceId,
-            threadId: review.flag.threadId,
-            actorRole: actor?.role || null,
-          },
-          actor?.id
-        );
+          if (
+            !review ||
+            !ConversationFlags.canViewFlaggedConversation(actor, review.flag)
+          ) {
+            return response.status(404).json({
+              success: false,
+              error: "Flagged conversation not available.",
+            });
+          }
 
-        return response.status(200).json({
-          success: true,
-          review,
-          error: null,
-        });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/system/conversation-flags/:id/review"
-          )
-        ) {
-          return;
+          await EventLogs.logEvent(
+            "flagged_conversation_viewed",
+            {
+              caseId: review.caseId,
+              sourceType: review.flag.sourceType,
+              chatId: review.flag.chatId,
+              workspaceId: review.flag.workspaceId,
+              threadId: review.flag.threadId,
+              actorRole: actor?.role || null,
+            },
+            actor?.id
+          );
+
+          return response.status(200).json({
+            success: true,
+            review,
+            error: null,
+          });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/system/conversation-flags/:id/review"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.get(
     "/system/export-chats",
-    [validatedRequest, flexUserRoleValid([ROLES.admin])],
-    async (_, response) => {
-      response
-        .status(403)
-        .json({ success: false, error: "Raw chat export is disabled." });
-    }
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/system/export-chats",
+        routeId: "system.export-chats",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "deny_raw_content",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin])],
+      async (_, response) => {
+        response
+          .status(403)
+          .json({ success: false, error: "Raw chat export is disabled." });
+      }
+    )
   );
 
   // Used for when a user in multi-user updates their own profile

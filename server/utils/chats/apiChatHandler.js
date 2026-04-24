@@ -17,6 +17,11 @@ const {
   buildProviderSessionId,
   persistAndModerateConversation,
 } = require("./persistence");
+const {
+  assertWorkspaceServiceAccess,
+  assertWorkspaceServiceThreadAccess,
+  resolveAuthorizedApiSessionId,
+} = require("../auth/apiContentAuthorization");
 const { Telemetry } = require("../../models/telemetry");
 const { CollectorApi } = require("../collectorApi");
 const fs = require("fs");
@@ -99,9 +104,34 @@ async function processDocumentAttachments(attachments = []) {
   return { parsedDocuments, imageAttachments };
 }
 
+function assertAuthorizedApiChatInvocation({
+  principal = null,
+  workspace = null,
+  thread = null,
+}) {
+  if (!principal) return;
+
+  if (thread) {
+    assertWorkspaceServiceThreadAccess(
+      principal,
+      workspace,
+      thread,
+      "workspace:api_sessions:write"
+    );
+    return;
+  }
+
+  assertWorkspaceServiceAccess(
+    principal,
+    workspace,
+    "workspace:api_sessions:write"
+  );
+}
+
 /**
  * Handle synchronous chats with your workspace via the developer API endpoint
  * @param {{
+ *  principal?: object|null,
  *  workspace: import("@prisma/client").workspaces,
  *  message:string,
  *  mode: "chat"|"query",
@@ -114,6 +144,7 @@ async function processDocumentAttachments(attachments = []) {
  * @returns {Promise<ResponseObject>}
  */
 async function chatSync({
+  principal = null,
   workspace,
   message = null,
   mode = "chat",
@@ -123,6 +154,8 @@ async function chatSync({
   attachments = [],
   reset = false,
 }) {
+  assertAuthorizedApiChatInvocation({ principal, workspace, thread });
+  sessionId = resolveAuthorizedApiSessionId(principal, sessionId);
   const uuid = uuidv4();
   const chatMode = mode ?? "chat";
 
@@ -451,7 +484,8 @@ async function chatSync({
 /**
  * Handle streamable HTTP chunks for chats with your workspace via the developer API endpoint
  * @param {{
- * response: import("express").Response,
+ *  response: import("express").Response,
+ *  principal?: object|null,
  *  workspace: import("@prisma/client").workspaces,
  *  message:string,
  *  mode: "chat"|"query",
@@ -465,6 +499,7 @@ async function chatSync({
  */
 async function streamChat({
   response,
+  principal = null,
   workspace,
   message = null,
   mode = "chat",
@@ -474,6 +509,8 @@ async function streamChat({
   attachments = [],
   reset = false,
 }) {
+  assertAuthorizedApiChatInvocation({ principal, workspace, thread });
+  sessionId = resolveAuthorizedApiSessionId(principal, sessionId);
   const uuid = uuidv4();
   const chatMode = mode ?? "chat";
 

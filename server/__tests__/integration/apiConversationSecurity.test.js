@@ -64,6 +64,7 @@ describe("api conversation security contracts", () => {
         slug: "service-metadata-thread",
         workspace_id: fixtures.workspaces.assignedWorkspace.id,
         user_id: null,
+        api_session_id: String(fixtures.workspaceServiceApiKey.id),
       },
     });
     await prisma.workspace_chats.create({
@@ -71,7 +72,7 @@ describe("api conversation security contracts", () => {
         workspaceId: fixtures.workspaces.assignedWorkspace.id,
         thread_id: serviceThread.id,
         user_id: null,
-        api_session_id: null,
+        api_session_id: String(fixtures.workspaceServiceApiKey.id),
         prompt: "Service thread prompt should stay hidden",
         response: JSON.stringify({
           text: "Service thread response should stay hidden",
@@ -127,6 +128,86 @@ describe("api conversation security contracts", () => {
       "Embed prompt should stay hidden",
       "Embed response should stay hidden",
     ]);
+  });
+
+  test("workspace-service keys cannot see user-owned workspace history metadata", async () => {
+    await prisma.workspace_chats.create({
+      data: {
+        workspaceId: fixtures.workspaces.assignedWorkspace.id,
+        thread_id: null,
+        user_id: null,
+        api_session_id: String(fixtures.workspaceServiceApiKey.id),
+        prompt: "Service-only workspace prompt should stay hidden",
+        response: JSON.stringify({
+          text: "Service-only workspace response should stay hidden",
+          sources: [],
+        }),
+        include: true,
+      },
+    });
+
+    const response = await request(app)
+      .get(`/api/v1/workspace/${fixtures.workspaces.assignedWorkspace.slug}/chats`)
+      .set("Authorization", fixtures.auth.workspaceServiceApiKey);
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body.history)).toBe(true);
+    expect(response.body.history.length).toBeGreaterThan(0);
+    expect(
+      response.body.history.some((entry) => entry.user?.id !== null)
+    ).toBe(false);
+    expect(
+      response.body.history.some((entry) =>
+        ["alice-user", "charlie-user", "bob-user"].includes(
+          entry.user?.username
+        )
+      )
+    ).toBe(false);
+    expectMetadataOnly(response.body, [
+      fixtures.chats.flaggedDefaultChat.prompt,
+      fixtures.chats.charlieSafeChat.prompt,
+      "Service-only workspace response should stay hidden",
+    ]);
+  });
+
+  test("workspace-service keys cannot target another service key's api session history", async () => {
+    const { ApiKey: HarnessApiKey } = require("../../models/apiKeys");
+    const { apiKey: secondWorkspaceServiceKey, error } = await HarnessApiKey.create(
+      fixtures.users.apiKeyOwner.id,
+      {
+        name: "Second workspace service key",
+        principalType: "workspace_service",
+        workspaceId: fixtures.workspaces.assignedWorkspace.id,
+      }
+    );
+    expect(error).toBeNull();
+    expect(secondWorkspaceServiceKey).toBeTruthy();
+
+    await prisma.workspace_chats.create({
+      data: {
+        workspaceId: fixtures.workspaces.assignedWorkspace.id,
+        thread_id: null,
+        user_id: null,
+        api_session_id: String(fixtures.workspaceServiceApiKey.id),
+        prompt: "First service key session prompt should stay hidden",
+        response: JSON.stringify({
+          text: "First service key session response should stay hidden",
+          sources: [],
+        }),
+        include: true,
+      },
+    });
+
+    const response = await request(app)
+      .get(
+        `/api/v1/workspace/${fixtures.workspaces.assignedWorkspace.slug}/chats`
+      )
+      .query({ apiSessionId: String(fixtures.workspaceServiceApiKey.id) })
+      .set("Authorization", `Bearer ${secondWorkspaceServiceKey.secret}`);
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body.history)).toBe(true);
+    expect(response.body.history).toEqual([]);
   });
 
   test("admin API metadata queue stays metadata-only", async () => {
@@ -680,15 +761,15 @@ describe("api conversation security contracts", () => {
             }),
         ]);
 
-      for (const response of [
+      const statuses = [
         historyResponse,
         updateResponse,
         deleteResponse,
         chatResponse,
         streamResponse,
-      ]) {
-        expect(response.status).toBe(404);
-      }
+      ].map((response) => response.status);
+
+      expect(statuses).toEqual([404, 404, 404, 404, 404]);
 
       expect(chatSyncSpy).not.toHaveBeenCalled();
       expect(streamChatSpy).not.toHaveBeenCalled();
@@ -712,6 +793,7 @@ describe("api conversation security contracts", () => {
         id: expect.any(Number),
         workspace_id: fixtures.workspaces.assignedWorkspace.id,
         user_id: null,
+        api_session_id: String(fixtures.workspaceServiceApiKey.id),
       })
     );
 
@@ -823,5 +905,209 @@ describe("api conversation security contracts", () => {
         "API keys cannot target users explicitly."
       );
     }
+  });
+
+  test("workspace-service keys cannot operate on another service key's thread in the same workspace", async () => {
+    const { ApiKey: FreshApiKey } = require("../../models/apiKeys");
+    const {
+      apiKey: secondWorkspaceServiceApiKey,
+      error: secondWorkspaceServiceApiKeyError,
+    } = await FreshApiKey.create(fixtures.users.apiKeyOwner.id, {
+      name: "Second workspace service key",
+      principalType: "workspace_service",
+      workspaceId: fixtures.workspaces.assignedWorkspace.id,
+    });
+
+    if (!secondWorkspaceServiceApiKey) {
+      throw new Error(
+        `Failed to create second workspace service key: ${secondWorkspaceServiceApiKeyError}`
+      );
+    }
+
+    const createResponse = await request(app)
+      .post(`/api/v1/workspace/${fixtures.workspaces.assignedWorkspace.slug}/thread/new`)
+      .set("Authorization", fixtures.auth.workspaceServiceApiKey)
+      .send({
+        name: "Primary service-owned thread",
+      });
+
+    expect(createResponse.status).toBe(200);
+    const threadPath = `/api/v1/workspace/${fixtures.workspaces.assignedWorkspace.slug}/thread/${createResponse.body.thread.slug}`;
+    const secondServiceAuth = `Bearer ${secondWorkspaceServiceApiKey.secret}`;
+    const chatSyncSpy = jest.spyOn(ApiChatHandler, "chatSync").mockResolvedValue({
+      id: "should-not-run",
+      type: "textResponse",
+      textResponse: "should not run",
+      sources: [],
+      close: true,
+      error: null,
+    });
+    const streamChatSpy = jest
+      .spyOn(ApiChatHandler, "streamChat")
+      .mockImplementation(async ({ response }) => {
+        response.write("data: should not run\n\n");
+      });
+
+    try {
+      const [historyResponse, updateResponse, deleteResponse, chatResponse, streamResponse] =
+        await Promise.all([
+          request(app).get(`${threadPath}/chats`).set("Authorization", secondServiceAuth),
+          request(app)
+            .post(`${threadPath}/update`)
+            .set("Authorization", secondServiceAuth)
+            .send({ name: "Hijacked name" }),
+          request(app).delete(threadPath).set("Authorization", secondServiceAuth),
+          request(app)
+            .post(`${threadPath}/chat`)
+            .set("Authorization", secondServiceAuth)
+            .send({
+              message: "try hijack thread",
+              mode: "chat",
+            }),
+          request(app)
+            .post(`${threadPath}/stream-chat`)
+            .set("Authorization", secondServiceAuth)
+            .send({
+              message: "try hijack thread",
+              mode: "chat",
+            }),
+        ]);
+
+      const statuses = [
+        historyResponse,
+        updateResponse,
+        deleteResponse,
+        chatResponse,
+        streamResponse,
+      ].map((response) => response.status);
+
+      expect(statuses).toEqual([404, 404, 404, 404, 404]);
+
+      expect(chatSyncSpy).not.toHaveBeenCalled();
+      expect(streamChatSpy).not.toHaveBeenCalled();
+    } finally {
+      chatSyncSpy.mockRestore();
+      streamChatSpy.mockRestore();
+    }
+  });
+
+  test("workspace-service keys fail closed on legacy unowned service threads", async () => {
+    const legacyThread = await prisma.workspace_threads.create({
+      data: {
+        name: "Legacy unowned service thread",
+        slug: "legacy-unowned-service-thread",
+        workspace_id: fixtures.workspaces.assignedWorkspace.id,
+        user_id: null,
+        api_session_id: null,
+      },
+    });
+
+    const threadPath = `/api/v1/workspace/${fixtures.workspaces.assignedWorkspace.slug}/thread/${legacyThread.slug}`;
+    const chatSyncSpy = jest.spyOn(ApiChatHandler, "chatSync").mockResolvedValue({
+      id: "should-not-run",
+      type: "textResponse",
+      textResponse: "should not run",
+      sources: [],
+      close: true,
+      error: null,
+    });
+    const streamChatSpy = jest
+      .spyOn(ApiChatHandler, "streamChat")
+      .mockImplementation(async ({ response }) => {
+        response.write("data: should not run\n\n");
+      });
+
+    try {
+      const [historyResponse, updateResponse, deleteResponse, chatResponse, streamResponse] =
+        await Promise.all([
+          request(app)
+            .get(`${threadPath}/chats`)
+            .set("Authorization", fixtures.auth.workspaceServiceApiKey),
+          request(app)
+            .post(`${threadPath}/update`)
+            .set("Authorization", fixtures.auth.workspaceServiceApiKey)
+            .send({ name: "Should not work" }),
+          request(app)
+            .delete(threadPath)
+            .set("Authorization", fixtures.auth.workspaceServiceApiKey),
+          request(app)
+            .post(`${threadPath}/chat`)
+            .set("Authorization", fixtures.auth.workspaceServiceApiKey)
+            .send({
+              message: "should fail closed",
+              mode: "chat",
+            }),
+          request(app)
+            .post(`${threadPath}/stream-chat`)
+            .set("Authorization", fixtures.auth.workspaceServiceApiKey)
+            .send({
+              message: "should fail closed",
+              mode: "chat",
+            }),
+        ]);
+
+      expect(
+        [
+          historyResponse,
+          updateResponse,
+          deleteResponse,
+          chatResponse,
+          streamResponse,
+        ].map((response) => response.status)
+      ).toEqual([404, 404, 404, 404, 404]);
+
+      expect(chatSyncSpy).not.toHaveBeenCalled();
+      expect(streamChatSpy).not.toHaveBeenCalled();
+    } finally {
+      chatSyncSpy.mockRestore();
+      streamChatSpy.mockRestore();
+    }
+  });
+
+  test("workspace-service thread history includes messages from the owning service session", async () => {
+    const serviceThread = await prisma.workspace_threads.create({
+      data: {
+        name: "Readable service thread",
+        slug: "readable-service-thread",
+        workspace_id: fixtures.workspaces.assignedWorkspace.id,
+        user_id: null,
+        api_session_id: String(fixtures.workspaceServiceApiKey.id),
+      },
+    });
+
+    await prisma.workspace_chats.create({
+      data: {
+        workspaceId: fixtures.workspaces.assignedWorkspace.id,
+        thread_id: serviceThread.id,
+        user_id: null,
+        api_session_id: String(fixtures.workspaceServiceApiKey.id),
+        prompt: "service-thread prompt",
+        response: JSON.stringify({
+          text: "service-thread response",
+          metrics: {
+            provider: "openai",
+            model: "gpt-test",
+          },
+        }),
+        include: true,
+      },
+    });
+
+    const historyResponse = await request(app)
+      .get(
+        `/api/v1/workspace/${fixtures.workspaces.assignedWorkspace.slug}/thread/${serviceThread.slug}/chats`
+      )
+      .set("Authorization", fixtures.auth.workspaceServiceApiKey);
+
+    expect(historyResponse.status).toBe(200);
+    expect(historyResponse.body.history).toEqual([
+      expect.objectContaining({
+        chatId: expect.any(Number),
+        thread: {
+          id: serviceThread.id,
+        },
+        apiSessionId: String(fixtures.workspaceServiceApiKey.id),
+      }),
+    ]);
   });
 });

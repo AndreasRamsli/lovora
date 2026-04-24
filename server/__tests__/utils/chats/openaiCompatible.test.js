@@ -20,6 +20,7 @@ jest.mock('../../../utils/DocumentManager', () => ({
 
 describe('OpenAICompatibleChat', () => {
   let mockWorkspace;
+  let mockPrincipal;
   let mockVectorDb;
   let mockLLMConnector;
   let mockResponse;
@@ -35,6 +36,12 @@ describe('OpenAICompatibleChat', () => {
       chatMode: 'chat',
       chatProvider: 'openai',
       chatModel: 'gpt-4',
+    };
+    mockPrincipal = {
+      kind: 'workspace_service',
+      apiKeyId: 42,
+      workspaceId: 1,
+      scopes: ['workspace:api_sessions:write'],
     };
 
     // Setup mock VectorDb
@@ -67,7 +74,7 @@ describe('OpenAICompatibleChat', () => {
     getLLMProvider.mockReturnValue(mockLLMConnector);
 
     buildProviderSessionId.mockReturnValue(
-      'workspace:test-workspace:user:single-user:default'
+      'workspace:test-workspace:api:42'
     );
     persistAndModerateConversation.mockResolvedValue({
       chat: { id: 'mock-chat-id' },
@@ -105,6 +112,7 @@ describe('OpenAICompatibleChat', () => {
       const prompt = extractTextContent(multiModalPrompt);
       const attachments = extractAttachments(multiModalPrompt);
       const result = await OpenAICompatibleChat.chatSync({
+        principal: mockPrincipal,
         workspace: mockWorkspace,
         prompt,
         attachments,
@@ -120,6 +128,7 @@ describe('OpenAICompatibleChat', () => {
       expect(persistAndModerateConversation).toHaveBeenCalledWith(
         expect.objectContaining({
           workspace: mockWorkspace,
+          apiSessionId: '42',
           prompt: multiModalPrompt[0].text,
           response: expect.objectContaining({
             text: 'Mock response',
@@ -134,7 +143,7 @@ describe('OpenAICompatibleChat', () => {
       expect(mockLLMConnector.getChatCompletion).toHaveBeenCalledWith(
         expect.any(Array),
         expect.objectContaining({
-          sessionId: 'workspace:test-workspace:user:single-user:default',
+          sessionId: 'workspace:test-workspace:api:42',
         })
       );
 
@@ -157,6 +166,7 @@ describe('OpenAICompatibleChat', () => {
     test('should handle regular text messages in OpenAI format', async () => {
       const promptString = 'Hello world';
       const result = await OpenAICompatibleChat.chatSync({
+        principal: mockPrincipal,
         workspace: mockWorkspace,
         prompt: promptString,
         systemPrompt: 'You are a helpful assistant',
@@ -171,6 +181,7 @@ describe('OpenAICompatibleChat', () => {
       expect(persistAndModerateConversation).toHaveBeenCalledWith(
         expect.objectContaining({
           workspace: mockWorkspace,
+          apiSessionId: '42',
           prompt: promptString,
           response: expect.objectContaining({
             text: 'Mock response',
@@ -202,6 +213,7 @@ describe('OpenAICompatibleChat', () => {
       const prompt = extractTextContent(multiModalPrompt);
       const attachments = extractAttachments(multiModalPrompt);
       await OpenAICompatibleChat.streamChat({
+        principal: mockPrincipal,
         workspace: mockWorkspace,
         response: mockResponse,
         prompt,
@@ -222,6 +234,7 @@ describe('OpenAICompatibleChat', () => {
       expect(persistAndModerateConversation).toHaveBeenCalledWith(
         expect.objectContaining({
           workspace: mockWorkspace,
+          apiSessionId: '42',
           prompt: multiModalPrompt[0].text,
           response: expect.objectContaining({
             text: 'Mock streamed response',
@@ -236,7 +249,7 @@ describe('OpenAICompatibleChat', () => {
       expect(mockLLMConnector.streamGetChatCompletion).toHaveBeenCalledWith(
         expect.any(Array),
         expect.objectContaining({
-          sessionId: 'workspace:test-workspace:user:single-user:default',
+          sessionId: 'workspace:test-workspace:api:42',
         })
       );
     });
@@ -244,6 +257,7 @@ describe('OpenAICompatibleChat', () => {
     test('should handle regular text messages in streaming mode', async () => {
       const promptString = 'Hello world';
       await OpenAICompatibleChat.streamChat({
+        principal: mockPrincipal,
         workspace: mockWorkspace,
         response: mockResponse,
         prompt: promptString,
@@ -263,6 +277,7 @@ describe('OpenAICompatibleChat', () => {
       expect(persistAndModerateConversation).toHaveBeenCalledWith(
         expect.objectContaining({
           workspace: mockWorkspace,
+          apiSessionId: '42',
           prompt: promptString,
           response: expect.objectContaining({
             text: 'Mock streamed response',

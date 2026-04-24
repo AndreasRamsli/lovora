@@ -88,7 +88,7 @@ export function BillingShell({ children }) {
       {showPricingGate && (
         <div
           className={cn(
-            "fixed inset-0 z-[70] flex items-start justify-center p-5 backdrop-blur-sm md:p-6",
+            "fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto p-5 backdrop-blur-sm md:p-6",
             pricingTheme.overlay
           )}
           onClick={contextValue.closePricingGate}

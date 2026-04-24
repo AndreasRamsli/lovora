@@ -7,10 +7,33 @@ const {
   buildProviderSessionId,
   persistAndModerateConversation,
 } = require("./persistence");
+const {
+  createAuthorizationError,
+  assertWorkspaceServiceAccess,
+} = require("../auth/apiContentAuthorization");
 
 const { PassThrough } = require("stream");
 
+function resolveApiSessionId(principal = null) {
+  if (principal?.kind !== "workspace_service" || !principal?.apiKeyId) {
+    throw createAuthorizationError(403, "API key cannot access this route.");
+  }
+
+  return String(principal.apiKeyId);
+}
+
+function assertAuthorizedOpenAIInvocation(principal = null, workspace = null) {
+  const apiSessionId = resolveApiSessionId(principal);
+  assertWorkspaceServiceAccess(
+    principal,
+    workspace,
+    "workspace:api_sessions:write"
+  );
+  return apiSessionId;
+}
+
 async function chatSync({
+  principal = null,
   workspace,
   systemPrompt = null,
   history = [],
@@ -18,13 +41,14 @@ async function chatSync({
   attachments = [],
   temperature = null,
 }) {
+  const apiSessionId = assertAuthorizedOpenAIInvocation(principal, workspace);
   const uuid = uuidv4();
   const chatMode = workspace?.chatMode ?? "chat";
   const LLMConnector = getLLMProvider({
     provider: workspace?.chatProvider,
     model: workspace?.chatModel,
   });
-  const providerSessionId = buildProviderSessionId({ workspace });
+  const providerSessionId = buildProviderSessionId({ workspace, apiSessionId });
   const VectorDb = getVectorDbClass();
   const hasVectorizedSpace = await VectorDb.hasNamespace(workspace.slug);
   const embeddingsCount = await VectorDb.namespaceCount(workspace.slug);
@@ -46,6 +70,7 @@ async function chatSync({
         attachments,
       },
       include: false,
+      apiSessionId,
       moderationMessage: String(prompt),
     });
 
@@ -140,6 +165,7 @@ async function chatSync({
         attachments,
       },
       include: false,
+      apiSessionId,
       moderationMessage: String(prompt),
     });
 
@@ -200,6 +226,7 @@ async function chatSync({
       metrics,
       attachments,
     },
+    apiSessionId,
     moderationMessage: String(prompt),
   });
 
@@ -218,6 +245,7 @@ async function chatSync({
 }
 
 async function streamChat({
+  principal = null,
   workspace,
   response,
   systemPrompt = null,
@@ -226,13 +254,14 @@ async function streamChat({
   attachments = [],
   temperature = null,
 }) {
+  const apiSessionId = assertAuthorizedOpenAIInvocation(principal, workspace);
   const uuid = uuidv4();
   const chatMode = workspace?.chatMode ?? "chat";
   const LLMConnector = getLLMProvider({
     provider: workspace?.chatProvider,
     model: workspace?.chatModel,
   });
-  const providerSessionId = buildProviderSessionId({ workspace });
+  const providerSessionId = buildProviderSessionId({ workspace, apiSessionId });
   const VectorDb = getVectorDbClass();
   const hasVectorizedSpace = await VectorDb.hasNamespace(workspace.slug);
   const embeddingsCount = await VectorDb.namespaceCount(workspace.slug);
@@ -273,6 +302,7 @@ async function streamChat({
         attachments,
       },
       include: false,
+      apiSessionId,
       moderationMessage: String(prompt),
     });
 
@@ -375,6 +405,7 @@ async function streamChat({
         attachments,
       },
       include: false,
+      apiSessionId,
       moderationMessage: String(prompt),
     });
 
@@ -452,6 +483,7 @@ async function streamChat({
         metrics: stream.metrics,
         attachments,
       },
+      apiSessionId,
       moderationMessage: String(prompt),
     });
 

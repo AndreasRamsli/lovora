@@ -21,6 +21,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import Billing from "@/models/billing";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,10 +29,9 @@ import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 import paths from "../../../../utils/paths.js";
 import {
-  PRICING_LADDER,
-  STUDENT_CALLOUT,
   TEAM_CONTACT_HREF,
   getDisplayPriceLabel,
+  getLocalizedPricingCatalog,
   getPrimaryAction,
 } from "./pricingCatalog";
 import { getPricingTheme, PRICING_LAYOUT_CLASSES } from "./pricingTheme";
@@ -96,6 +96,7 @@ function PricingCard({
   onAnnualChange,
   isLoading,
   onCheckout,
+  uiCopy,
 }) {
   const showAnnualPrice = Boolean(isAnnual && tier.supportsAnnualBilling);
   const action = getPrimaryAction(tier, showAnnualPrice);
@@ -149,7 +150,7 @@ function PricingCard({
               tone={isFeatured ? "featured" : "neutral"}
               checked={showAnnualPrice}
               onCheckedChange={onAnnualChange}
-              aria-label={`${tier.name} annual billing`}
+              aria-label={`${tier.name} ${uiCopy.annualBilling}`}
             />
           </div>
         ) : (
@@ -206,7 +207,7 @@ function PricingCard({
             disabled={isLoading}
             onClick={() => onCheckout(action.planKey)}
           >
-            {isLoading ? "Redirecting..." : action.label}
+            {isLoading ? uiCopy.redirecting : action.label}
           </PricingButton>
         ) : (
           <PricingButton
@@ -226,7 +227,14 @@ function PricingCard({
   );
 }
 
-function BottomCallout({ callout, theme, themeName, isLoading, onCheckout }) {
+function BottomCallout({
+  callout,
+  theme,
+  themeName,
+  isLoading,
+  onCheckout,
+  uiCopy,
+}) {
   const actionHref = resolveActionHref(callout.action);
 
   return (
@@ -277,7 +285,7 @@ function BottomCallout({ callout, theme, themeName, isLoading, onCheckout }) {
           disabled={isLoading}
           onClick={() => onCheckout(callout.action.planKey)}
         >
-          {isLoading ? "Redirecting..." : callout.ctaLabel}
+          {isLoading ? uiCopy.redirecting : callout.ctaLabel}
         </PricingButton>
       ) : (
         <PricingButton
@@ -303,9 +311,13 @@ export default function PricingGate({
   onClose,
   centered = false,
 }) {
+  const { i18n } = useTranslation();
   const { resolvedTheme } = useTheme();
   const themeName = resolvedTheme === "light" ? "light" : "dark";
   const theme = getPricingTheme(themeName);
+  const { pricingLadder, studentCallout, uiCopy } = getLocalizedPricingCatalog(
+    i18n.language
+  );
   const [isAnnual, setIsAnnual] = useState(false);
   const [submittingPlan, setSubmittingPlan] = useState(null);
   const [error, setError] = useState("");
@@ -326,11 +338,7 @@ export default function PricingGate({
       return;
     }
 
-    setError(
-      result?.error ||
-        result?.message ||
-        "Unable to start checkout right now. Please try again."
-    );
+    setError(result?.error || result?.message || uiCopy.checkoutError);
   }
 
   return (
@@ -353,14 +361,14 @@ export default function PricingGate({
               theme.closeButton
             )}
             onClick={onClose}
-            aria-label="Close pricing options"
+            aria-label={uiCopy.closePricingOptions}
           >
             <X className="h-4 w-4" />
           </Button>
         )}
 
         <div className={cn(PRICING_LAYOUT_CLASSES.grid, onClose && "pr-14")}>
-          {PRICING_LADDER.map((tier) => (
+          {pricingLadder.map((tier) => (
             <PricingCard
               key={tier.slug}
               tier={tier}
@@ -374,17 +382,19 @@ export default function PricingGate({
                   ?.planKey
               }
               onCheckout={handleCheckout}
+              uiCopy={uiCopy}
             />
           ))}
         </div>
 
         <div className={cn(onClose && "pr-14")}>
           <BottomCallout
-            callout={STUDENT_CALLOUT}
+            callout={studentCallout}
             theme={theme}
             themeName={themeName}
-            isLoading={submittingPlan === STUDENT_CALLOUT.action.planKey}
+            isLoading={submittingPlan === studentCallout.action.planKey}
             onCheckout={handleCheckout}
+            uiCopy={uiCopy}
           />
         </div>
 
