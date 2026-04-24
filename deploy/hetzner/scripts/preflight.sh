@@ -86,6 +86,8 @@ main() {
   install -d -m 755 "$data_root/collector/outputs"
 
   docker compose -f "$compose_file" config >/dev/null
+  python3 "$script_dir/check_prisma_migration_state.py" \
+    "$data_root/server/storage/anythingllm.db"
   python3 "$script_dir/verify_stripe_webhook.py"
 
   echo "Hetzner preflight OK."
