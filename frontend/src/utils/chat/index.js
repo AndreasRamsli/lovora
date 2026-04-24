@@ -97,6 +97,7 @@ export default function handleChat(
       if (type === "finalizeResponseStream") {
         updatedHistory = {
           ...existingHistory,
+          ...(sources && sources.length > 0 ? { sources } : {}),
           closed: close,
           animate: !close,
           pending: false,

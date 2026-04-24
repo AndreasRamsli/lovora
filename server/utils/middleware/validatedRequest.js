@@ -2,6 +2,7 @@ const { SystemSettings } = require("../../models/systemSettings");
 const { EncryptionManager } = require("../EncryptionManager");
 const { decodeJWT } = require("../http");
 const { resolveRequestUser } = require("../auth/requestUserFromRequest");
+const { resolveSessionPrincipal } = require("../auth/principals");
 const EncryptionMgr = new EncryptionManager();
 
 async function validatedRequest(request, response, next) {
@@ -85,6 +86,7 @@ async function validateMultiUserRequest(request, response, next) {
   }
 
   response.locals.user = user;
+  response.locals.principal = resolveSessionPrincipal(user);
   next();
 }
 

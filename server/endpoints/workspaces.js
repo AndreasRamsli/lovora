@@ -11,6 +11,9 @@ const { Workspace } = require("../models/workspace");
 const { Document } = require("../models/documents");
 const { DocumentVectors } = require("../models/vectors");
 const { WorkspaceChats } = require("../models/workspaceChats");
+const {
+  ChatContentRepository,
+} = require("../repositories/chatContentRepository");
 const { getVectorDbClass } = require("../utils/helpers");
 const { handleFileUpload, handlePfpUpload } = require("../utils/files/multer");
 const { validatedRequest } = require("../utils/middleware/validatedRequest");
@@ -30,12 +33,16 @@ const {
 const { convertToChatHistory } = require("../utils/helpers/chat/responses");
 const { CollectorApi } = require("../utils/collectorApi");
 const {
+  createRequestSecurityContext,
+} = require("../utils/privacy/requestSecurityContext");
+const {
   determineWorkspacePfpFilepath,
   fetchPfp,
   getPfpBasePath,
 } = require("../utils/files/pfp");
 const { getTTSProvider } = require("../utils/TextToSpeech");
 const { WorkspaceThread } = require("../models/workspaceThread");
+const { withRoutePolicy } = require("../utils/privacy/routePolicy");
 
 const truncate = require("truncate");
 const { purgeDocument } = require("../utils/files/purgeDocument");
@@ -67,68 +74,96 @@ function workspaceEndpoints(app) {
 
   app.post(
     "/workspace/new",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
-    async (request, response) => {
-      try {
-        const user = await userFromSession(request, response);
-        const { name = null } = reqBody(request);
-        const { workspace, message } = await Workspace.new(name, user?.id);
-        await Telemetry.sendTelemetry(
-          "workspace_created",
-          {
-            multiUserMode: multiUserMode(response),
-            LLMSelection: process.env.LLM_PROVIDER || "openai",
-            Embedder: process.env.EMBEDDING_ENGINE || "inherit",
-            VectorDbSelection: process.env.VECTOR_DB || "lancedb",
-            TTSSelection: process.env.TTS_PROVIDER || "native",
-            LLMModel: getModelTag(),
-          },
-          user?.id
-        );
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/workspace/new",
+        routeId: "workspace.create",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+      async (request, response) => {
+        try {
+          const user = await userFromSession(request, response);
+          const { name = null } = reqBody(request);
+          const { workspace, message } = await Workspace.new(name, user?.id);
+          await Telemetry.sendTelemetry(
+            "workspace_created",
+            {
+              multiUserMode: multiUserMode(response),
+              LLMSelection: process.env.LLM_PROVIDER || "openai",
+              Embedder: process.env.EMBEDDING_ENGINE || "inherit",
+              VectorDbSelection: process.env.VECTOR_DB || "lancedb",
+              TTSSelection: process.env.TTS_PROVIDER || "native",
+              LLMModel: getModelTag(),
+            },
+            user?.id
+          );
 
-        await EventLogs.logEvent(
-          "workspace_created",
-          {
-            workspaceName: workspace?.name || "Unknown Workspace",
-          },
-          user?.id
-        );
-        response.status(200).json({ workspace, message });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+          await EventLogs.logEvent(
+            "workspace_created",
+            {
+              workspaceName: workspace?.name || "Unknown Workspace",
+            },
+            user?.id
+          );
+          response.status(200).json({ workspace, message });
+        } catch (e) {
+          if (e?.status === 403) {
+            response.sendStatus(403).end();
+            return;
+          }
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.post(
     "/workspace/:slug/update",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
-    async (request, response) => {
-      try {
-        const user = await userFromSession(request, response);
-        const { slug = null } = request.params;
-        const data = reqBody(request);
-        const currWorkspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/workspace/:slug/update",
+        routeId: "workspace.update",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+      async (request, response) => {
+        try {
+          const user = await userFromSession(request, response);
+          const { slug = null } = request.params;
+          const data = reqBody(request);
+          const currWorkspace = multiUserMode(response)
+            ? await Workspace.getWithUser(user, { slug })
+            : await Workspace.get({ slug });
 
-        if (!currWorkspace) {
-          response.sendStatus(400).end();
-          return;
+          if (!currWorkspace) {
+            response.sendStatus(400).end();
+            return;
+          }
+
+          await Workspace.trackChange(currWorkspace, data, user);
+          const { workspace, message } = await Workspace.update(
+            currWorkspace.id,
+            data
+          );
+          response.status(200).json({ workspace, message });
+        } catch (e) {
+          if (e?.status) {
+            response.sendStatus(e.status).end();
+            return;
+          }
+          console.error(e.message, e);
+          response.sendStatus(500).end();
         }
-
-        await Workspace.trackChange(currWorkspace, data, user);
-        const { workspace, message } = await Workspace.update(
-          currWorkspace.id,
-          data
-        );
-        response.status(200).json({ workspace, message });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
@@ -176,7 +211,7 @@ function workspaceEndpoints(app) {
         response.status(200).json({ success: true, error: null });
       } catch (e) {
         console.error(e.message, e);
-        response.sendStatus(500).end();
+        response.sendStatus(e?.status || 500).end();
       }
     }
   );
@@ -270,45 +305,55 @@ function workspaceEndpoints(app) {
 
   app.delete(
     "/workspace/:slug",
-    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
-    async (request, response) => {
-      try {
-        const { slug = "" } = request.params;
-        const user = await userFromSession(request, response);
-        const VectorDb = getVectorDbClass();
-        const workspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
-
-        if (!workspace) {
-          response.sendStatus(400).end();
-          return;
-        }
-
-        await WorkspaceChats.delete({ workspaceId: Number(workspace.id) });
-        await DocumentVectors.deleteForWorkspace(workspace.id);
-        await Document.delete({ workspaceId: Number(workspace.id) });
-        await Workspace.delete({ id: Number(workspace.id) });
-
-        await EventLogs.logEvent(
-          "workspace_deleted",
-          {
-            workspaceName: workspace?.name || "Unknown Workspace",
-          },
-          response.locals?.user?.id
-        );
-
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/workspace/:slug",
+        routeId: "workspace.delete",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+      async (request, response) => {
         try {
-          await VectorDb["delete-namespace"]({ namespace: slug });
+          const { slug = "" } = request.params;
+          const user = await userFromSession(request, response);
+          const VectorDb = getVectorDbClass();
+          const workspace = multiUserMode(response)
+            ? await Workspace.getWithUser(user, { slug })
+            : await Workspace.get({ slug });
+
+          if (!workspace) {
+            response.sendStatus(400).end();
+            return;
+          }
+
+          await WorkspaceChats.delete({ workspaceId: Number(workspace.id) });
+          await DocumentVectors.deleteForWorkspace(workspace.id);
+          await Document.delete({ workspaceId: Number(workspace.id) });
+          await Workspace.delete({ id: Number(workspace.id) });
+
+          await EventLogs.logEvent(
+            "workspace_deleted",
+            {
+              workspaceName: workspace?.name || "Unknown Workspace",
+            },
+            response.locals?.user?.id
+          );
+
+          try {
+            await VectorDb["delete-namespace"]({ namespace: slug });
+          } catch (e) {
+            console.error(e.message);
+          }
+          response.sendStatus(200).end();
         } catch (e) {
-          console.error(e.message);
+          console.error(e.message, e);
+          response.sendStatus(500).end();
         }
-        response.sendStatus(200).end();
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.delete(
@@ -354,188 +399,277 @@ function workspaceEndpoints(app) {
 
   app.get(
     "/workspaces",
-    [validatedRequest, flexUserRoleValid([ROLES.all])],
-    async (request, response) => {
-      try {
-        const user = await userFromSession(request, response);
-        const workspaces = multiUserMode(response)
-          ? await Workspace.whereWithUser(user)
-          : await Workspace.where();
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/workspaces",
+        routeId: "workspaces.list",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.all])],
+      async (request, response) => {
+        try {
+          const user = await userFromSession(request, response);
+          const workspaces = multiUserMode(response)
+            ? await Workspace.whereWithUser(user)
+            : await Workspace.where();
 
-        response.status(200).json({ workspaces });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+          response.status(200).json({ workspaces });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.get(
     "/workspace/:slug",
-    [validatedRequest, flexUserRoleValid([ROLES.all])],
-    async (request, response) => {
-      try {
-        const { slug } = request.params;
-        const user = await userFromSession(request, response);
-        const workspace = multiUserMode(response)
-          ? await Workspace.getWithUser(user, { slug })
-          : await Workspace.get({ slug });
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/workspace/:slug",
+        routeId: "workspace.get",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.all])],
+      async (request, response) => {
+        try {
+          const { slug } = request.params;
+          const user = await userFromSession(request, response);
+          const workspace = multiUserMode(response)
+            ? await Workspace.getWithUser(user, { slug })
+            : await Workspace.get({ slug });
 
-        response.status(200).json({ workspace });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+          response.status(200).json({ workspace });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.get(
     "/workspace/:slug/chats",
-    [
-      validatedRequest,
-      flexUserRoleValid([ROLES.all]),
-      validWorkspaceSlugByMembership,
-    ],
-    async (request, response) => {
-      try {
-        const user = await userFromSession(request, response);
-        const workspace = response.locals.workspace;
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/workspace/:slug/chats",
+        routeId: "workspace.default-thread.history",
+        plane: "content",
+        category: "chat_history",
+        responsePolicy: "raw_chat_content",
+      },
+      [
+        validatedRequest,
+        flexUserRoleValid([ROLES.all]),
+        validWorkspaceSlugByMembership,
+      ],
+      async (request, response) => {
+        try {
+          const user = await userFromSession(request, response);
+          const workspace = response.locals.workspace;
 
-        if (!workspace) {
-          response.sendStatus(400).end();
-          return;
+          if (!workspace) {
+            response.sendStatus(400).end();
+            return;
+          }
+
+          const history = multiUserMode(response)
+            ? await ChatContentRepository.listDefaultThreadHistory(
+                response.locals.createRouteSecurityContext?.() ||
+                  createRequestSecurityContext({
+                    requestId: request.header("X-Request-Id") || null,
+                    routeId: "workspace.default-thread.history",
+                    plane: "content",
+                    principal: response.locals.principal,
+                  }),
+                workspace.id,
+                {
+                  ownerUserId: user?.id ?? null,
+                  workspaceId: workspace.id,
+                  apiSessionId: null,
+                }
+              )
+            : await WorkspaceChats.forWorkspace(workspace.id);
+          response.status(200).json({ history: convertToChatHistory(history) });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(e?.status || 500).end();
         }
-
-        const history = multiUserMode(response)
-          ? await WorkspaceChats.forWorkspaceByUser(workspace.id, user.id)
-          : await WorkspaceChats.forWorkspace(workspace.id);
-        response.status(200).json({ history: convertToChatHistory(history) });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.delete(
     "/workspace/:slug/delete-chats",
-    [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
-    async (request, response) => {
-      try {
-        const { chatIds = [] } = reqBody(request);
-        const user = await userFromSession(request, response);
-        const workspace = response.locals.workspace;
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/workspace/:slug/delete-chats",
+        routeId: "workspace.default-thread.delete-chats",
+        plane: "control",
+        category: "chat_history",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
+      async (request, response) => {
+        try {
+          const { chatIds = [] } = reqBody(request);
+          const user = await userFromSession(request, response);
+          const workspace = response.locals.workspace;
 
-        if (!workspace || !Array.isArray(chatIds)) {
-          response.sendStatus(400).end();
-          return;
+          if (!workspace || !Array.isArray(chatIds)) {
+            response.sendStatus(400).end();
+            return;
+          }
+
+          // This works for both workspace and threads.
+          // we simplify this by just looking at workspace<>user overlap
+          // since they are all on the same table.
+          await WorkspaceChats.delete({
+            id: { in: chatIds.map((id) => Number(id)) },
+            user_id: user?.id ?? null,
+            workspaceId: workspace.id,
+          });
+
+          response.sendStatus(200).end();
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
         }
-
-        // This works for both workspace and threads.
-        // we simplify this by just looking at workspace<>user overlap
-        // since they are all on the same table.
-        await WorkspaceChats.delete({
-          id: { in: chatIds.map((id) => Number(id)) },
-          user_id: user?.id ?? null,
-          workspaceId: workspace.id,
-        });
-
-        response.sendStatus(200).end();
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.delete(
     "/workspace/:slug/delete-edited-chats",
-    [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
-    async (request, response) => {
-      try {
-        const { startingId } = reqBody(request);
-        const user = await userFromSession(request, response);
-        const workspace = response.locals.workspace;
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/workspace/:slug/delete-edited-chats",
+        routeId: "workspace.default-thread.delete-edited-chats",
+        plane: "control",
+        category: "chat_history",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
+      async (request, response) => {
+        try {
+          const { startingId } = reqBody(request);
+          const user = await userFromSession(request, response);
+          const workspace = response.locals.workspace;
 
-        await WorkspaceChats.delete({
-          workspaceId: workspace.id,
-          thread_id: null,
-          user_id: user?.id,
-          id: { gte: Number(startingId) },
-        });
+          await WorkspaceChats.delete({
+            workspaceId: workspace.id,
+            thread_id: null,
+            user_id: user?.id,
+            id: { gte: Number(startingId) },
+          });
 
-        response.sendStatus(200).end();
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+          response.sendStatus(200).end();
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.post(
     "/workspace/:slug/update-chat",
-    [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
-    async (request, response) => {
-      try {
-        const { chatId, newText = null, role = "assistant" } = reqBody(request);
-        if (!newText || !String(newText).trim())
-          throw new Error("Cannot save empty edit");
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/workspace/:slug/update-chat",
+        routeId: "workspace.default-thread.update-chat",
+        plane: "control",
+        category: "chat_history",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
+      async (request, response) => {
+        try {
+          const {
+            chatId,
+            newText = null,
+            role = "assistant",
+          } = reqBody(request);
+          if (!newText || !String(newText).trim())
+            throw new Error("Cannot save empty edit");
 
-        const user = await userFromSession(request, response);
-        const workspace = response.locals.workspace;
-        const existingChat = await WorkspaceChats.get({
-          workspaceId: workspace.id,
-          thread_id: null,
-          user_id: user?.id,
-          id: Number(chatId),
-        });
-        if (!existingChat) throw new Error("Invalid chat.");
+          const user = await userFromSession(request, response);
+          const workspace = response.locals.workspace;
+          const existingChat = await WorkspaceChats.get({
+            workspaceId: workspace.id,
+            thread_id: null,
+            user_id: user?.id,
+            id: Number(chatId),
+          });
+          if (!existingChat) throw new Error("Invalid chat.");
 
-        if (role === "user") {
-          await WorkspaceChats._update(existingChat.id, {
-            prompt: String(newText),
-          });
-        } else {
-          const chatResponse = safeJsonParse(existingChat.response, null);
-          if (!chatResponse) throw new Error("Failed to parse chat response");
-          await WorkspaceChats._update(existingChat.id, {
-            response: JSON.stringify({
-              ...chatResponse,
-              text: String(newText),
-            }),
-          });
+          if (role === "user") {
+            await WorkspaceChats._update(existingChat.id, {
+              prompt: String(newText),
+            });
+          } else {
+            const chatResponse = safeJsonParse(existingChat.response, null);
+            if (!chatResponse) throw new Error("Failed to parse chat response");
+            await WorkspaceChats._update(existingChat.id, {
+              response: JSON.stringify({
+                ...chatResponse,
+                text: String(newText),
+              }),
+            });
+          }
+
+          response.sendStatus(200).end();
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
         }
-
-        response.sendStatus(200).end();
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/workspace/:slug/chat-feedback/:chatId",
-    [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
-    async (request, response) => {
-      try {
-        const { chatId } = request.params;
-        const { feedback = null } = reqBody(request);
-        const user = await userFromSession(request, response);
-        const existingChat = await WorkspaceChats.get({
-          id: Number(chatId),
-          workspaceId: response.locals.workspace.id,
-          user_id: user?.id,
-        });
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/workspace/:slug/chat-feedback/:chatId",
+        routeId: "workspace.default-thread.chat-feedback",
+        plane: "control",
+        category: "chat_history",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
+      async (request, response) => {
+        try {
+          const { chatId } = request.params;
+          const { feedback = null } = reqBody(request);
+          const user = await userFromSession(request, response);
+          const existingChat = await WorkspaceChats.get({
+            id: Number(chatId),
+            workspaceId: response.locals.workspace.id,
+            user_id: user?.id,
+          });
 
-        if (!existingChat) return response.status(404).json({ success: false });
-        await WorkspaceChats.updateFeedbackScore(chatId, feedback);
-        return response.status(200).json({ success: true });
-      } catch (error) {
-        console.error("Error updating chat feedback:", error);
-        response.status(500).end();
+          if (!existingChat)
+            return response.status(404).json({ success: false });
+          await WorkspaceChats.updateFeedbackScore(chatId, feedback);
+          return response.status(200).json({ success: true });
+        } catch (error) {
+          console.error("Error updating chat feedback:", error);
+          response.status(500).end();
+        }
       }
-    }
+    )
   );
 
   app.get(
@@ -805,102 +939,122 @@ function workspaceEndpoints(app) {
 
   app.post(
     "/workspace/:slug/thread/fork",
-    [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
-    async (request, response) => {
-      try {
-        const user = await userFromSession(request, response);
-        const workspace = response.locals.workspace;
-        const { chatId, threadSlug } = reqBody(request);
-        if (!chatId)
-          return response.status(400).json({ message: "chatId is required" });
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/workspace/:slug/thread/fork",
+        routeId: "workspace.thread.fork",
+        plane: "control",
+        category: "workspace_thread",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
+      async (request, response) => {
+        try {
+          const user = await userFromSession(request, response);
+          const workspace = response.locals.workspace;
+          const { chatId, threadSlug } = reqBody(request);
+          if (!chatId)
+            return response.status(400).json({ message: "chatId is required" });
 
-        // Get threadId we are branching from if that request body is sent
-        // and is a valid thread slug.
-        const threadId = !!threadSlug
-          ? (
-              await WorkspaceThread.get({
-                slug: String(threadSlug),
-                workspace_id: workspace.id,
-              })
-            )?.id ?? null
-          : null;
-        const chatsToFork = await WorkspaceChats.where(
-          {
-            workspaceId: workspace.id,
-            user_id: user?.id,
-            include: true, // only duplicate visible chats
-            thread_id: threadId,
-            api_session_id: null, // Do not include API session chats.
-            id: { lte: Number(chatId) },
-          },
-          null,
-          { id: "asc" }
-        );
+          // Get threadId we are branching from if that request body is sent
+          // and is a valid thread slug.
+          const threadId = !!threadSlug
+            ? (
+                await WorkspaceThread.get({
+                  slug: String(threadSlug),
+                  workspace_id: workspace.id,
+                })
+              )?.id ?? null
+            : null;
+          const chatsToFork = await WorkspaceChats.where(
+            {
+              workspaceId: workspace.id,
+              user_id: user?.id,
+              include: true, // only duplicate visible chats
+              thread_id: threadId,
+              api_session_id: null, // Do not include API session chats.
+              id: { lte: Number(chatId) },
+            },
+            null,
+            { id: "asc" }
+          );
 
-        const { thread: newThread, message: threadError } =
-          await WorkspaceThread.new(workspace, user?.id);
-        if (threadError)
-          return response.status(500).json({ error: threadError });
+          const { thread: newThread, message: threadError } =
+            await WorkspaceThread.new(workspace, user?.id);
+          if (threadError)
+            return response.status(500).json({ error: threadError });
 
-        let lastMessageText = "";
-        const chatsData = chatsToFork.map((chat) => {
-          const chatResponse = safeJsonParse(chat.response, {});
-          if (chatResponse?.text) lastMessageText = chatResponse.text;
+          let lastMessageText = "";
+          const chatsData = chatsToFork.map((chat) => {
+            const chatResponse = safeJsonParse(chat.response, {});
+            if (chatResponse?.text) lastMessageText = chatResponse.text;
 
-          return {
-            workspaceId: workspace.id,
-            prompt: chat.prompt,
-            response: JSON.stringify(chatResponse),
-            user_id: user?.id,
-            thread_id: newThread.id,
-          };
-        });
-        await WorkspaceChats.bulkCreate(chatsData);
-        await WorkspaceThread.update(newThread, {
-          name: !!lastMessageText
-            ? truncate(lastMessageText, 22)
-            : "Forked Thread",
-        });
+            return {
+              workspaceId: workspace.id,
+              prompt: chat.prompt,
+              response: JSON.stringify(chatResponse),
+              user_id: user?.id,
+              thread_id: newThread.id,
+            };
+          });
+          await WorkspaceChats.bulkCreate(chatsData);
+          await WorkspaceThread.update(newThread, {
+            name: !!lastMessageText
+              ? truncate(lastMessageText, 22)
+              : "Forked Thread",
+          });
 
-        await EventLogs.logEvent(
-          "thread_forked",
-          {
-            workspaceName: workspace?.name || "Unknown Workspace",
-            threadName: newThread.name,
-          },
-          user?.id
-        );
-        response.status(200).json({ newThreadSlug: newThread.slug });
-      } catch (e) {
-        console.error(e.message, e);
-        response.status(500).json({ message: "Internal server error" });
+          await EventLogs.logEvent(
+            "thread_forked",
+            {
+              workspaceName: workspace?.name || "Unknown Workspace",
+              threadName: newThread.name,
+            },
+            user?.id
+          );
+          response.status(200).json({ newThreadSlug: newThread.slug });
+        } catch (e) {
+          console.error(e.message, e);
+          response.status(500).json({ message: "Internal server error" });
+        }
       }
-    }
+    )
   );
 
   app.put(
     "/workspace/workspace-chats/:id",
-    [validatedRequest, flexUserRoleValid([ROLES.all])],
-    async (request, response) => {
-      try {
-        const { id } = request.params;
-        const user = await userFromSession(request, response);
-        const validChat = await WorkspaceChats.get({
-          id: Number(id),
-          user_id: user?.id ?? null,
-        });
-        if (!validChat)
-          return response
-            .status(404)
-            .json({ success: false, error: "Chat not found." });
+    ...withRoutePolicy(
+      {
+        method: "PUT",
+        path: "/api/workspace/workspace-chats/:id",
+        routeId: "workspace.default-thread.exclude-chat",
+        plane: "control",
+        category: "chat_history",
+        responsePolicy: "metadata_only",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.all])],
+      async (request, response) => {
+        try {
+          const { id } = request.params;
+          const user = await userFromSession(request, response);
+          const validChat = await WorkspaceChats.get({
+            id: Number(id),
+            user_id: user?.id ?? null,
+          });
+          if (!validChat)
+            return response
+              .status(404)
+              .json({ success: false, error: "Chat not found." });
 
-        await WorkspaceChats._update(validChat.id, { include: false });
-        response.json({ success: true, error: null });
-      } catch (e) {
-        console.error(e.message, e);
-        response.status(500).json({ success: false, error: "Server error" });
+          await WorkspaceChats._update(validChat.id, { include: false });
+          response.json({ success: true, error: null });
+        } catch (e) {
+          console.error(e.message, e);
+          response.status(500).json({ success: false, error: "Server error" });
+        }
       }
-    }
+    )
   );
 
   /** Handles the uploading and embedding in one-call by uploading via drag-and-drop in chat container. */
@@ -1013,63 +1167,93 @@ function workspaceEndpoints(app) {
 
   app.get(
     "/workspace/:slug/prompt-history",
-    [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
-    async (_, response) => {
-      try {
-        response.status(200).json({
-          history: await Workspace.promptHistory({
-            workspaceId: response.locals.workspace.id,
-          }),
-        });
-      } catch (error) {
-        console.error("Error fetching prompt history:", error);
-        response.sendStatus(500).end();
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/workspace/:slug/prompt-history",
+        routeId: "workspace.prompt-history.list",
+        plane: "content",
+        category: "prompt_history",
+        responsePolicy: "raw_chat_content",
+      },
+      [validatedRequest, flexUserRoleValid([ROLES.all]), validWorkspaceSlug],
+      async (_, response) => {
+        try {
+          response.status(200).json({
+            history: await Workspace.promptHistory({
+              workspaceId: response.locals.workspace.id,
+            }),
+          });
+        } catch (error) {
+          console.error("Error fetching prompt history:", error);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.delete(
     "/workspace/:slug/prompt-history",
-    [
-      validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
-      validWorkspaceSlug,
-    ],
-    async (_, response) => {
-      try {
-        response.status(200).json({
-          success: await Workspace.deleteAllPromptHistory({
-            workspaceId: response.locals.workspace.id,
-          }),
-        });
-      } catch (error) {
-        console.error("Error clearing prompt history:", error);
-        response.sendStatus(500).end();
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/workspace/:slug/prompt-history",
+        routeId: "workspace.prompt-history.delete-all",
+        plane: "control",
+        category: "prompt_history",
+        responsePolicy: "metadata_only",
+      },
+      [
+        validatedRequest,
+        flexUserRoleValid([ROLES.admin, ROLES.manager]),
+        validWorkspaceSlug,
+      ],
+      async (_, response) => {
+        try {
+          response.status(200).json({
+            success: await Workspace.deleteAllPromptHistory({
+              workspaceId: response.locals.workspace.id,
+            }),
+          });
+        } catch (error) {
+          console.error("Error clearing prompt history:", error);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.delete(
     "/workspace/prompt-history/:id",
-    [
-      validatedRequest,
-      flexUserRoleValid([ROLES.admin, ROLES.manager]),
-      validWorkspaceSlug,
-    ],
-    async (request, response) => {
-      try {
-        const { id } = request.params;
-        response.status(200).json({
-          success: await Workspace.deletePromptHistory({
-            workspaceId: response.locals.workspace.id,
-            id: Number(id),
-          }),
-        });
-      } catch (error) {
-        console.error("Error deleting prompt history:", error);
-        response.sendStatus(500).end();
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/workspace/prompt-history/:id",
+        routeId: "workspace.prompt-history.delete",
+        plane: "control",
+        category: "prompt_history",
+        responsePolicy: "metadata_only",
+      },
+      [
+        validatedRequest,
+        flexUserRoleValid([ROLES.admin, ROLES.manager]),
+        validWorkspaceSlug,
+      ],
+      async (request, response) => {
+        try {
+          const { id } = request.params;
+          response.status(200).json({
+            success: await Workspace.deletePromptHistory({
+              workspaceId: response.locals.workspace.id,
+              id: Number(id),
+            }),
+          });
+        } catch (error) {
+          console.error("Error deleting prompt history:", error);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   /**

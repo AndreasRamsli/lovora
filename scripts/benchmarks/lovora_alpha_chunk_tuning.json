@@ -1,0 +1,74 @@
+[
+  {
+    "id": "nl_contracter",
+    "query": "Hva sier Norske Lov om contracter og forpligter?",
+    "tags": ["nl", "statute"],
+    "expect": {
+      "lovdataId": "nl-16870415-000",
+      "corpus": "NL"
+    }
+  },
+  {
+    "id": "nl_grunnlov_eidsvoll",
+    "query": "Hva står i Kongeriket Norges Grunnlov fra Eidsvoll?",
+    "tags": ["nl", "statute"],
+    "expect": {
+      "lovdataId": "nl-18140517-000",
+      "corpus": "NL"
+    }
+  },
+  {
+    "id": "nl_crpd_endringslov",
+    "query": "Hvilken endringslov inkorporerer FN-konvensjonen om rettighetene til mennesker med nedsatt funksjonsevne?",
+    "tags": ["nl", "amending"],
+    "expect": {
+      "lovdataId": "nl-20251219-113",
+      "corpus": "NL"
+    }
+  },
+  {
+    "id": "nl_utlendingsloven_familieinnvandring",
+    "query": "Hvilken lov gjelder endringer i utlendingsloven om familieinnvandring?",
+    "tags": ["nl", "amending"],
+    "expect": {
+      "lovdataId": "nl-20250620-084",
+      "corpus": "NL"
+    }
+  },
+  {
+    "id": "nl_skattebetalingsloven_formuesskatt",
+    "query": "Hvilken endringslov handler om utsatt betaling av formuesskatt på virksomhetsformue?",
+    "tags": ["nl", "amending"],
+    "expect": {
+      "lovdataId": "nl-20251222-120",
+      "corpus": "NL"
+    }
+  },
+  {
+    "id": "sf_stamhus_salg",
+    "query": "Hvilke dokumenter må stamhusbesidderen sende ved salg av leilendingsgods?",
+    "tags": ["sf", "regulation"],
+    "expect": {
+      "lovdataId": "sf-18960626-9805",
+      "corpus": "SF"
+    }
+  },
+  {
+    "id": "sf_kongeflaget",
+    "query": "Hvilken forskrift gjelder Kongeflaget?",
+    "tags": ["sf", "regulation"],
+    "expect": {
+      "lovdataId": "sf-19051115-0002",
+      "corpus": "SF"
+    }
+  },
+  {
+    "id": "sf_kongevaabenet",
+    "query": "Hvilken forskrift gjelder Kongevaabenet?",
+    "tags": ["sf", "regulation"],
+    "expect": {
+      "lovdataId": "sf-19051230-0001",
+      "corpus": "SF"
+    }
+  }
+]

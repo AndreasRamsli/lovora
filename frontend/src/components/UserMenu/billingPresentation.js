@@ -27,7 +27,9 @@ function formatFallbackPlanLabel(planKey = "") {
 
 export function formatBillingPlanLabel(planKey = "free") {
   const normalizedPlanKey = String(planKey || "free");
-  return PLAN_LABELS[normalizedPlanKey] ?? formatFallbackPlanLabel(normalizedPlanKey);
+  return (
+    PLAN_LABELS[normalizedPlanKey] ?? formatFallbackPlanLabel(normalizedPlanKey)
+  );
 }
 
 export function deriveBillingPresentation(payload = null) {

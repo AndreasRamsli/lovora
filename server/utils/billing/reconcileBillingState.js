@@ -92,7 +92,9 @@ function reconcileBillingState({
   let reason = "no_active_entitlement";
 
   if (stripeSubscriptionId) {
-    const billingStatus = normalizeSubscriptionStatus(stripeSubscription.status);
+    const billingStatus = normalizeSubscriptionStatus(
+      stripeSubscription.status
+    );
     const billingPlan =
       stripeSubscription?.metadata?.planKey ||
       (currentState.billingPlan && currentState.billingPlan !== "free"

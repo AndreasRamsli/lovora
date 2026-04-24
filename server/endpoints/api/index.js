@@ -9,7 +9,8 @@ const { apiUserManagementEndpoints } = require("./userManagement");
 const { apiOpenAICompatibleEndpoints } = require("./openai");
 const { apiEmbedEndpoints } = require("./embed");
 
-// All endpoints must be documented and pass through the validApiKey Middleware.
+// All /api/v1 routes are strict: no exemptions remain, and each route must use
+// withRoutePolicy(...). validApiKey authenticates only; route policy supplies authorization.
 // How to JSDoc an endpoint
 // https://www.npmjs.com/package/swagger-autogen#openapi-3x
 function developerEndpoints(app, router) {

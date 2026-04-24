@@ -1,5 +1,6 @@
 const prisma = require("../utils/prisma");
 const { safeJsonParse } = require("../utils/http");
+const { canReviewFlagMetadata } = require("../utils/auth/principals");
 
 function parseArray(value) {
   if (!value) return [];
@@ -38,12 +39,20 @@ function responseMetadata(response = "{}") {
   };
 }
 
-function sanitizeAttachments(attachments = []) {
-  if (!Array.isArray(attachments)) return [];
-  return attachments.map((attachment = {}) => ({
-    name: attachment?.name || "attachment",
-    mime: attachment?.mime || null,
-  }));
+function reviewerToPrincipal(actor = null) {
+  if (!actor) return null;
+
+  return {
+    kind: "user",
+    userId: actor.id ? Number(actor.id) : null,
+    roles: actor.role ? [String(actor.role)] : [],
+  };
+}
+
+async function getFlagForMutation(id) {
+  return await prisma.conversation_flags.findUnique({
+    where: { id: Number(id) },
+  });
 }
 
 const ConversationFlags = {
@@ -218,8 +227,6 @@ const ConversationFlags = {
         thread: thread
           ? {
               id: thread.id,
-              slug: thread.slug,
-              name: thread.name,
             }
           : null,
         apiSessionId: chat.api_session_id || null,
@@ -272,6 +279,7 @@ const ConversationFlags = {
   },
 
   listReviewCases: async function ({
+    actor = null,
     status = "open",
     limit = 20,
     offset = 0,
@@ -285,6 +293,8 @@ const ConversationFlags = {
       reviewer: true,
       chat: true,
     });
+
+    const principal = reviewerToPrincipal(actor);
 
     return results.map((flag) => ({
       id: flag.id,
@@ -327,18 +337,17 @@ const ConversationFlags = {
       thread: flag.thread
         ? {
             id: flag.thread.id,
-            slug: flag.thread.slug,
-            name: flag.thread.name,
           }
         : null,
+      reviewAvailable: canReviewFlagMetadata(principal, {
+        status: flag.status,
+        userId: flag.userId,
+      }),
     }));
   },
 
   canViewFlaggedConversation: function (actor = null, flag = null) {
-    if (!actor || !flag) return false;
-    if (!["admin", "manager"].includes(actor.role)) return false;
-    if (flag.status !== "open") return false;
-    return normalizedSourceType(flag.sourceType) === "workspace_chat";
+    return canReviewFlagMetadata(reviewerToPrincipal(actor), flag);
   },
 
   getReviewConversation: async function (id) {
@@ -346,7 +355,6 @@ const ConversationFlags = {
       const flag = await prisma.conversation_flags.findFirst({
         where: { id: Number(id) },
         include: {
-          chat: true,
           user: true,
           workspace: true,
           thread: true,
@@ -354,25 +362,6 @@ const ConversationFlags = {
         },
       });
       if (!flag || flag.status !== "open") return null;
-
-      const clause = {
-        workspaceId: flag.workspaceId,
-        include: true,
-        ...(flag.threadId ? { thread_id: flag.threadId } : { thread_id: null }),
-      };
-
-      if (flag.chat?.api_session_id) {
-        clause.user_id = null;
-        clause.api_session_id = flag.chat.api_session_id;
-      } else {
-        clause.user_id = flag.userId || null;
-        clause.api_session_id = null;
-      }
-
-      const chats = await prisma.workspace_chats.findMany({
-        where: clause,
-        orderBy: { id: "asc" },
-      });
 
       return {
         caseId: flag.id,
@@ -386,8 +375,6 @@ const ConversationFlags = {
         thread: flag.thread
           ? {
               id: flag.thread.id,
-              name: flag.thread.name,
-              slug: flag.thread.slug,
             }
           : null,
         flag: {
@@ -407,19 +394,6 @@ const ConversationFlags = {
           resolution: flag.resolution,
           createdAt: flag.createdAt,
         },
-        messages: chats.map((chat) => {
-          const response = parsedResponse(chat.response);
-          return {
-            id: chat.id,
-            prompt: chat.prompt,
-            responseText: response?.text || "",
-            attachments: sanitizeAttachments(response?.attachments),
-            createdAt: chat.createdAt,
-            provider: response?.metrics?.provider || null,
-            model: response?.metrics?.model || null,
-            isFlaggedChat: chat.id === flag.chatId,
-          };
-        }),
       };
     } catch (error) {
       console.error(error.message);
@@ -429,6 +403,9 @@ const ConversationFlags = {
 
   dismiss: async function (id, actorId, reviewNote = "") {
     try {
+      const flag = await getFlagForMutation(id);
+      if (!flag || flag.status !== "open") return null;
+
       return await prisma.conversation_flags.update({
         where: { id: Number(id) },
         data: {
@@ -447,10 +424,8 @@ const ConversationFlags = {
 
   suspendUser: async function (id, actorId, reviewNote = "") {
     try {
-      const flag = await prisma.conversation_flags.findUnique({
-        where: { id: Number(id) },
-      });
-      if (!flag?.userId) return null;
+      const flag = await getFlagForMutation(id);
+      if (!flag || flag.status !== "open" || !flag.userId) return null;
 
       const [, updatedFlag] = await prisma.$transaction([
         prisma.users.update({
@@ -478,10 +453,15 @@ const ConversationFlags = {
 
   unsuspendUser: async function (id, actorId, reviewNote = "") {
     try {
-      const flag = await prisma.conversation_flags.findUnique({
-        where: { id: Number(id) },
-      });
-      if (!flag?.userId) return null;
+      const flag = await getFlagForMutation(id);
+      if (
+        !flag ||
+        !flag.userId ||
+        flag.status !== "resolved" ||
+        flag.resolution !== "suspended"
+      ) {
+        return null;
+      }
 
       const [, updatedFlag] = await prisma.$transaction([
         prisma.users.update({
@@ -491,6 +471,8 @@ const ConversationFlags = {
         prisma.conversation_flags.update({
           where: { id: Number(id) },
           data: {
+            status: "resolved",
+            resolution: "unsuspended",
             reviewedBy: actorId ? Number(actorId) : null,
             reviewedAt: new Date(),
             reviewNote: String(reviewNote || ""),

@@ -6,7 +6,7 @@ The boundary is intentionally narrow:
 
 - Raw source text and generated Markdown artifacts stay outside git.
 - The manifest contract, schema, validators, and thin wrappers stay in-repo.
-- The wrappers adapt the existing root-level corpus scripts instead of replacing them.
+- The preparation wrapper adapts the existing root-level corpus script instead of replacing it.
 - By default the wrappers write to the external data root `../legal_embedding_ready` relative to the repo checkout, or to `LOVORA_CORPUS_DATA_ROOT` if set.
 
 ## Files
@@ -14,7 +14,6 @@ The boundary is intentionally narrow:
 - `manifest.schema.json` defines the versioned NDJSON record shape for legal corpus chunks.
 - `manifest_tools.py` loads newline-delimited manifests, validates records, and rewrites legacy records into the `v1` contract.
 - `prepare_legal_corpus.py` runs the existing root preparation script, then rewrites `_manifest.jsonl` into the versioned contract with hashes and timestamps.
-- `upload_legal_corpus.py` audits the manifest and referenced files before delegating to the existing root upload script.
 - `audit_legal_corpus.py` performs a local, non-destructive audit of the manifest and the referenced source/output files.
 
 ## Contract
@@ -38,16 +37,14 @@ python lovora/ops/corpus/prepare_legal_corpus.py --source-dataset-version lovdat
 
 The default output root is `../legal_embedding_ready` relative to the repo checkout, or `LOVORA_CORPUS_DATA_ROOT` if set.
 
-Upload:
-
-```bash
-python lovora/ops/corpus/upload_legal_corpus.py --manifest ../legal_embedding_ready/_manifest.jsonl
-```
-
 Audit:
 
 ```bash
 python lovora/ops/corpus/audit_legal_corpus.py --manifest ../legal_embedding_ready/_manifest.jsonl
 ```
+
+The legacy HTTP uploader has been removed. For alpha ingestion, bundle the prepared
+manifest from the outer corpus checkout and run `run_legal_corpus_direct_ingest.sh`
+against the persistent Hetzner storage volume.
 
 The wrappers are designed to be boring on purpose: they make the manifest contract explicit, keep the data layout predictable, and leave the actual corpus generation logic in the existing root scripts.

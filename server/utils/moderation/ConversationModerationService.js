@@ -72,7 +72,9 @@ class ConversationModerationService {
       patterns.some((pattern) => pattern.test(text))
     ).map(({ id, category }) => ({ id, category }));
 
-    const categories = [...new Set(matchedRules.map(({ category }) => category))];
+    const categories = [
+      ...new Set(matchedRules.map(({ category }) => category)),
+    ];
     const review = matchedRules.length > 0;
 
     return {

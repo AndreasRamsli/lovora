@@ -40,7 +40,7 @@ function getRequestOrigin(request = {}) {
   return request.headers?.origin || null;
 }
 
-function getCheckoutBaseUrl(request = {}, requestBody = {}) {
+function getCheckoutBaseUrl(request = {}) {
   const candidateBaseUrl =
     getRequestOrigin(request) ||
     request.appBaseUrl ||
@@ -77,7 +77,7 @@ function resolveSafeCheckoutUrl(candidateUrl, fallbackPath, baseUrl) {
 
 function getCheckoutRedirectUrls(request = {}, requestBody = {}) {
   const workspaceSlug = String(requestBody.workspaceSlug || "").trim();
-  const baseUrl = getCheckoutBaseUrl(request, requestBody);
+  const baseUrl = getCheckoutBaseUrl(request);
   const defaultPath = workspaceSlug
     ? `/workspace/${workspaceSlug}`
     : "/settings/system/billing";

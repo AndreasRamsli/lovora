@@ -7,6 +7,9 @@ const { Workspace } = require("../../../models/workspace");
 const { ConversationFlags } = require("../../../models/conversationFlags");
 const { WorkspaceChats } = require("../../../models/workspaceChats");
 const { WorkspaceUser } = require("../../../models/workspaceUsers");
+const {
+  ChatMetadataRepository,
+} = require("../../../repositories/chatMetadataRepository");
 const { canModifyAdmin } = require("../../../utils/helpers/admin");
 const { multiUserMode, reqBody } = require("../../../utils/http");
 const { validApiKey } = require("../../../utils/middleware/validApiKey");
@@ -14,6 +17,7 @@ const {
   guardModerationSchema,
   handleModerationSchemaRouteError,
 } = require("../../../utils/moderation/schemaReadiness");
+const { withRoutePolicy } = require("../../../utils/privacy/routePolicy");
 
 function apiKeyAuditContext(response) {
   return {
@@ -22,11 +26,48 @@ function apiKeyAuditContext(response) {
   };
 }
 
+const managementMetadataReadAccess = {
+  management: ["management:metadata:read"],
+};
+
+const managementMetadataWriteAccess = {
+  management: ["management:metadata:write"],
+};
+
+const managementUsersReadAccess = {
+  management: ["management:users:read"],
+};
+
+const managementUsersWriteAccess = {
+  management: ["management:users:write"],
+};
+
+const managementModerationReadAccess = {
+  management: ["management:metadata:read", "management:moderation:write"],
+};
+
+const managementModerationWriteAccess = {
+  management: ["management:metadata:write", "management:moderation:write"],
+};
+
 function apiAdminEndpoints(app) {
   if (!app) return;
 
-  app.get("/v1/admin/is-multi-user-mode", [validApiKey], (_, response) => {
-    /*
+  app.get(
+    "/v1/admin/is-multi-user-mode",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/admin/is-multi-user-mode",
+        routeId: "api.admin.multi-user-mode",
+        plane: "control",
+        category: "system_settings",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      (_, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.description = 'Check to see if the instance is in multi-user-mode first. Methods are disabled until multi user mode is enabled via the UI.'
     #swagger.responses[200] = {
@@ -47,12 +88,27 @@ function apiAdminEndpoints(app) {
       }
     }
     */
-    const isMultiUser = multiUserMode(response);
-    response.status(200).json({ isMultiUser });
-  });
+        const isMultiUser = multiUserMode(response);
+        response.status(200).json({ isMultiUser });
+      }
+    )
+  );
 
-  app.get("/v1/admin/users", [validApiKey], async (request, response) => {
-    /*
+  app.get(
+    "/v1/admin/users",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/admin/users",
+        routeId: "api.admin.users.list",
+        plane: "control",
+        category: "user_management",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.description = 'Check to see if the instance is in multi-user-mode first. Methods are disabled until multi user mode is enabled via the UI.'
     #swagger.responses[200] = {
@@ -81,22 +137,37 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-    try {
-      if (!multiUserMode(response)) {
-        response.sendStatus(401).end();
-        return;
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
+
+          const users = await User.where();
+          response.status(200).json({ users });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
       }
+    )
+  );
 
-      const users = await User.where();
-      response.status(200).json({ users });
-    } catch (e) {
-      console.error(e);
-      response.sendStatus(500).end();
-    }
-  });
-
-  app.post("/v1/admin/users/new", [validApiKey], async (request, response) => {
-    /*
+  app.post(
+    "/v1/admin/users/new",
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/users/new",
+        routeId: "api.admin.users.create",
+        plane: "control",
+        category: "user_management",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.description = 'Create a new user with username and password. Methods are disabled until multi user mode is enabled via the UI.'
     #swagger.requestBody = {
@@ -138,23 +209,38 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-    try {
-      if (!multiUserMode(response)) {
-        response.sendStatus(401).end();
-        return;
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
+
+          const newUserParams = reqBody(request);
+          const { user: newUser, error } = await User.create(newUserParams);
+          response.status(newUser ? 200 : 400).json({ user: newUser, error });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
       }
+    )
+  );
 
-      const newUserParams = reqBody(request);
-      const { user: newUser, error } = await User.create(newUserParams);
-      response.status(newUser ? 200 : 400).json({ user: newUser, error });
-    } catch (e) {
-      console.error(e);
-      response.sendStatus(500).end();
-    }
-  });
-
-  app.post("/v1/admin/users/:id", [validApiKey], async (request, response) => {
-    /*
+  app.post(
+    "/v1/admin/users/:id",
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/users/:id",
+        routeId: "api.admin.users.update",
+        plane: "control",
+        category: "user_management",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.parameters['id'] = {
       in: 'path',
@@ -199,37 +285,53 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-    try {
-      if (!multiUserMode(response)) {
-        response.sendStatus(401).end();
-        return;
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
+
+          const { id } = request.params;
+          const updates = reqBody(request);
+          const user = await User.get({ id: Number(id) });
+          const validAdminRoleModification = await canModifyAdmin(
+            user,
+            updates
+          );
+
+          if (!validAdminRoleModification.valid) {
+            response.status(200).json({
+              success: false,
+              error: validAdminRoleModification.error,
+            });
+            return;
+          }
+
+          const { success, error } = await User.update(id, updates);
+          response.status(200).json({ success, error });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
       }
-
-      const { id } = request.params;
-      const updates = reqBody(request);
-      const user = await User.get({ id: Number(id) });
-      const validAdminRoleModification = await canModifyAdmin(user, updates);
-
-      if (!validAdminRoleModification.valid) {
-        response
-          .status(200)
-          .json({ success: false, error: validAdminRoleModification.error });
-        return;
-      }
-
-      const { success, error } = await User.update(id, updates);
-      response.status(200).json({ success, error });
-    } catch (e) {
-      console.error(e);
-      response.sendStatus(500).end();
-    }
-  });
+    )
+  );
 
   app.delete(
     "/v1/admin/users/:id",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/v1/admin/users/:id",
+        routeId: "api.admin.users.delete",
+        plane: "control",
+        category: "user_management",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.description = 'Delete existing user by id. Methods are disabled until multi user mode is enabled via the UI.'
     #swagger.parameters['id'] = {
@@ -260,28 +362,42 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-      try {
-        if (!multiUserMode(response)) {
-          response.sendStatus(401).end();
-          return;
-        }
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
 
-        const { id } = request.params;
-        const user = await User.get({ id: Number(id) });
-        await User.delete({ id: user.id });
-        await EventLogs.logEvent("api_user_deleted", {
-          userName: user.username,
-        });
-        response.status(200).json({ success: true, error: null });
-      } catch (e) {
-        console.error(e);
-        response.sendStatus(500).end();
+          const { id } = request.params;
+          const user = await User.get({ id: Number(id) });
+          await User.delete({ id: user.id });
+          await EventLogs.logEvent("api_user_deleted", {
+            userName: user.username,
+          });
+          response.status(200).json({ success: true, error: null });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
-  app.get("/v1/admin/invites", [validApiKey], async (request, response) => {
-    /*
+  app.get(
+    "/v1/admin/invites",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/admin/invites",
+        routeId: "api.admin.invites.list",
+        plane: "control",
+        category: "user_management",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.description = 'List all existing invitations to instance regardless of status. Methods are disabled until multi user mode is enabled via the UI.'
     #swagger.responses[200] = {
@@ -312,72 +428,111 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-    try {
-      if (!multiUserMode(response)) {
-        response.sendStatus(401).end();
-        return;
-      }
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
 
-      const invites = await Invite.whereWithUsers();
-      response.status(200).json({ invites });
-    } catch (e) {
-      console.error(e);
-      response.sendStatus(500).end();
-    }
-  });
+          const invites = await Invite.whereWithUsers();
+          response.status(200).json({ invites });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
+      }
+    )
+  );
 
   app.get(
     "/v1/admin/corpus-releases",
-    [validApiKey],
-    async (request, response) => {
-      try {
-        if (!multiUserMode(response)) {
-          response.sendStatus(401).end();
-          return;
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/admin/corpus-releases",
+        routeId: "api.admin.corpus-releases.list",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
+
+          const workspaceSlug =
+            typeof request.query.workspaceSlug === "string"
+              ? request.query.workspaceSlug.trim()
+              : "";
+          const parsedLimit = Number.parseInt(request.query.limit, 10);
+          const limit = Number.isNaN(parsedLimit)
+            ? 25
+            : Math.min(Math.max(parsedLimit, 1), 100);
+
+          const releases = await CorpusRelease.list(
+            workspaceSlug ? { workspaceSlug } : {},
+            limit
+          );
+          response.status(200).json({ releases });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
         }
-
-        const workspaceSlug =
-          typeof request.query.workspaceSlug === "string"
-            ? request.query.workspaceSlug.trim()
-            : "";
-        const parsedLimit = Number.parseInt(request.query.limit, 10);
-        const limit = Number.isNaN(parsedLimit)
-          ? 25
-          : Math.min(Math.max(parsedLimit, 1), 100);
-
-        const releases = await CorpusRelease.list(
-          workspaceSlug ? { workspaceSlug } : {},
-          limit
-        );
-        response.status(200).json({ releases });
-      } catch (e) {
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.get(
     "/v1/admin/corpus-releases/:workspaceSlug/latest",
-    [validApiKey],
-    async (request, response) => {
-      try {
-        if (!multiUserMode(response)) {
-          response.sendStatus(401).end();
-          return;
-        }
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/admin/corpus-releases/:workspaceSlug/latest",
+        routeId: "api.admin.corpus-releases.latest",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
 
-        const release = await CorpusRelease.getCurrent(request.params.workspaceSlug);
-        response.status(200).json({ release });
-      } catch (e) {
-        console.error(e);
-        response.sendStatus(500).end();
+          const release = await CorpusRelease.getCurrent(
+            request.params.workspaceSlug
+          );
+          response.status(200).json({ release });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
-  app.post("/v1/admin/invite/new", [validApiKey], async (request, response) => {
-    /*
+  app.post(
+    "/v1/admin/invite/new",
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/invite/new",
+        routeId: "api.admin.invites.create",
+        plane: "control",
+        category: "user_management",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.description = 'Create a new invite code for someone to use to register with instance. Methods are disabled until multi user mode is enabled via the UI.'
     #swagger.requestBody = {
@@ -417,28 +572,40 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-    try {
-      if (!multiUserMode(response)) {
-        response.sendStatus(401).end();
-        return;
-      }
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
 
-      const body = reqBody(request);
-      const { invite, error } = await Invite.create({
-        workspaceIds: body?.workspaceIds ?? [],
-      });
-      response.status(200).json({ invite, error });
-    } catch (e) {
-      console.error(e);
-      response.sendStatus(500).end();
-    }
-  });
+          const body = reqBody(request);
+          const { invite, error } = await Invite.create({
+            workspaceIds: body?.workspaceIds ?? [],
+          });
+          response.status(200).json({ invite, error });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
+      }
+    )
+  );
 
   app.delete(
     "/v1/admin/invite/:id",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/v1/admin/invite/:id",
+        routeId: "api.admin.invites.delete",
+        plane: "control",
+        category: "user_management",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.description = 'Deactivates (soft-delete) invite by id. Methods are disabled until multi user mode is enabled via the UI.'
     #swagger.parameters['id'] = {
@@ -469,27 +636,38 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-      try {
-        if (!multiUserMode(response)) {
-          response.sendStatus(401).end();
-          return;
-        }
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
 
-        const { id } = request.params;
-        const { success, error } = await Invite.deactivate(id);
-        response.status(200).json({ success, error });
-      } catch (e) {
-        console.error(e);
-        response.sendStatus(500).end();
+          const { id } = request.params;
+          const { success, error } = await Invite.deactivate(id);
+          response.status(200).json({ success, error });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.get(
     "/v1/admin/workspaces/:workspaceId/users",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/admin/workspaces/:workspaceId/users",
+        routeId: "api.admin.workspaces.users",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
       #swagger.tags = ['Admin']
       #swagger.parameters['workspaceId'] = {
         in: 'path',
@@ -523,28 +701,39 @@ function apiAdminEndpoints(app) {
       }
       */
 
-      try {
-        if (!multiUserMode(response)) {
-          response.sendStatus(401).end();
-          return;
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
+
+          const workspaceId = request.params.workspaceId;
+          const users = await Workspace.workspaceUsers(workspaceId);
+
+          response.status(200).json({ users });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
         }
-
-        const workspaceId = request.params.workspaceId;
-        const users = await Workspace.workspaceUsers(workspaceId);
-
-        response.status(200).json({ users });
-      } catch (e) {
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/admin/workspaces/:workspaceId/update-users",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/workspaces/:workspaceId/update-users",
+        routeId: "api.admin.workspaces.update-users",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.deprecated = true
     #swagger.parameters['workspaceId'] = {
@@ -587,31 +776,42 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-      try {
-        if (!multiUserMode(response)) {
-          response.sendStatus(401).end();
-          return;
-        }
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
 
-        const { workspaceId } = request.params;
-        const { userIds } = reqBody(request);
-        const { success, error } = await Workspace.updateUsers(
-          workspaceId,
-          userIds
-        );
-        response.status(200).json({ success, error });
-      } catch (e) {
-        console.error(e);
-        response.sendStatus(500).end();
+          const { workspaceId } = request.params;
+          const { userIds } = reqBody(request);
+          const { success, error } = await Workspace.updateUsers(
+            workspaceId,
+            userIds
+          );
+          response.status(200).json({ success, error });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.post(
     "/v1/admin/workspaces/:workspaceSlug/manage-users",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/workspaces/:workspaceSlug/manage-users",
+        routeId: "api.admin.workspaces.manage-users",
+        plane: "control",
+        category: "workspace_admin",
+        responsePolicy: "metadata_only",
+        principalAccess: managementUsersWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.parameters['workspaceSlug'] = {
       in: 'path',
@@ -658,75 +858,88 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-      try {
-        if (!multiUserMode(response)) {
-          response.sendStatus(401).end();
-          return;
-        }
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
 
-        const { workspaceSlug } = request.params;
-        const { userIds: _uids, reset = false } = reqBody(request);
-        const userIds = (
-          await User.where({ id: { in: _uids.map(Number) } })
-        ).map((user) => user.id);
-        const workspace = await Workspace.get({ slug: String(workspaceSlug) });
-        const workspaceUsers = await Workspace.workspaceUsers(workspace.id);
-
-        if (!workspace) {
-          response.status(404).json({
-            success: false,
-            error: `Workspace ${workspaceSlug} not found`,
-            users: workspaceUsers,
+          const { workspaceSlug } = request.params;
+          const { userIds: _uids, reset = false } = reqBody(request);
+          const userIds = (
+            await User.where({ id: { in: _uids.map(Number) } })
+          ).map((user) => user.id);
+          const workspace = await Workspace.get({
+            slug: String(workspaceSlug),
           });
-          return;
-        }
+          const workspaceUsers = await Workspace.workspaceUsers(workspace.id);
 
-        if (userIds.length === 0) {
-          response.status(404).json({
-            success: false,
-            error: `No valid user IDs provided.`,
-            users: workspaceUsers,
-          });
-          return;
-        }
+          if (!workspace) {
+            response.status(404).json({
+              success: false,
+              error: `Workspace ${workspaceSlug} not found`,
+              users: workspaceUsers,
+            });
+            return;
+          }
 
-        // Reset all users in the workspace and add the new users as the only users in the workspace
-        if (reset) {
-          const { success, error } = await Workspace.updateUsers(
-            workspace.id,
-            userIds
+          if (userIds.length === 0) {
+            response.status(404).json({
+              success: false,
+              error: `No valid user IDs provided.`,
+              users: workspaceUsers,
+            });
+            return;
+          }
+
+          // Reset all users in the workspace and add the new users as the only users in the workspace
+          if (reset) {
+            const { success, error } = await Workspace.updateUsers(
+              workspace.id,
+              userIds
+            );
+            return response.status(200).json({
+              success,
+              error,
+              users: await Workspace.workspaceUsers(workspace.id),
+            });
+          }
+
+          // Add new users to the workspace if they are not already in the workspace
+          const existingUserIds = workspaceUsers.map((user) => user.userId);
+          const usersToAdd = userIds.filter(
+            (userId) => !existingUserIds.includes(userId)
           );
-          return response.status(200).json({
-            success,
-            error,
+          if (usersToAdd.length > 0)
+            await WorkspaceUser.createManyUsers(usersToAdd, workspace.id);
+          response.status(200).json({
+            success: true,
+            error: null,
             users: await Workspace.workspaceUsers(workspace.id),
           });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
         }
-
-        // Add new users to the workspace if they are not already in the workspace
-        const existingUserIds = workspaceUsers.map((user) => user.userId);
-        const usersToAdd = userIds.filter(
-          (userId) => !existingUserIds.includes(userId)
-        );
-        if (usersToAdd.length > 0)
-          await WorkspaceUser.createManyUsers(usersToAdd, workspace.id);
-        response.status(200).json({
-          success: true,
-          error: null,
-          users: await Workspace.workspaceUsers(workspace.id),
-        });
-      } catch (e) {
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/admin/workspace-chats",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/workspace-chats",
+        routeId: "api.admin.workspace-chats",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+        principalAccess: managementModerationReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.description = 'All chats in the system ordered by most recent. Methods are disabled until multi user mode is enabled via the UI.'
     #swagger.requestBody = {
@@ -759,210 +972,274 @@ function apiAdminEndpoints(app) {
       }
     }
     */
-      const guard = await guardModerationSchema(
-        response,
-        "/v1/admin/workspace-chats"
-      );
-      if (!guard.ok) return;
+        const guard = await guardModerationSchema(
+          response,
+          "/v1/admin/workspace-chats"
+        );
+        if (!guard.ok) return;
 
-      try {
-        const pgSize = 20;
-        const { offset = 0 } = reqBody(request);
-        const chats = await ConversationFlags.listMetadata({
-          limit: pgSize,
-          offset: offset * pgSize,
-        });
+        try {
+          const pgSize = 20;
+          const { offset = 0 } = reqBody(request);
+          const chats = await ChatMetadataRepository.listWorkspaceChats({
+            requestContext: response.locals.createRouteSecurityContext?.(),
+            limit: pgSize,
+            offset: offset * pgSize,
+          });
 
-        const hasPages = (await WorkspaceChats.count()) > (offset + 1) * pgSize;
-        response.status(200).json({ chats: chats, hasPages });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/v1/admin/workspace-chats"
-          )
-        ) {
-          return;
+          const hasPages =
+            (await WorkspaceChats.count()) > (offset + 1) * pgSize;
+          response.status(200).json({ chats: chats, hasPages });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/v1/admin/workspace-chats"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/admin/conversation-flags",
-    [validApiKey],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/v1/admin/conversation-flags"
-      );
-      if (!guard.ok) return;
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/conversation-flags",
+        routeId: "api.admin.conversation-flags",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+        principalAccess: managementModerationReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/v1/admin/conversation-flags"
+        );
+        if (!guard.ok) return;
 
-      try {
-        const pgSize = 20;
-        const { offset = 0, status = "open" } = reqBody(request);
-        const flags = await ConversationFlags.listReviewCases({
-          status,
-          limit: pgSize,
-          offset: offset * pgSize,
-        });
+        try {
+          const pgSize = 20;
+          const { offset = 0, status = "open" } = reqBody(request);
+          const flags = await ChatMetadataRepository.listReviewCases({
+            requestContext: response.locals.createRouteSecurityContext?.(),
+            status,
+            limit: pgSize,
+            offset: offset * pgSize,
+          });
 
-        const hasPages =
-          (await ConversationFlags.count(status === "all" ? {} : { status })) >
-          (offset + 1) * pgSize;
+          const hasPages =
+            (await ConversationFlags.count(
+              status === "all" ? {} : { status }
+            )) >
+            (offset + 1) * pgSize;
 
-        response.status(200).json({ flags, hasPages });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/v1/admin/conversation-flags"
-          )
-        ) {
-          return;
+          response.status(200).json({ flags, hasPages });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/v1/admin/conversation-flags"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/admin/conversation-flags/:id/dismiss",
-    [validApiKey],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/v1/admin/conversation-flags/:id/dismiss"
-      );
-      if (!guard.ok) return;
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/conversation-flags/:id/dismiss",
+        routeId: "api.admin.conversation-flags.dismiss",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+        principalAccess: managementModerationWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/v1/admin/conversation-flags/:id/dismiss"
+        );
+        if (!guard.ok) return;
 
-      try {
-        const { id } = request.params;
-        const { reviewNote = "" } = reqBody(request);
-        const flag = await ConversationFlags.dismiss(id, null, reviewNote);
-        if (!flag)
-          return response
-            .status(404)
-            .json({ success: false, error: "Flag not found." });
-        await EventLogs.logEvent("conversation_flag_dismissed", {
-          caseId: flag.id,
-          chatId: flag.chatId,
-          reviewNote,
-          ...apiKeyAuditContext(response),
-        });
-        response.status(200).json({ success: true, error: null });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/v1/admin/conversation-flags/:id/dismiss"
-          )
-        ) {
-          return;
+        try {
+          const { id } = request.params;
+          const { reviewNote = "" } = reqBody(request);
+          const flag = await ConversationFlags.dismiss(id, null, reviewNote);
+          if (!flag)
+            return response
+              .status(404)
+              .json({ success: false, error: "Flag not found." });
+          await EventLogs.logEvent("conversation_flag_dismissed", {
+            caseId: flag.id,
+            chatId: flag.chatId,
+            reviewNote,
+            ...apiKeyAuditContext(response),
+          });
+          response.status(200).json({ success: true, error: null });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/v1/admin/conversation-flags/:id/dismiss"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/admin/conversation-flags/:id/suspend-user",
-    [validApiKey],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/v1/admin/conversation-flags/:id/suspend-user"
-      );
-      if (!guard.ok) return;
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/conversation-flags/:id/suspend-user",
+        routeId: "api.admin.conversation-flags.suspend-user",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+        principalAccess: managementModerationWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/v1/admin/conversation-flags/:id/suspend-user"
+        );
+        if (!guard.ok) return;
 
-      try {
-        const { id } = request.params;
-        const { reviewNote = "" } = reqBody(request);
-        const flag = await ConversationFlags.suspendUser(id, null, reviewNote);
-        if (!flag)
-          return response
-            .status(404)
-            .json({ success: false, error: "Flag or user not found." });
-        await EventLogs.logEvent("user_suspended_from_flag", {
-          caseId: flag.id,
-          chatId: flag.chatId,
-          reviewNote,
-          ...apiKeyAuditContext(response),
-        });
-        response.status(200).json({ success: true, error: null });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/v1/admin/conversation-flags/:id/suspend-user"
-          )
-        ) {
-          return;
+        try {
+          const { id } = request.params;
+          const { reviewNote = "" } = reqBody(request);
+          const flag = await ConversationFlags.suspendUser(
+            id,
+            null,
+            reviewNote
+          );
+          if (!flag)
+            return response
+              .status(404)
+              .json({ success: false, error: "Flag or user not found." });
+          await EventLogs.logEvent("user_suspended_from_flag", {
+            caseId: flag.id,
+            chatId: flag.chatId,
+            reviewNote,
+            ...apiKeyAuditContext(response),
+          });
+          response.status(200).json({ success: true, error: null });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/v1/admin/conversation-flags/:id/suspend-user"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/admin/conversation-flags/:id/unsuspend-user",
-    [validApiKey],
-    async (request, response) => {
-      const guard = await guardModerationSchema(
-        response,
-        "/v1/admin/conversation-flags/:id/unsuspend-user"
-      );
-      if (!guard.ok) return;
-
-      try {
-        const { id } = request.params;
-        const { reviewNote = "" } = reqBody(request);
-        const flag = await ConversationFlags.unsuspendUser(
-          id,
-          null,
-          reviewNote
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/conversation-flags/:id/unsuspend-user",
+        routeId: "api.admin.conversation-flags.unsuspend-user",
+        plane: "control",
+        category: "moderation",
+        responsePolicy: "metadata_only",
+        principalAccess: managementModerationWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        const guard = await guardModerationSchema(
+          response,
+          "/v1/admin/conversation-flags/:id/unsuspend-user"
         );
-        if (!flag)
-          return response
-            .status(404)
-            .json({ success: false, error: "Flag or user not found." });
-        await EventLogs.logEvent("user_unsuspended", {
-          caseId: flag.id,
-          chatId: flag.chatId,
-          reviewNote,
-          ...apiKeyAuditContext(response),
-        });
-        response.status(200).json({ success: true, error: null });
-      } catch (e) {
-        if (
-          handleModerationSchemaRouteError(
-            response,
-            e,
-            "/v1/admin/conversation-flags/:id/unsuspend-user"
-          )
-        ) {
-          return;
+        if (!guard.ok) return;
+
+        try {
+          const { id } = request.params;
+          const { reviewNote = "" } = reqBody(request);
+          const flag = await ConversationFlags.unsuspendUser(
+            id,
+            null,
+            reviewNote
+          );
+          if (!flag)
+            return response
+              .status(404)
+              .json({ success: false, error: "Flag or user not found." });
+          await EventLogs.logEvent("user_unsuspended", {
+            caseId: flag.id,
+            chatId: flag.chatId,
+            reviewNote,
+            ...apiKeyAuditContext(response),
+          });
+          response.status(200).json({ success: true, error: null });
+        } catch (e) {
+          if (
+            handleModerationSchemaRouteError(
+              response,
+              e,
+              "/v1/admin/conversation-flags/:id/unsuspend-user"
+            )
+          ) {
+            return;
+          }
+          console.error(e);
+          response.sendStatus(500).end();
         }
-        console.error(e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/admin/preferences",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/admin/preferences",
+        routeId: "api.admin.preferences.update",
+        plane: "control",
+        category: "system_settings",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Admin']
     #swagger.description = 'Update multi-user preferences for instance. Methods are disabled until multi user mode is enabled via the UI.'
     #swagger.requestBody = {
@@ -998,20 +1275,21 @@ function apiAdminEndpoints(app) {
       description: "Instance is not in Multi-User mode. Method denied",
     }
     */
-      try {
-        if (!multiUserMode(response)) {
-          response.sendStatus(401).end();
-          return;
-        }
+        try {
+          if (!multiUserMode(response)) {
+            response.sendStatus(401).end();
+            return;
+          }
 
-        const updates = reqBody(request);
-        await SystemSettings.updateSettings(updates);
-        response.status(200).json({ success: true, error: null });
-      } catch (e) {
-        console.error(e);
-        response.sendStatus(500).end();
+          const updates = reqBody(request);
+          await SystemSettings.updateSettings(updates);
+          response.status(200).json({ success: true, error: null });
+        } catch (e) {
+          console.error(e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 }
 

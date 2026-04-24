@@ -213,7 +213,9 @@ export default function MultiUserAuth() {
 
       if (view === "signup") {
         if (!isEmailAddress(identifier)) {
-          throw new Error("Account creation currently requires an email address.");
+          throw new Error(
+            "Account creation currently requires an email address."
+          );
         }
 
         const { error: signUpError } = await betterAuthClient.signUp.email({

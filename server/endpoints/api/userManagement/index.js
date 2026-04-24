@@ -1,16 +1,31 @@
 const { User } = require("../../../models/user");
-const { TemporaryAuthToken } = require("../../../models/temporaryAuthToken");
 const { multiUserMode } = require("../../../utils/http");
 const {
   simpleSSOEnabled,
 } = require("../../../utils/middleware/simpleSSOEnabled");
 const { validApiKey } = require("../../../utils/middleware/validApiKey");
+const { withRoutePolicy } = require("../../../utils/privacy/routePolicy");
 
 function apiUserManagementEndpoints(app) {
   if (!app) return;
 
-  app.get("/v1/users", [validApiKey], async (request, response) => {
-    /*
+  app.get(
+    "/v1/users",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/users",
+        routeId: "api.users.list",
+        plane: "control",
+        category: "user_management",
+        responsePolicy: "metadata_only",
+        principalAccess: {
+          management: ["management:users:read"],
+        },
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
       #swagger.tags = ['User Management']
       #swagger.description = 'List all users'
       #swagger.responses[200] = {
@@ -45,79 +60,62 @@ function apiUserManagementEndpoints(app) {
       description: "Instance is not in Multi-User mode. Permission denied.",
     }
       */
-    try {
-      if (!multiUserMode(response))
-        return response
-          .status(401)
-          .send("Instance is not in Multi-User mode. Permission denied.");
+        try {
+          if (!multiUserMode(response))
+            return response
+              .status(401)
+              .send("Instance is not in Multi-User mode. Permission denied.");
 
-      const users = await User.where();
-      const filteredUsers = users.map((user) => ({
-        id: user.id,
-        username: user.username,
-        role: user.role,
-      }));
-      response.status(200).json({ users: filteredUsers });
-    } catch (e) {
-      console.error(e.message, e);
-      response.sendStatus(500).end();
-    }
-  });
+          const users = await User.where();
+          const filteredUsers = users.map((user) => ({
+            id: user.id,
+            username: user.username,
+            role: user.role,
+          }));
+          response.status(200).json({ users: filteredUsers });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
+      }
+    )
+  );
 
   app.get(
     "/v1/users/:id/issue-auth-token",
-    [validApiKey, simpleSSOEnabled],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/users/:id/issue-auth-token",
+        routeId: "api.users.issue-auth-token",
+        plane: "control",
+        category: "user_management",
+        responsePolicy: "deny_credential_issuance",
+        principalAccess: {},
+      },
+      [validApiKey, simpleSSOEnabled],
+      async (_request, response) => {
+        /*
       #swagger.tags = ['User Management']
-      #swagger.description = 'Issue a temporary auth token for a user'
+      #swagger.description = 'This route is permanently disabled for API keys and always returns a denial response.'
       #swagger.parameters['id'] = {
         in: 'path',
-        description: 'The ID of the user to issue a temporary auth token for',
+        description: 'The ID of the user that would have been targeted by the legacy impersonation route',
         required: true,
         type: 'string'
       }
-      #swagger.responses[200] = {
-        content: {
-          "application/json": {
-            schema: {
-              type: 'object',
-              example: {
-                token: "1234567890",
-                loginPath: "/sso/simple?token=1234567890"
-              }
-            }
-          }
+      #swagger.responses[403] = {
+        description: 'API keys cannot mint login or impersonation tokens.',
+        schema: {
+          "$ref": "#/definitions/InvalidAPIKey"
         }
       }
-    }
-    #swagger.responses[403] = {
-      schema: {
-        "$ref": "#/definitions/InvalidAPIKey"
-      }
-    }
-     #swagger.responses[401] = {
-      description: "Instance is not in Multi-User mode. Permission denied.",
-    }
       */
-      try {
-        const { id: userId } = request.params;
-        const user = await User.get({ id: Number(userId) });
-        if (!user)
-          return response.status(404).json({ error: "User not found" });
-
-        const { token, error } = await TemporaryAuthToken.issue(userId);
-        if (error) return response.status(500).json({ error: error });
-
-        response.status(200).json({
-          token: String(token),
-          loginPath: `/sso/simple?token=${token}`,
+        response.status(403).json({
+          error: "API keys cannot issue user auth tokens.",
         });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 }
 

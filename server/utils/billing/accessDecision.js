@@ -1,5 +1,7 @@
 function normalizeRole(role = "default") {
-  return String(role || "default").trim().toLowerCase();
+  return String(role || "default")
+    .trim()
+    .toLowerCase();
 }
 
 function asDate(value = null) {

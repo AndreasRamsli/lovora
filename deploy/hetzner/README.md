@@ -27,7 +27,7 @@ Complete these in order before the first public rollout:
 4. Run [preflight.sh](scripts/preflight.sh) from the Hetzner bundle directory.
 5. Start the stack with [rollout.sh](scripts/rollout.sh).
 6. Prepare the first legal corpus on the app host.
-7. Upload the first corpus with `upload_legal_corpus.py`.
+7. Bundle and direct-ingest the first corpus into the persistent storage volume.
 8. Run [smoke.sh](scripts/smoke.sh) and the post-run audit script.
 9. Enable the nightly backup timer.
 10. Keep the rollback commands handy before any further change.
@@ -168,7 +168,7 @@ The production stack expects Better Auth to be configured and a default workspac
 Keep the bootstrap slug aligned with the workspace created during boot/backfill:
 
 ```dotenv
-DEFAULT_WORKSPACE_SLUG='workspace'
+DEFAULT_WORKSPACE_SLUG='lovora-alpha'
 BETTER_AUTH_URL='https://app.lovora.no'
 BETTER_AUTH_SECRET='<random-secret>'
 BETTER_AUTH_TRUSTED_ORIGINS='https://app.lovora.no,https://lovora.no,https://www.lovora.no'
@@ -204,27 +204,33 @@ By default, this writes the prepared sections into `legal_embedding_ready/` and 
 
 If you want to stage only one corpus, use the script flags documented by `--help`.
 
-## 8. Upload The First Corpus
+## 8. Bundle And Direct-Ingest The First Corpus
 
-Upload the prepared NL and SF sections into the default production workspace:
-
-```bash
-cd /srv/lovora
-python3 upload_legal_corpus.py \
-  --base-url "https://$DOMAIN" \
-  --api-key "$ANYTHINGLLM_API_KEY" \
-  --workspace workspace
-```
-
-For a dry run:
+Bundle the prepared NL and SF sections, then ingest those bundles directly into the
+default production workspace:
 
 ```bash
 cd /srv/lovora
-python3 upload_legal_corpus.py --dry-run
+python3 bundle_legal_corpus.py \
+  --manifest legal_embedding_ready/_manifest.jsonl \
+  --output-root legal_embedding_bundled
 ```
 
-The uploader reads `legal_embedding_ready/_manifest.jsonl` and preserves the source metadata needed for the Lovdata citation icon.
-Use the same `workspace` slug in audit and upload steps unless you have intentionally changed `DEFAULT_WORKSPACE_SLUG`.
+```bash
+cd /srv/lovora
+bash run_legal_corpus_direct_ingest.sh \
+  --manifest /corpus/legal_embedding_bundled/_manifest.jsonl \
+  --workspace lovora-alpha \
+  --reset
+```
+
+For a canary, pass `--limit <n>` or repeated `--doc-id <id>` to the direct-ingest
+script first. A later full run without `--reset` skips bundle outputs already
+recorded in `_direct_ingest_lovora-alpha.jsonl`, so canaries do not duplicate docs.
+
+The direct ingest reads `legal_embedding_bundled/_manifest.jsonl`, writes
+AnythingLLM documents and LanceDB vectors into `/srv/lovora/lovora/.data/hetzner`,
+and preserves Lovdata metadata needed for citations.
 
 ## 9. Smoke And Audit
 
@@ -242,7 +248,7 @@ cd /srv/lovora
 python3 audit_lra_postrun.py \
   --base-url "https://$DOMAIN" \
   --api-key "$ANYTHINGLLM_API_KEY" \
-  --workspace workspace \
+  --workspace lovora-alpha \
   --folder lovdata-nl
 ```
 

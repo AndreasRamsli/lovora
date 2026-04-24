@@ -3,18 +3,20 @@ const { Document } = require("../../../models/documents");
 const { Telemetry } = require("../../../models/telemetry");
 const { DocumentVectors } = require("../../../models/vectors");
 const { Workspace } = require("../../../models/workspace");
-const { ConversationFlags } = require("../../../models/conversationFlags");
 const { WorkspaceChats } = require("../../../models/workspaceChats");
+const { ConversationFlags } = require("../../../models/conversationFlags");
 const { getVectorDbClass, getLLMProvider } = require("../../../utils/helpers");
 const { multiUserMode, reqBody } = require("../../../utils/http");
 const { validApiKey } = require("../../../utils/middleware/validApiKey");
 const { VALID_CHAT_MODE } = require("../../../utils/chats/stream");
 const { EventLogs } = require("../../../models/eventLogs");
-const {
-  writeResponseChunk,
-} = require("../../../utils/helpers/chat/responses");
+const { writeResponseChunk } = require("../../../utils/helpers/chat/responses");
 const { ApiChatHandler } = require("../../../utils/chats/apiChatHandler");
+const {
+  resolveAuthorizedApiSessionId,
+} = require("../../../utils/auth/apiContentAuthorization");
 const { getModelTag } = require("../../utils");
+const { withRoutePolicy } = require("../../../utils/privacy/routePolicy");
 
 function vectorSearchErrorResponse(error) {
   if (error?.code !== "QUERY_EMBEDDING_FAILED") return null;
@@ -30,11 +32,44 @@ function vectorSearchErrorResponse(error) {
   };
 }
 
+function denyWorkspaceBinding(response) {
+  response.status(403).json({
+    error: "API key cannot access this workspace.",
+  });
+}
+
+function hasWorkspaceBindingMismatch(response, workspace) {
+  const principal = response.locals.principal;
+  if (principal?.kind !== "workspace_service") return false;
+  return Number(principal.workspaceId) !== Number(workspace?.id);
+}
+
+const managementMetadataReadAccess = {
+  management: ["management:metadata:read"],
+};
+
+const managementMetadataWriteAccess = {
+  management: ["management:metadata:write"],
+};
+
 function apiWorkspaceEndpoints(app) {
   if (!app) return;
 
-  app.post("/v1/workspace/new", [validApiKey], async (request, response) => {
-    /*
+  app.post(
+    "/v1/workspace/new",
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/workspace/new",
+        routeId: "api.workspace.create",
+        plane: "control",
+        category: "workspace_api",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Workspaces']
     #swagger.description = 'Create a new workspace'
     #swagger.requestBody = {
@@ -83,39 +118,54 @@ function apiWorkspaceEndpoints(app) {
       }
     }
     */
-    try {
-      const { name = null, ...additionalFields } = reqBody(request);
-      const { workspace, message } = await Workspace.new(
-        name,
-        null,
-        additionalFields
-      );
+        try {
+          const { name = null, ...additionalFields } = reqBody(request);
+          const { workspace, message } = await Workspace.new(
+            name,
+            null,
+            additionalFields
+          );
 
-      if (!workspace) {
-        response.status(400).json({ workspace: null, message });
-        return;
+          if (!workspace) {
+            response.status(400).json({ workspace: null, message });
+            return;
+          }
+
+          await Telemetry.sendTelemetry("workspace_created", {
+            multiUserMode: multiUserMode(response),
+            LLMSelection: process.env.LLM_PROVIDER || "openai",
+            Embedder: process.env.EMBEDDING_ENGINE || "inherit",
+            VectorDbSelection: process.env.VECTOR_DB || "lancedb",
+            TTSSelection: process.env.TTS_PROVIDER || "native",
+            LLMModel: getModelTag(),
+          });
+          await EventLogs.logEvent("api_workspace_created", {
+            workspaceName: workspace?.name || "Unknown Workspace",
+          });
+          response.status(200).json({ workspace, message });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
+    )
+  );
 
-      await Telemetry.sendTelemetry("workspace_created", {
-        multiUserMode: multiUserMode(response),
-        LLMSelection: process.env.LLM_PROVIDER || "openai",
-        Embedder: process.env.EMBEDDING_ENGINE || "inherit",
-        VectorDbSelection: process.env.VECTOR_DB || "lancedb",
-        TTSSelection: process.env.TTS_PROVIDER || "native",
-        LLMModel: getModelTag(),
-      });
-      await EventLogs.logEvent("api_workspace_created", {
-        workspaceName: workspace?.name || "Unknown Workspace",
-      });
-      response.status(200).json({ workspace, message });
-    } catch (e) {
-      console.error(e.message, e);
-      response.sendStatus(500).end();
-    }
-  });
-
-  app.get("/v1/workspaces", [validApiKey], async (request, response) => {
-    /*
+  app.get(
+    "/v1/workspaces",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/workspaces",
+        routeId: "api.workspaces.list",
+        plane: "control",
+        category: "workspace_api",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Workspaces']
     #swagger.description = 'List all current workspaces'
     #swagger.responses[200] = {
@@ -148,28 +198,42 @@ function apiWorkspaceEndpoints(app) {
       }
     }
     */
-    try {
-      const workspaces = await Workspace._findMany({
-        where: {},
-        include: {
-          threads: {
-            select: {
-              user_id: true,
-              slug: true,
-              name: true,
+        try {
+          const workspaces = await Workspace._findMany({
+            where: {},
+            include: {
+              threads: {
+                select: {
+                  user_id: true,
+                  slug: true,
+                },
+              },
             },
-          },
-        },
-      });
-      response.status(200).json({ workspaces });
-    } catch (e) {
-      console.error(e.message, e);
-      response.sendStatus(500).end();
-    }
-  });
+          });
+          response.status(200).json({ workspaces });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
+      }
+    )
+  );
 
-  app.get("/v1/workspace/:slug", [validApiKey], async (request, response) => {
-    /*
+  app.get(
+    "/v1/workspace/:slug",
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/workspace/:slug",
+        routeId: "api.workspace.get",
+        plane: "control",
+        category: "workspace_api",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataReadAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Workspaces']
     #swagger.description = 'Get a workspace by its unique slug.'
     #swagger.parameters['slug'] = {
@@ -209,35 +273,47 @@ function apiWorkspaceEndpoints(app) {
       }
     }
     */
-    try {
-      const { slug } = request.params;
-      const workspace = await Workspace._findMany({
-        where: {
-          slug: String(slug),
-        },
-        include: {
-          documents: true,
-          threads: {
-            select: {
-              user_id: true,
-              slug: true,
+        try {
+          const { slug } = request.params;
+          const workspace = await Workspace._findMany({
+            where: {
+              slug: String(slug),
             },
-          },
-        },
-      });
+            include: {
+              documents: true,
+              threads: {
+                select: {
+                  user_id: true,
+                  slug: true,
+                },
+              },
+            },
+          });
 
-      response.status(200).json({ workspace });
-    } catch (e) {
-      console.error(e.message, e);
-      response.sendStatus(500).end();
-    }
-  });
+          response.status(200).json({ workspace });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
+      }
+    )
+  );
 
   app.delete(
     "/v1/workspace/:slug",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "DELETE",
+        path: "/api/v1/workspace/:slug",
+        routeId: "api.workspace.delete",
+        plane: "control",
+        category: "workspace_api",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Workspaces']
     #swagger.description = 'Deletes a workspace by its slug.'
     #swagger.parameters['slug'] = {
@@ -252,43 +328,54 @@ function apiWorkspaceEndpoints(app) {
       }
     }
     */
-      try {
-        const { slug = "" } = request.params;
-        const VectorDb = getVectorDbClass();
-        const workspace = await Workspace.get({ slug });
-
-        if (!workspace) {
-          response.sendStatus(400).end();
-          return;
-        }
-
-        const workspaceId = Number(workspace.id);
-        await WorkspaceChats.delete({ workspaceId: workspaceId });
-        await DocumentVectors.deleteForWorkspace(workspaceId);
-        await Document.delete({ workspaceId: workspaceId });
-        await Workspace.delete({ id: workspaceId });
-
-        await EventLogs.logEvent("api_workspace_deleted", {
-          workspaceName: workspace?.name || "Unknown Workspace",
-        });
         try {
-          await VectorDb["delete-namespace"]({ namespace: slug });
+          const { slug = "" } = request.params;
+          const VectorDb = getVectorDbClass();
+          const workspace = await Workspace.get({ slug });
+
+          if (!workspace) {
+            response.sendStatus(400).end();
+            return;
+          }
+
+          const workspaceId = Number(workspace.id);
+          await WorkspaceChats.delete({ workspaceId: workspaceId });
+          await DocumentVectors.deleteForWorkspace(workspaceId);
+          await Document.delete({ workspaceId: workspaceId });
+          await Workspace.delete({ id: workspaceId });
+
+          await EventLogs.logEvent("api_workspace_deleted", {
+            workspaceName: workspace?.name || "Unknown Workspace",
+          });
+          try {
+            await VectorDb["delete-namespace"]({ namespace: slug });
+          } catch (e) {
+            console.error(e.message);
+          }
+          response.sendStatus(200).end();
         } catch (e) {
-          console.error(e.message);
+          console.error(e.message, e);
+          response.sendStatus(500).end();
         }
-        response.sendStatus(200).end();
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/workspace/:slug/update",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/workspace/:slug/update",
+        routeId: "api.workspace.update",
+        plane: "control",
+        category: "workspace_api",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Workspaces']
     #swagger.description = 'Update workspace settings by its unique slug.'
     #swagger.parameters['slug'] = {
@@ -340,33 +427,47 @@ function apiWorkspaceEndpoints(app) {
       }
     }
     */
-      try {
-        const { slug = null } = request.params;
-        const data = reqBody(request);
-        const currWorkspace = await Workspace.get({ slug });
+        try {
+          const { slug = null } = request.params;
+          const data = reqBody(request);
+          const currWorkspace = await Workspace.get({ slug });
 
-        if (!currWorkspace) {
-          response.sendStatus(400).end();
-          return;
+          if (!currWorkspace) {
+            response.sendStatus(400).end();
+            return;
+          }
+
+          const { workspace, message } = await Workspace.update(
+            currWorkspace.id,
+            data
+          );
+          response.status(200).json({ workspace, message });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
         }
-
-        const { workspace, message } = await Workspace.update(
-          currWorkspace.id,
-          data
-        );
-        response.status(200).json({ workspace, message });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.get(
     "/v1/workspace/:slug/chats",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "GET",
+        path: "/api/v1/workspace/:slug/chats",
+        routeId: "api.workspace.history",
+        plane: "control",
+        category: "workspace_api",
+        responsePolicy: "metadata_only",
+        principalAccess: {
+          management: ["management:metadata:read"],
+          workspace_service: ["workspace:api_sessions:read"],
+        },
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Workspaces']
     #swagger.description = 'Get a workspaces chats regardless of user by its unique slug.'
     #swagger.parameters['slug'] = {
@@ -422,53 +523,80 @@ function apiWorkspaceEndpoints(app) {
       }
     }
     */
-      try {
-        const { slug } = request.params;
-        const {
-          apiSessionId = null,
-          limit = 100,
-          orderBy = "asc",
-        } = request.query;
-        const workspace = await Workspace.get({ slug });
+        try {
+          const { slug } = request.params;
+          const {
+            apiSessionId = null,
+            limit = 100,
+            orderBy = "asc",
+          } = request.query;
+          const workspace = await Workspace.get({ slug });
 
-        if (!workspace) {
-          response.sendStatus(400).end();
-          return;
-        }
+          if (!workspace) {
+            response.sendStatus(400).end();
+            return;
+          }
+          if (hasWorkspaceBindingMismatch(response, workspace)) {
+            denyWorkspaceBinding(response);
+            return;
+          }
 
-        const validLimit = Math.max(1, parseInt(limit));
-        const validOrderBy = ["asc", "desc"].includes(orderBy)
-          ? orderBy
-          : "asc";
+          const validLimit = Math.max(1, parseInt(limit));
+          const validOrderBy = ["asc", "desc"].includes(orderBy)
+            ? orderBy
+            : "asc";
 
-        const history = await ConversationFlags.listMetadataByClause({
-          clause: {
+          const principal = response.locals.principal || null;
+          const authorizedApiSessionId = resolveAuthorizedApiSessionId(
+            principal,
+            apiSessionId
+          );
+          const historyClause = {
             workspaceId: workspace.id,
             thread_id: null,
             include: true,
-            ...(apiSessionId
+            ...(authorizedApiSessionId
               ? {
                   user_id: null,
-                  api_session_id: String(apiSessionId),
+                  api_session_id: authorizedApiSessionId,
                 }
               : { api_session_id: null }),
-          },
-          limit: validLimit,
-          orderBy: { createdAt: validOrderBy },
-        });
-        response.status(200).json({ history });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
+          };
+
+          // Workspace-service keys may only read service-owned workspace history.
+          if (principal?.kind === "workspace_service") {
+            historyClause.user_id = null;
+          }
+
+          const history = await ConversationFlags.listMetadataByClause({
+            clause: historyClause,
+            limit: validLimit,
+            orderBy: { createdAt: validOrderBy },
+          });
+          response.status(200).json({ history });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
+        }
       }
-    }
+    )
   );
 
   app.post(
     "/v1/workspace/:slug/update-embeddings",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/workspace/:slug/update-embeddings",
+        routeId: "api.workspace.update-embeddings",
+        plane: "control",
+        category: "workspace_api",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Workspaces']
     #swagger.description = 'Add or remove documents from a workspace by its unique slug.'
     #swagger.parameters['slug'] = {
@@ -518,34 +646,45 @@ function apiWorkspaceEndpoints(app) {
       }
     }
     */
-      try {
-        const { slug = null } = request.params;
-        const { adds = [], deletes = [] } = reqBody(request);
-        const currWorkspace = await Workspace.get({ slug });
+        try {
+          const { slug = null } = request.params;
+          const { adds = [], deletes = [] } = reqBody(request);
+          const currWorkspace = await Workspace.get({ slug });
 
-        if (!currWorkspace) {
-          response.sendStatus(400).end();
-          return;
+          if (!currWorkspace) {
+            response.sendStatus(400).end();
+            return;
+          }
+
+          await Document.removeDocuments(currWorkspace, deletes);
+          await Document.addDocuments(currWorkspace, adds);
+          const updatedWorkspace = await Workspace.get({
+            id: Number(currWorkspace.id),
+          });
+          response.status(200).json({ workspace: updatedWorkspace });
+        } catch (e) {
+          console.error(e.message, e);
+          response.sendStatus(500).end();
         }
-
-        await Document.removeDocuments(currWorkspace, deletes);
-        await Document.addDocuments(currWorkspace, adds);
-        const updatedWorkspace = await Workspace.get({
-          id: Number(currWorkspace.id),
-        });
-        response.status(200).json({ workspace: updatedWorkspace });
-      } catch (e) {
-        console.error(e.message, e);
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/workspace/:slug/update-pin",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/workspace/:slug/update-pin",
+        routeId: "api.workspace.update-pin",
+        plane: "control",
+        category: "workspace_api",
+        responsePolicy: "metadata_only",
+        principalAccess: managementMetadataWriteAccess,
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
       #swagger.tags = ['Workspaces']
       #swagger.description = 'Add or remove pin from a document in a workspace by its unique slug.'
       #swagger.parameters['slug'] = {
@@ -586,34 +725,47 @@ function apiWorkspaceEndpoints(app) {
         description: 'Internal Server Error'
       }
       */
-      try {
-        const { slug = null } = request.params;
-        const { docPath, pinStatus = false } = reqBody(request);
-        const workspace = await Workspace.get({ slug });
+        try {
+          const { slug = null } = request.params;
+          const { docPath, pinStatus = false } = reqBody(request);
+          const workspace = await Workspace.get({ slug });
 
-        const document = await Document.get({
-          workspaceId: workspace.id,
-          docpath: docPath,
-        });
-        if (!document) return response.sendStatus(404).end();
+          const document = await Document.get({
+            workspaceId: workspace.id,
+            docpath: docPath,
+          });
+          if (!document) return response.sendStatus(404).end();
 
-        await Document.update(document.id, { pinned: pinStatus });
-        return response
-          .status(200)
-          .json({ message: "Pin status updated successfully" })
-          .end();
-      } catch (error) {
-        console.error("Error processing the pin status update:", error);
-        return response.status(500).end();
+          await Document.update(document.id, { pinned: pinStatus });
+          return response
+            .status(200)
+            .json({ message: "Pin status updated successfully" })
+            .end();
+        } catch (error) {
+          console.error("Error processing the pin status update:", error);
+          return response.status(500).end();
+        }
       }
-    }
+    )
   );
 
   app.post(
     "/v1/workspace/:slug/chat",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/workspace/:slug/chat",
+        routeId: "api.workspace.chat",
+        plane: "content",
+        category: "workspace_api",
+        responsePolicy: "raw_chat_content",
+        principalAccess: {
+          workspace_service: ["workspace:api_sessions:write"],
+        },
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
    #swagger.tags = ['Workspaces']
    #swagger.description = 'Execute a chat with a workspace'
    #swagger.requestBody = {
@@ -665,85 +817,104 @@ function apiWorkspaceEndpoints(app) {
      }
    }
    */
-      try {
-        const { slug } = request.params;
-        const {
-          message,
-          mode = "query",
-          sessionId = null,
-          attachments = [],
-          reset = false,
-        } = reqBody(request);
-        const workspace = await Workspace.get({ slug: String(slug) });
+        try {
+          const { slug } = request.params;
+          const {
+            message,
+            mode = "query",
+            sessionId = null,
+            attachments = [],
+            reset = false,
+          } = reqBody(request);
+          const workspace = await Workspace.get({ slug: String(slug) });
 
-        if (!workspace) {
-          response.status(400).json({
+          if (!workspace) {
+            response.status(400).json({
+              id: uuidv4(),
+              type: "abort",
+              textResponse: null,
+              sources: [],
+              close: true,
+              error: `Workspace ${slug} is not a valid workspace.`,
+            });
+            return;
+          }
+          if (hasWorkspaceBindingMismatch(response, workspace)) {
+            denyWorkspaceBinding(response);
+            return;
+          }
+
+          if ((!message?.length || !VALID_CHAT_MODE.includes(mode)) && !reset) {
+            response.status(400).json({
+              id: uuidv4(),
+              type: "abort",
+              textResponse: null,
+              sources: [],
+              close: true,
+              error: !message?.length
+                ? "Message is empty"
+                : `${mode} is not a valid mode.`,
+            });
+            return;
+          }
+
+          const principal = response.locals.principal;
+          const result = await ApiChatHandler.chatSync({
+            principal,
+            workspace,
+            message,
+            mode,
+            user: null,
+            thread: null,
+            sessionId: resolveAuthorizedApiSessionId(principal, sessionId),
+            attachments,
+            reset,
+          });
+
+          await Telemetry.sendTelemetry("sent_chat", {
+            LLMSelection:
+              workspace.chatProvider ?? process.env.LLM_PROVIDER ?? "openai",
+            Embedder: process.env.EMBEDDING_ENGINE || "inherit",
+            VectorDbSelection: process.env.VECTOR_DB || "lancedb",
+            TTSSelection: process.env.TTS_PROVIDER || "native",
+          });
+          await EventLogs.logEvent("api_sent_chat", {
+            workspaceName: workspace?.name,
+            chatModel: workspace?.chatModel || "System Default",
+          });
+          return response.status(200).json({ ...result });
+        } catch (e) {
+          console.error(e.message, e);
+          response.status(500).json({
             id: uuidv4(),
             type: "abort",
             textResponse: null,
             sources: [],
             close: true,
-            error: `Workspace ${slug} is not a valid workspace.`,
+            error: e.message,
           });
-          return;
         }
-
-        if ((!message?.length || !VALID_CHAT_MODE.includes(mode)) && !reset) {
-          response.status(400).json({
-            id: uuidv4(),
-            type: "abort",
-            textResponse: null,
-            sources: [],
-            close: true,
-            error: !message?.length
-              ? "Message is empty"
-              : `${mode} is not a valid mode.`,
-          });
-          return;
-        }
-
-        const result = await ApiChatHandler.chatSync({
-          workspace,
-          message,
-          mode,
-          user: null,
-          thread: null,
-          sessionId: !!sessionId ? String(sessionId) : null,
-          attachments,
-          reset,
-        });
-
-        await Telemetry.sendTelemetry("sent_chat", {
-          LLMSelection:
-            workspace.chatProvider ?? process.env.LLM_PROVIDER ?? "openai",
-          Embedder: process.env.EMBEDDING_ENGINE || "inherit",
-          VectorDbSelection: process.env.VECTOR_DB || "lancedb",
-          TTSSelection: process.env.TTS_PROVIDER || "native",
-        });
-        await EventLogs.logEvent("api_sent_chat", {
-          workspaceName: workspace?.name,
-          chatModel: workspace?.chatModel || "System Default",
-        });
-        return response.status(200).json({ ...result });
-      } catch (e) {
-        console.error(e.message, e);
-        response.status(500).json({
-          id: uuidv4(),
-          type: "abort",
-          textResponse: null,
-          sources: [],
-          close: true,
-          error: e.message,
-        });
       }
-    }
+    )
   );
 
   app.post(
     "/v1/workspace/:slug/stream-chat",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/workspace/:slug/stream-chat",
+        routeId: "api.workspace.chat.stream",
+        plane: "content",
+        category: "workspace_api",
+        responsePolicy: "streaming_chat_content",
+        principalAccess: {
+          workspace_service: ["workspace:api_sessions:write"],
+        },
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
    #swagger.tags = ['Workspaces']
    #swagger.description = 'Execute a streamable chat with a workspace'
    #swagger.requestBody = {
@@ -816,92 +987,111 @@ function apiWorkspaceEndpoints(app) {
      }
    }
    */
-      try {
-        const { slug } = request.params;
-        const {
-          message,
-          mode = "query",
-          sessionId = null,
-          attachments = [],
-          reset = false,
-        } = reqBody(request);
-        const workspace = await Workspace.get({ slug: String(slug) });
+        try {
+          const { slug } = request.params;
+          const {
+            message,
+            mode = "query",
+            sessionId = null,
+            attachments = [],
+            reset = false,
+          } = reqBody(request);
+          const workspace = await Workspace.get({ slug: String(slug) });
 
-        if (!workspace) {
-          response.status(400).json({
+          if (!workspace) {
+            response.status(400).json({
+              id: uuidv4(),
+              type: "abort",
+              textResponse: null,
+              sources: [],
+              close: true,
+              error: `Workspace ${slug} is not a valid workspace.`,
+            });
+            return;
+          }
+          if (hasWorkspaceBindingMismatch(response, workspace)) {
+            denyWorkspaceBinding(response);
+            return;
+          }
+
+          if ((!message?.length || !VALID_CHAT_MODE.includes(mode)) && !reset) {
+            response.status(400).json({
+              id: uuidv4(),
+              type: "abort",
+              textResponse: null,
+              sources: [],
+              close: true,
+              error: !message?.length
+                ? "Message is empty"
+                : `${mode} is not a valid mode.`,
+            });
+            return;
+          }
+
+          response.setHeader("Cache-Control", "no-cache");
+          response.setHeader("Content-Type", "text/event-stream");
+          response.setHeader("Access-Control-Allow-Origin", "*");
+          response.setHeader("Connection", "keep-alive");
+          response.flushHeaders();
+
+          const principal = response.locals.principal;
+          await ApiChatHandler.streamChat({
+            response,
+            principal,
+            workspace,
+            message,
+            mode,
+            user: null,
+            thread: null,
+            sessionId: resolveAuthorizedApiSessionId(principal, sessionId),
+            attachments,
+            reset,
+          });
+          await Telemetry.sendTelemetry("sent_chat", {
+            LLMSelection:
+              workspace.chatProvider ?? process.env.LLM_PROVIDER ?? "openai",
+            Embedder: process.env.EMBEDDING_ENGINE || "inherit",
+            VectorDbSelection: process.env.VECTOR_DB || "lancedb",
+            TTSSelection: process.env.TTS_PROVIDER || "native",
+          });
+          await EventLogs.logEvent("api_sent_chat", {
+            workspaceName: workspace?.name,
+            chatModel: workspace?.chatModel || "System Default",
+          });
+          response.end();
+        } catch (e) {
+          console.error(e.message, e);
+          writeResponseChunk(response, {
             id: uuidv4(),
             type: "abort",
             textResponse: null,
             sources: [],
             close: true,
-            error: `Workspace ${slug} is not a valid workspace.`,
+            error: e.message,
           });
-          return;
+          response.end();
         }
-
-        if ((!message?.length || !VALID_CHAT_MODE.includes(mode)) && !reset) {
-          response.status(400).json({
-            id: uuidv4(),
-            type: "abort",
-            textResponse: null,
-            sources: [],
-            close: true,
-            error: !message?.length
-              ? "Message is empty"
-              : `${mode} is not a valid mode.`,
-          });
-          return;
-        }
-
-        response.setHeader("Cache-Control", "no-cache");
-        response.setHeader("Content-Type", "text/event-stream");
-        response.setHeader("Access-Control-Allow-Origin", "*");
-        response.setHeader("Connection", "keep-alive");
-        response.flushHeaders();
-
-        await ApiChatHandler.streamChat({
-          response,
-          workspace,
-          message,
-          mode,
-          user: null,
-          thread: null,
-          sessionId: !!sessionId ? String(sessionId) : null,
-          attachments,
-          reset,
-        });
-        await Telemetry.sendTelemetry("sent_chat", {
-          LLMSelection:
-            workspace.chatProvider ?? process.env.LLM_PROVIDER ?? "openai",
-          Embedder: process.env.EMBEDDING_ENGINE || "inherit",
-          VectorDbSelection: process.env.VECTOR_DB || "lancedb",
-          TTSSelection: process.env.TTS_PROVIDER || "native",
-        });
-        await EventLogs.logEvent("api_sent_chat", {
-          workspaceName: workspace?.name,
-          chatModel: workspace?.chatModel || "System Default",
-        });
-        response.end();
-      } catch (e) {
-        console.error(e.message, e);
-        writeResponseChunk(response, {
-          id: uuidv4(),
-          type: "abort",
-          textResponse: null,
-          sources: [],
-          close: true,
-          error: e.message,
-        });
-        response.end();
       }
-    }
+    )
   );
 
   app.post(
     "/v1/workspace/:slug/vector-search",
-    [validApiKey],
-    async (request, response) => {
-      /*
+    ...withRoutePolicy(
+      {
+        method: "POST",
+        path: "/api/v1/workspace/:slug/vector-search",
+        routeId: "api.workspace.vector-search",
+        plane: "content",
+        category: "workspace_api",
+        responsePolicy: "raw_chat_content",
+        principalAccess: {
+          workspace_service: ["workspace:api_sessions:read"],
+        },
+      },
+      [validApiKey],
+      async (request, response) => {
+        /*
     #swagger.tags = ['Workspaces']
     #swagger.description = 'Perform a vector similarity search in a workspace'
     #swagger.parameters['slug'] = {
@@ -954,83 +1144,90 @@ function apiWorkspaceEndpoints(app) {
       }
     }
     */
-      try {
-        const { slug } = request.params;
-        const { query, topN, scoreThreshold } = reqBody(request);
-        const workspace = await Workspace.get({ slug: String(slug) });
+        try {
+          const { slug } = request.params;
+          const { query, topN, scoreThreshold } = reqBody(request);
+          const workspace = await Workspace.get({ slug: String(slug) });
 
-        if (!workspace)
-          return response.status(400).json({
-            message: `Workspace ${slug} is not a valid workspace.`,
+          if (!workspace)
+            return response.status(400).json({
+              message: `Workspace ${slug} is not a valid workspace.`,
+            });
+          if (hasWorkspaceBindingMismatch(response, workspace)) {
+            denyWorkspaceBinding(response);
+            return;
+          }
+
+          if (!query?.length)
+            return response.status(400).json({
+              message: "Query parameter cannot be empty.",
+            });
+
+          const VectorDb = getVectorDbClass();
+          const hasVectorizedSpace = await VectorDb.hasNamespace(
+            workspace.slug
+          );
+          const embeddingsCount = await VectorDb.namespaceCount(workspace.slug);
+
+          if (!hasVectorizedSpace || embeddingsCount === 0)
+            return response.status(200).json({
+              results: [],
+              message: "No embeddings found for this workspace.",
+            });
+
+          const parseSimilarityThreshold = () => {
+            let input = parseFloat(scoreThreshold);
+            if (isNaN(input) || input < 0 || input > 1)
+              return workspace?.similarityThreshold ?? 0.25;
+            return input;
+          };
+
+          const parseTopN = () => {
+            let input = Number(topN);
+            if (isNaN(input) || input < 1) return workspace?.topN ?? 4;
+            return input;
+          };
+
+          const results = await VectorDb.performSimilaritySearch({
+            namespace: workspace.slug,
+            input: String(query),
+            LLMConnector: getLLMProvider(),
+            similarityThreshold: parseSimilarityThreshold(),
+            topN: parseTopN(),
+            rerank: workspace?.vectorSearchMode === "rerank",
           });
 
-        if (!query?.length)
-          return response.status(400).json({
-            message: "Query parameter cannot be empty.",
+          response.status(200).json({
+            results: results.sources.map((source) => ({
+              id: source.id,
+              text: source.text,
+              metadata: {
+                url: source.url,
+                title: source.title,
+                author: source.docAuthor,
+                description: source.description,
+                docSource: source.docSource,
+                chunkSource: source.chunkSource,
+                published: source.published,
+                wordCount: source.wordCount,
+                tokenCount: source.token_count_estimate,
+              },
+              distance: source._distance,
+              score: source.score,
+            })),
           });
-
-        const VectorDb = getVectorDbClass();
-        const hasVectorizedSpace = await VectorDb.hasNamespace(workspace.slug);
-        const embeddingsCount = await VectorDb.namespaceCount(workspace.slug);
-
-        if (!hasVectorizedSpace || embeddingsCount === 0)
-          return response.status(200).json({
-            results: [],
-            message: "No embeddings found for this workspace.",
-          });
-
-        const parseSimilarityThreshold = () => {
-          let input = parseFloat(scoreThreshold);
-          if (isNaN(input) || input < 0 || input > 1)
-            return workspace?.similarityThreshold ?? 0.25;
-          return input;
-        };
-
-        const parseTopN = () => {
-          let input = Number(topN);
-          if (isNaN(input) || input < 1) return workspace?.topN ?? 4;
-          return input;
-        };
-
-        const results = await VectorDb.performSimilaritySearch({
-          namespace: workspace.slug,
-          input: String(query),
-          LLMConnector: getLLMProvider(),
-          similarityThreshold: parseSimilarityThreshold(),
-          topN: parseTopN(),
-          rerank: workspace?.vectorSearchMode === "rerank",
-        });
-
-        response.status(200).json({
-          results: results.sources.map((source) => ({
-            id: source.id,
-            text: source.text,
-            metadata: {
-              url: source.url,
-              title: source.title,
-              author: source.docAuthor,
-              description: source.description,
-              docSource: source.docSource,
-              chunkSource: source.chunkSource,
-              published: source.published,
-              wordCount: source.wordCount,
-              tokenCount: source.token_count_estimate,
-            },
-            distance: source._distance,
-            score: source.score,
-          })),
-        });
-      } catch (e) {
-        console.error(e.message, e);
-        const vectorSearchError = vectorSearchErrorResponse(e);
-        if (vectorSearchError) {
-          return response
-            .status(vectorSearchError.status)
-            .json(vectorSearchError.body);
+        } catch (e) {
+          console.error(e.message, e);
+          const vectorSearchError = vectorSearchErrorResponse(e);
+          if (vectorSearchError) {
+            return response
+              .status(vectorSearchError.status)
+              .json(vectorSearchError.body);
+          }
+          response.sendStatus(500).end();
         }
-        response.sendStatus(500).end();
       }
-    }
+    )
   );
 }
 

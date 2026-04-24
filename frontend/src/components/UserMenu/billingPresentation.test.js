@@ -218,6 +218,20 @@ describe("billingPresentation", () => {
     );
   });
 
+  test("BillingShell centers the pricing gate in the viewport", () => {
+    const source = fs.readFileSync(
+      path.join(userMenuRoot, "BillingShell.jsx"),
+      "utf8"
+    );
+
+    const overlayStart = source.indexOf("{showPricingGate && (");
+    const overlayEnd = source.indexOf("<PricingGate", overlayStart);
+    const overlaySource = source.slice(overlayStart, overlayEnd);
+
+    expect(overlaySource).toContain("items-center");
+    expect(overlaySource).not.toContain("items-start");
+  });
+
   test("PricingGate forwards success and cancel URLs into Billing.createCheckoutSession", () => {
     const source = fs.readFileSync(
       path.join(

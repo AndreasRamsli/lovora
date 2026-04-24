@@ -3,25 +3,12 @@ class VoyageAiEmbedder {
     if (!process.env.VOYAGEAI_API_KEY)
       throw new Error("No Voyage AI API key was set.");
 
-    const {
-      VoyageEmbeddings,
-    } = require("@langchain/community/embeddings/voyage");
-
     this.model = process.env.EMBEDDING_MODEL_PREF || "voyage-3-lite";
-    const voyageConfig = {
-      apiKey: process.env.VOYAGEAI_API_KEY,
-      modelName: this.model,
-      // Voyage AI's limit per request is 128 https://docs.voyageai.com/docs/rate-limits#use-larger-batches
-      batchSize: 128,
-    };
-    this.documentVoyage = new VoyageEmbeddings({
-      ...voyageConfig,
-      inputType: "document",
-    });
-    this.queryVoyage = new VoyageEmbeddings({
-      ...voyageConfig,
-      inputType: "query",
-    });
+    this.apiKey = process.env.VOYAGEAI_API_KEY;
+    this.endpoint = "https://api.voyageai.com/v1/embeddings";
+    // Voyage AI caps embedding batches at 128 inputs and recommends using
+    // larger batches to avoid RPM limits.
+    this.batchSize = 128;
     this.embeddingMaxChunkLength = this.#getMaxEmbeddingLength();
   }
 
@@ -48,29 +35,67 @@ class VoyageAiEmbedder {
   }
 
   async embedTextInput(textInput) {
-    const result = Array.isArray(textInput)
-      ? await this.queryVoyage.embedDocuments(textInput)
-      : await this.queryVoyage.embedQuery(textInput);
+    const result = await this.#embed(
+      Array.isArray(textInput) ? textInput : [textInput],
+      "query"
+    );
 
     // If given an array return the native Array[Array] format since that should be the outcome.
     // But if given a single string, we need to flatten it so that we have a 1D array.
-    return (Array.isArray(textInput) ? result : result.flat?.() ?? result) || [];
+    return (
+      (Array.isArray(textInput) ? result : result.flat?.() ?? result) || []
+    );
   }
 
   async embedChunks(textChunks = []) {
     try {
-      const embeddings = await this.documentVoyage.embedDocuments(textChunks);
-      return embeddings;
+      return await this.#embed(textChunks, "document");
     } catch (error) {
       console.error("Voyage AI Failed to embed:", error);
-      if (
-        error.message.includes(
-          "Cannot read properties of undefined (reading '0')"
-        )
-      )
-        throw new Error("Voyage AI failed to embed: Rate limit reached");
       throw error;
     }
+  }
+
+  async #embed(textInputs = [], inputType = "document") {
+    if (!Array.isArray(textInputs) || textInputs.length === 0) return [];
+
+    const embeddings = [];
+    for (let index = 0; index < textInputs.length; index += this.batchSize) {
+      const batch = textInputs.slice(index, index + this.batchSize);
+      embeddings.push(...(await this.#embedBatch(batch, inputType)));
+    }
+    return embeddings;
+  }
+
+  async #embedBatch(textInputs = [], inputType = "document") {
+    const response = await fetch(this.endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: textInputs,
+        model: this.model,
+        input_type: inputType,
+      }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = payload?.detail || payload?.message || response.statusText;
+      const message = String(error);
+      if (
+        response.status === 429 ||
+        message.toLowerCase().includes("rate limit")
+      )
+        throw new Error("Voyage AI failed to embed: Rate limit reached");
+      throw new Error(`Voyage AI failed to embed: ${message}`);
+    }
+
+    return (payload?.data || [])
+      .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+      .map((item) => item.embedding);
   }
 }
 

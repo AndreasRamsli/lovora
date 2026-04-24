@@ -21,7 +21,10 @@ function getSyntheticEmailForLegacyUser(legacyUser = {}) {
   return `legacy-user-${legacyUser.id}@lovora.local`;
 }
 
-async function ensureBetterAuthUserForLegacyUser(legacyUser = {}, password = "") {
+async function ensureBetterAuthUserForLegacyUser(
+  legacyUser = {},
+  password = ""
+) {
   const { auth } = await getBetterAuthRuntime();
   const context = await auth.$context;
   const hashedPassword = await context.password.hash(String(password));
@@ -33,7 +36,8 @@ async function ensureBetterAuthUserForLegacyUser(legacyUser = {}, password = "")
     });
   }
 
-  const email = betterAuthUser?.email || getSyntheticEmailForLegacyUser(legacyUser);
+  const email =
+    betterAuthUser?.email || getSyntheticEmailForLegacyUser(legacyUser);
 
   if (!betterAuthUser) {
     betterAuthUser = await prisma.user.findUnique({
@@ -45,7 +49,8 @@ async function ensureBetterAuthUserForLegacyUser(legacyUser = {}, password = "")
     betterAuthUser = await context.internalAdapter.createUser({
       email,
       name:
-        normalizeIdentifier(legacyUser.username) || `legacy-user-${legacyUser.id}`,
+        normalizeIdentifier(legacyUser.username) ||
+        `legacy-user-${legacyUser.id}`,
       emailVerified: true,
     });
 
@@ -141,7 +146,8 @@ function getSetCookies(headers) {
 }
 
 async function toSerializableResponse(webResponse) {
-  const contentType = webResponse.headers.get("content-type") || JSON_CONTENT_TYPE;
+  const contentType =
+    webResponse.headers.get("content-type") || JSON_CONTENT_TYPE;
   const rawBody = await webResponse.text();
   let body = null;
 

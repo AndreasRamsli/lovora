@@ -5,6 +5,10 @@ import * as Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import System from "@/models/system";
 import showToast from "@/utils/toast";
+import {
+  canOpenFlagReview,
+  reviewButtonLabel,
+} from "./reviewQueuePresentation.js";
 
 const PAGE_SIZE = 20;
 
@@ -16,6 +20,10 @@ function formatDate(value) {
 function formatJoined(values = []) {
   if (!Array.isArray(values) || values.length === 0) return "--";
   return values.join(", ");
+}
+
+function formatThreadLabel(thread = null) {
+  return thread?.id ? `Thread #${thread.id}` : "Default thread";
 }
 
 function StatusBadge({ value = "safe" }) {
@@ -112,7 +120,7 @@ function ReviewConversation({ review, loading, error, onClose }) {
   return (
     <SectionShell
       title="Flagged Conversation"
-      description="This view is the only place raw conversation content is available to moderators. Access ends when the case is dismissed or resolved."
+      description="This case view is metadata-only. Raw prompts, responses, titles, and attachment names are intentionally unavailable to moderators."
       actions={
         review ? (
           <button
@@ -139,8 +147,8 @@ function ReviewConversation({ review, loading, error, onClose }) {
           <ErrorPanel message={error.error} code={error.code} />
         ) : (
           <div className="rounded-2xl border border-dashed border-white/10 p-6 text-sm text-theme-text-secondary">
-            Open a flagged case from the review queue to inspect the full
-            thread.
+            Open a flagged case from the review queue to inspect the case
+            summary.
           </div>
         )
       ) : (
@@ -167,7 +175,7 @@ function ReviewConversation({ review, loading, error, onClose }) {
                 Thread
               </div>
               <div className="pt-2 text-sm font-semibold text-theme-text-primary">
-                {review.thread?.name || "Default thread"}
+                {formatThreadLabel(review.thread)}
               </div>
             </div>
             <div className="rounded-2xl border border-white/10 p-4">
@@ -180,57 +188,36 @@ function ReviewConversation({ review, loading, error, onClose }) {
             </div>
           </div>
 
-          <div className="space-y-3">
-            {review.messages.map((message) => (
-              <div
-                key={message.id}
-                className={`rounded-2xl border p-4 ${message.isFlaggedChat ? "border-amber-500/40" : "border-white/10"}`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-theme-text-secondary">
-                      Chat #{message.id}
-                    </span>
-                    {message.isFlaggedChat && <StatusBadge value="review" />}
-                  </div>
-                  <div className="text-xs text-theme-text-secondary">
-                    {formatDate(message.createdAt)}
-                  </div>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="rounded-xl bg-theme-bg-secondary p-4">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-secondary">
-                      User
-                    </div>
-                    <pre className="whitespace-pre-wrap break-words pt-3 text-sm text-theme-text-primary">
-                      {message.prompt}
-                    </pre>
-                  </div>
-                  <div className="rounded-xl bg-theme-bg-secondary p-4">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-theme-text-secondary">
-                      Assistant
-                    </div>
-                    <pre className="whitespace-pre-wrap break-words pt-3 text-sm text-theme-text-primary">
-                      {message.responseText || "--"}
-                    </pre>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 pt-3 text-xs text-theme-text-secondary">
-                  <span>Provider: {message.provider || "--"}</span>
-                  <span>Model: {message.model || "--"}</span>
-                  <span>
-                    Attachments:{" "}
-                    {message.attachments?.length
-                      ? message.attachments
-                          .map((attachment) => attachment.name)
-                          .join(", ")
-                      : "--"}
-                  </span>
-                </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 p-4">
+              <div className="text-xs uppercase tracking-wide text-theme-text-secondary">
+                Flagged chat
               </div>
-            ))}
+              <div className="pt-2 text-sm font-semibold text-theme-text-primary">
+                #{review.flag?.chatId || "--"}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 p-4">
+              <div className="text-xs uppercase tracking-wide text-theme-text-secondary">
+                Risk
+              </div>
+              <div className="pt-2">
+                <StatusBadge value={review.flag?.riskLevel || "safe"} />
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 p-4">
+              <div className="text-xs uppercase tracking-wide text-theme-text-secondary">
+                Created
+              </div>
+              <div className="pt-2 text-sm font-semibold text-theme-text-primary">
+                {formatDate(review.flag?.createdAt)}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-dashed border-white/10 p-4 text-sm text-theme-text-secondary">
+            Admin review is limited to metadata and action history. Raw user
+            chat content is not accessible from this surface.
           </div>
         </div>
       )}
@@ -264,7 +251,7 @@ function FlagTable({
   return (
     <SectionShell
       title="Review Queue"
-      description="These cases are created from deterministic moderation rules. Raw thread access is available only from the dedicated flagged conversation viewer."
+      description="These cases are created from deterministic moderation rules. Review opens metadata only, based on backend availability, so moderators can inspect the case without raw thread access."
       actions={
         <select
           value={status}
@@ -342,7 +329,7 @@ function FlagTable({
                       <td className="px-4 py-3 align-top">
                         <div>{flag.workspace?.name || "deleted workspace"}</div>
                         <div className="pt-1 text-theme-text-secondary">
-                          {flag.thread?.name || "Default thread"}
+                          {formatThreadLabel(flag.thread)}
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -369,12 +356,12 @@ function FlagTable({
                       </td>
                       <td className="px-4 py-3 align-top">
                         <div className="flex flex-wrap gap-2">
-                          {flag.status === "open" && (
+                          {canOpenFlagReview(flag) && (
                             <button
                               onClick={() => onOpenReview(flag.id)}
                               className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-theme-text-secondary"
                             >
-                              Open flagged conversation
+                              {reviewButtonLabel(flag)}
                             </button>
                           )}
                           {flag.status === "open" && (
@@ -474,7 +461,7 @@ function MetadataTable({ chats, loading, error, offset, setOffset, canNext }) {
                       <td className="px-4 py-3">{chat.user?.username}</td>
                       <td className="px-4 py-3">{chat.workspace?.name}</td>
                       <td className="px-4 py-3">
-                        {chat.thread?.name || "Default thread"}
+                        {formatThreadLabel(chat.thread)}
                       </td>
                       <td className="px-4 py-3">{chat.provider || "--"}</td>
                       <td className="px-4 py-3">{chat.model || "--"}</td>

@@ -24,8 +24,8 @@ export default function AdminApiKeys() {
   const fetchExistingKeys = async () => {
     const user = userFromStorage();
     const Model = !!user ? Admin : System;
-    const { apiKeys: foundKeys } = await Model.getApiKeys();
-    setApiKeys(foundKeys);
+    const { apiKeys: foundKeys = [] } = await Model.getApiKeys();
+    setApiKeys(Array.isArray(foundKeys) ? foundKeys : []);
     setLoading(false);
   };
 
@@ -84,7 +84,7 @@ export default function AdminApiKeys() {
                 containerClassName="flex w-full"
               />
             ) : (
-              <table className="w-full text-xs text-left rounded-lg min-w-[640px] border-spacing-0">
+              <table className="w-full text-xs text-left rounded-lg min-w-[760px] border-spacing-0">
                 <thead className="text-theme-text-secondary text-xs leading-[18px] font-bold uppercase border-white/10 border-b">
                   <tr>
                     <th scope="col" className="px-6 py-3 rounded-tl-lg">
@@ -92,6 +92,9 @@ export default function AdminApiKeys() {
                     </th>
                     <th scope="col" className="px-6 py-3">
                       {t("api.table.by")}
+                    </th>
+                    <th scope="col" className="px-6 py-3">
+                      Type / Binding
                     </th>
                     <th scope="col" className="px-6 py-3">
                       {t("api.table.created")}
@@ -104,7 +107,7 @@ export default function AdminApiKeys() {
                 <tbody>
                   {apiKeys.length === 0 ? (
                     <tr className="bg-transparent text-theme-text-secondary text-sm font-medium">
-                      <td colSpan="4" className="px-6 py-4 text-center">
+                      <td colSpan="5" className="px-6 py-4 text-center">
                         No API keys found
                       </td>
                     </tr>

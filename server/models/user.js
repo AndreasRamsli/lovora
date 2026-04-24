@@ -23,7 +23,9 @@ const {
 const User = {
   usernameRegex: new RegExp(/^[a-z][a-z0-9._@-]*$/),
   normalizeAuthProvider: function (value = "legacy") {
-    const normalized = String(value || "legacy").trim().toLowerCase();
+    const normalized = String(value || "legacy")
+      .trim()
+      .toLowerCase();
     const allowed = ["legacy", "better-auth"];
     return allowed.includes(normalized) ? normalized : "legacy";
   },

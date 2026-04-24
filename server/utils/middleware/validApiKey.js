@@ -1,5 +1,6 @@
 const { ApiKey } = require("../../models/apiKeys");
 const { SystemSettings } = require("../../models/systemSettings");
+const { resolveApiKeyPrincipal } = require("../auth/principals");
 
 async function validApiKey(request, response, next) {
   const multiUserMode = await SystemSettings.isMultiUserMode();
@@ -22,7 +23,16 @@ async function validApiKey(request, response, next) {
     return;
   }
 
+  const principal = resolveApiKeyPrincipal(apiKey);
+  if (!principal) {
+    response.status(403).json({
+      error: "No valid api key found.",
+    });
+    return;
+  }
+
   response.locals.apiKey = apiKey;
+  response.locals.principal = principal;
   next();
 }
 

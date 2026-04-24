@@ -31,7 +31,12 @@ const WorkspaceThread = {
     return slugifyModule(...args);
   },
 
-  new: async function (workspace, userId = null, data = {}) {
+  new: async function (
+    workspace,
+    userId = null,
+    data = {},
+    apiSessionId = null
+  ) {
     try {
       const thread = await prisma.workspace_threads.create({
         data: {
@@ -40,6 +45,7 @@ const WorkspaceThread = {
             ? this.slugify(data.slug, { lowercase: true })
             : uuidv4(),
           user_id: userId ? Number(userId) : null,
+          api_session_id: apiSessionId ? String(apiSessionId) : null,
           workspace_id: workspace.id,
         },
       });

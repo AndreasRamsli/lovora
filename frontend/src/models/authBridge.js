@@ -64,7 +64,9 @@ const AuthBridge = {
         return {
           valid: res.ok,
           ...payload,
-          message: payload?.message || (!res.ok ? `Login failed (${res.status})` : null),
+          message:
+            payload?.message ||
+            (!res.ok ? `Login failed (${res.status})` : null),
         };
       })
       .catch((error) => ({

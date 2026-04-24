@@ -11,6 +11,8 @@ const { getBaseLLMProviderModel } = require("../utils/helpers");
 const {
   ConnectionStringParser,
 } = require("../utils/agents/aibitat/plugins/sql-agent/SQLConnectors/utils");
+const slugifyModule = require("slugify");
+const slugify = slugifyModule.default || slugifyModule;
 
 function isNullOrNaN(value) {
   if (value === null) return true;

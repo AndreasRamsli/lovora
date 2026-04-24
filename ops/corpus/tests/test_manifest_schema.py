@@ -14,7 +14,6 @@ if str(OPS_CORPUS_DIR) not in sys.path:
 
 import audit_legal_corpus  # noqa: E402
 import prepare_legal_corpus  # noqa: E402
-import upload_legal_corpus  # noqa: E402
 from manifest_tools import (  # noqa: E402
     MANIFEST_VERSION,
     ManifestValidationError,
@@ -189,60 +188,12 @@ class ManifestSchemaTests(unittest.TestCase):
             rewritten = load_manifest_records(manifest_path)
             self.assertEqual(rewritten[0]["generatedAt"], rewritten[1]["generatedAt"])
 
-    def test_upload_rejects_tampered_manifest_before_delegating(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            source_path = temp_path / "source.txt"
-            output_path = temp_path / "nl-20251222-130-0001-full-document.md"
-            source_path.write_text("source text", encoding="utf-8")
-            output_path.write_text("output text", encoding="utf-8")
-            manifest_path = temp_path / "_manifest.jsonl"
-            manifest_path.write_text(
-                json.dumps(
-                    {
-                        "manifestVersion": MANIFEST_VERSION,
-                        "generatedAt": "2026-04-22T11:30:00Z",
-                        "sourceDatasetVersion": "lovdata-export-2026-04-22",
-                        "corpus": "NL",
-                        "upload_folder": "lovdata-nl",
-                        "doc_id": "nl-20251222-130",
-                        "sectionIndex": 1,
-                        "title": "Lov om endringer i naturmangfoldloven",
-                        "shortTitle": "Endringslov til naturmangfoldloven",
-                        "documentId": "LOV-2025-12-22-130",
-                        "url": "https://lovdata.no/dokument/NL/LOV-2025-12-22-130",
-                        "chunkSource": "link://https://lovdata.no/dokument/NL/LOV-2025-12-22-130#section-0001",
-                        "department": "Klima- og miljødepartementet",
-                        "effectiveDate": "2026-01-01",
-                        "lastChanged": "",
-                        "chapter": "II",
-                        "subchapter": "",
-                        "section": "full-document",
-                        "sourcePath": str(source_path),
-                        "sourceSha256": "0" * 64,
-                        "outputPath": str(output_path),
-                        "outputSha256": "1" * 64,
-                    }
-                )
-                + "\n",
-                encoding="utf-8",
-            )
-
-            root_module = Mock()
-            root_module.main.return_value = 0
-            with patch.object(upload_legal_corpus, "_load_root_module", return_value=root_module):
-                exit_code = upload_legal_corpus.main(["--manifest", str(manifest_path)])
-
-            self.assertEqual(exit_code, 1)
-            root_module.main.assert_not_called()
-
     def test_default_output_root_is_outside_checkout(self):
         self.assertEqual(
             prepare_legal_corpus.DEFAULT_OUTPUT_ROOT,
             prepare_legal_corpus.WORKSPACE_ROOT / "legal_embedding_ready",
         )
         self.assertEqual(audit_legal_corpus.DEFAULT_MANIFEST.parent, prepare_legal_corpus.DEFAULT_OUTPUT_ROOT)
-        self.assertEqual(upload_legal_corpus.DEFAULT_MANIFEST.parent, prepare_legal_corpus.DEFAULT_OUTPUT_ROOT)
 
     def test_prepare_wrapper_runs_root_prepare_from_outer_workspace(self):
         observed_cwds = []

@@ -456,7 +456,9 @@ const Document = {
 
           if (embedded.includes(docLocation)) {
             result.embedded.push(workspace.slug);
-            console.log(`Document embedded into workspace ${workspace.slug}...`);
+            console.log(
+              `Document embedded into workspace ${workspace.slug}...`
+            );
           }
 
           if (skippedExisting.includes(docLocation)) {

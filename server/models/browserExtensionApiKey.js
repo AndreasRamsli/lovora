@@ -204,7 +204,9 @@ const BrowserExtensionApiKey = {
           user_id: null,
         },
       });
-      console.log("Successfully restored browser extension API keys to single-user mode");
+      console.log(
+        "Successfully restored browser extension API keys to single-user mode"
+      );
       return true;
     } catch (error) {
       console.error(

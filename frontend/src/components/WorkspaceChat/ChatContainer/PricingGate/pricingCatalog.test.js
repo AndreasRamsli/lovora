@@ -6,6 +6,7 @@ import {
   STUDENT_CALLOUT,
   TEAM_CONTACT_HREF,
   getDisplayPriceLabel,
+  getLocalizedPricingCatalog,
   getPrimaryAction,
 } from "./pricingCatalog.js";
 
@@ -128,6 +129,41 @@ describe("Lovora pricing catalog", () => {
       href: TEAM_CONTACT_HREF,
       label: "Contact sales",
     });
+  });
+
+  test("localizes the pricing ladder and team callout for Norwegian", () => {
+    const { pricingLadder, studentCallout } = getLocalizedPricingCatalog("nb");
+
+    expect(pricingLadder.map(({ name }) => name)).toEqual([
+      "Personlig start",
+      "Seriøs privatperson",
+      "Studentplan",
+    ]);
+    expect(pricingLadder[0]).toMatchObject({
+      subtitle: "Lett juridisk hjelp",
+      priceLabel: "249 kr / måned",
+      utilityLabel: "Årlig",
+      note: "For første gjennomgang",
+    });
+    expect(pricingLadder[0].features.map(({ text }) => text)).toContain(
+      "Still juridiske spørsmål"
+    );
+    expect(pricingLadder[1].primaryAction.label).toBe(
+      "Start med Seriøs privatperson"
+    );
+    expect(studentCallout).toMatchObject({
+      title: "Profesjonell / Team",
+      priceLabel: "999 kr / måned",
+      ctaLabel: "Kontakt salg",
+    });
+  });
+
+  test("falls back to English pricing content for non-Norwegian languages", () => {
+    const { pricingLadder, studentCallout } = getLocalizedPricingCatalog("en");
+
+    expect(pricingLadder[0].name).toBe("Personal Entry");
+    expect(pricingLadder[0].priceLabel).toBe("249 kr / month");
+    expect(studentCallout.ctaLabel).toBe("Contact sales");
   });
 });
 

@@ -76,6 +76,11 @@ deploy_runtime_image() {
 
   LOVORA_RUNTIME_IMAGE="$runtime_image" \
     docker compose -f "$compose_file" up -d --no-build
+
+  # File bind mounts keep the original inode until the service is recreated.
+  # Recreate Caddy so checked-out Caddyfile updates are applied during rollout.
+  LOVORA_RUNTIME_IMAGE="$runtime_image" \
+    docker compose -f "$compose_file" up -d --no-build --force-recreate --no-deps caddy
 }
 
 run_smoke_checks() {
