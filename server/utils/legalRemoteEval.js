@@ -40,11 +40,18 @@ function formatStatuteLovdataId(corpus, year, month, day, sequence) {
 function canonicalDocument(value = "") {
   const source = String(value).toLowerCase();
   const match = source.match(
-    /\/dokument\/(hrstr|trr|emdn|nl|sf)\/(avgjorelse|lov|forskrift)\/([a-z0-9-]+)(?=[/?#]|$)/
+    /\/dokument\/(hrstr|trr|emdn|nl|sf|lti)\/(avgjorelse|lov|forskrift)\/([a-z0-9-]+)(?=[/?#]|$)/
   );
   if (match) {
     const [, rawCorpus, documentType, documentId] = match;
-    const corpus = rawCorpus === "hrstr" ? "HRA" : rawCorpus.toUpperCase();
+    const corpus =
+      rawCorpus === "hrstr"
+        ? "HRA"
+        : rawCorpus === "lti"
+          ? documentType === "forskrift"
+            ? "SF"
+            : "NL"
+          : rawCorpus.toUpperCase();
     const statuteMatch = documentId.match(/^(\d{4})-(\d{2})-(\d{2})-(\d+)$/);
     return {
       corpus,
@@ -81,6 +88,7 @@ function canonicalDocument(value = "") {
 function deriveLovdataId(result = {}) {
   if (result.lovdataId) return String(result.lovdataId).toLowerCase();
   const metadata = result.metadata || {};
+  if (metadata.lovdataId) return String(metadata.lovdataId).toLowerCase();
   for (const value of [
     metadata.chunkSource,
     metadata.url,
@@ -94,12 +102,16 @@ function deriveLovdataId(result = {}) {
 }
 
 function deriveCorpus(result = {}) {
-  if (result.corpus) return String(result.corpus).toUpperCase();
+  const resultCorpus = result.corpus ? String(result.corpus).toUpperCase() : "";
+  if (resultCorpus && resultCorpus !== "LTI") return resultCorpus;
   const metadata = result.metadata || {};
-  if (metadata.corpus) return String(metadata.corpus).toUpperCase();
+  const metadataCorpus = metadata.corpus
+    ? String(metadata.corpus).toUpperCase()
+    : "";
   const lovdataId = deriveLovdataId(result);
   if (lovdataId?.startsWith("nl-")) return "NL";
   if (lovdataId?.startsWith("sf-")) return "SF";
+  if (metadataCorpus && metadataCorpus !== "LTI") return metadataCorpus;
   for (const value of [
     metadata.chunkSource,
     metadata.url,
@@ -133,9 +145,9 @@ function matchesSingleExpectation(result, expect = {}) {
     return false;
   if (
     expect.urlIncludes &&
-    !String(result.url)
-      .toLowerCase()
-      .includes(String(expect.urlIncludes).toLowerCase())
+    ![result.url, result.chunkSource].some((value) =>
+      String(value).toLowerCase().includes(String(expect.urlIncludes).toLowerCase())
+    )
   )
     return false;
   if (

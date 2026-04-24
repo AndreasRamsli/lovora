@@ -74,6 +74,46 @@ describe("legalRemoteEval", () => {
     expect(rank).toBe(2);
   });
 
+  test("rankOfFirstMatch matches direct ingest LTI metadata", () => {
+    const rank = rankOfFirstMatch(
+      [
+        {
+          metadata: {
+            url: "https://lovdata.no/dokument/LTI/lov/2025-12-22-127",
+            lovdataId: "nl-20251222-127",
+            corpus: "NL",
+          },
+        },
+      ],
+      {
+        lovdataId: "nl-20251222-127",
+        corpus: "NL",
+        urlIncludes: "/dokument/LTI/lov/2025-12-22-127",
+      }
+    );
+    expect(rank).toBe(1);
+  });
+
+  test("rankOfFirstMatch derives corpus from LTI metadata and accepts chunkSource URLs", () => {
+    const rank = rankOfFirstMatch(
+      [
+        {
+          metadata: {
+            chunkSource:
+              "link://https://lovdata.no/dokument/LTI/forskrift/2025-10-29-2134#bundled-document-part-1",
+            corpus: "LTI",
+          },
+        },
+      ],
+      {
+        lovdataId: "sf-20251029-2134",
+        corpus: "SF",
+        urlIncludes: "/dokument/LTI/forskrift/2025-10-29-2134",
+      }
+    );
+    expect(rank).toBe(1);
+  });
+
   test("computeMetrics reports hit rates and mrr", () => {
     expect(
       computeMetrics(

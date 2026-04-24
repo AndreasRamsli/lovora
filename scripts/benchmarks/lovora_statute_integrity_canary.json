@@ -1,0 +1,33 @@
+[
+  {
+    "id": "nl_husleietvistutvalget_2025_127",
+    "query": "Hvilken endringslov endrer husleieloven § 12-5 om Husleietvistutvalget, og sier at Husleietvistutvalget behandler tvister etter husleieloven og lov 16. juni 1939 nr. 6 om husleie?",
+    "tags": ["nl", "statute-integrity", "amending", "lov-2025-12-22-127"],
+    "notes": "Regression canary for missing I/II content in LOV-2025-12-22-127 after Lovdata formatting.",
+    "expect": {
+      "lovdataId": "nl-20251222-127",
+      "corpus": "NL",
+      "urlIncludes": "/dokument/LTI/lov/2025-12-22-127"
+    }
+  },
+  {
+    "id": "nl_skattebetalingsloven_2025_120",
+    "query": "Hvilken endringslov gjelder endringer i skattebetalingsloven om utsatt betaling av formuesskatt på virksomhetsformue?",
+    "tags": ["nl", "statute-integrity", "amending"],
+    "expect": {
+      "lovdataId": "nl-20251222-120",
+      "corpus": "NL",
+      "urlIncludes": "/dokument/LTI/lov/2025-12-22-120"
+    }
+  },
+  {
+    "id": "sf_kostra_2025_2134",
+    "query": "Hvilken endringsforskrift gjelder rapportering fra kommuner og fylkeskommuner mv. og endringer i KOSTRA-forskriften fra 29. oktober 2025?",
+    "tags": ["sf", "statute-integrity", "amending"],
+    "expect": {
+      "lovdataId": "sf-20251029-2134",
+      "corpus": "SF",
+      "urlIncludes": "/dokument/LTI/forskrift/2025-10-29-2134"
+    }
+  }
+]
