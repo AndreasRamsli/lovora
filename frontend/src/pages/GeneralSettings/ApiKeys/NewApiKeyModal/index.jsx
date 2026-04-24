@@ -6,7 +6,7 @@ import { userFromStorage } from "@/utils/request";
 import System from "@/models/system";
 import showToast from "@/utils/toast";
 import { useTranslation } from "react-i18next";
-import { buildCreateApiKeyPayload } from "./apiKeyFormState";
+import { buildCreateApiKeyPayload } from "../apiKeyFormState";
 
 export default function NewApiKeyModal({ closeModal, onSuccess }) {
   const { t } = useTranslation();
