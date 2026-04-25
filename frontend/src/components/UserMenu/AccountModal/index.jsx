@@ -1,4 +1,3 @@
-import { useLanguageOptions } from "@/hooks/useLanguageOptions";
 import usePfp from "@/hooks/usePfp";
 import System from "@/models/system";
 import Appearance from "@/models/appearance";
@@ -6,7 +5,6 @@ import { AUTH_USER } from "@/utils/constants";
 import showToast from "@/utils/toast";
 import { Info, Plus, X } from "@phosphor-icons/react";
 import ModalWrapper from "@/components/ModalWrapper";
-import { useThemeContext } from "@/ThemeContext";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { Tooltip } from "react-tooltip";
@@ -192,15 +190,9 @@ export default function AccountModal({ user, hideModal }) {
                   defaultValue={user.bio}
                 />
               </div>
-              <div className="flex gap-x-16">
-                <div className="flex flex-col gap-y-6">
-                  <ThemePreference />
-                  <LanguagePreference />
-                </div>
-                <div className="flex flex-col gap-y-6">
-                  <AutoSubmitPreference />
-                  <AutoSpeakPreference />
-                </div>
+              <div className="flex flex-col gap-y-6 md:flex-row md:gap-x-16">
+                <AutoSubmitPreference />
+                <AutoSpeakPreference />
               </div>
             </div>
             <div className="flex justify-between items-center border-t border-theme-modal-border pt-4 p-6">
@@ -222,67 +214,6 @@ export default function AccountModal({ user, hideModal }) {
         </div>
       </div>
     </ModalWrapper>
-  );
-}
-
-function LanguagePreference() {
-  const {
-    currentLanguage,
-    supportedLanguages,
-    getLanguageName,
-    changeLanguage,
-  } = useLanguageOptions();
-  const { t } = useTranslation();
-  return (
-    <div>
-      <label
-        htmlFor="userLang"
-        className="block mb-2 text-sm font-medium text-white"
-      >
-        {t("profile_settings.language")}
-      </label>
-      <select
-        name="userLang"
-        className="border-none bg-theme-settings-input-bg w-fit mt-2 px-4 focus:outline-primary-button active:outline-primary-button outline-none text-white text-sm rounded-lg block py-2"
-        defaultValue={currentLanguage || "en"}
-        onChange={(e) => changeLanguage(e.target.value)}
-      >
-        {supportedLanguages.map((lang) => {
-          return (
-            <option key={lang} value={lang}>
-              {getLanguageName(lang)}
-            </option>
-          );
-        })}
-      </select>
-    </div>
-  );
-}
-
-function ThemePreference() {
-  const { theme, setTheme, availableThemes } = useThemeContext();
-  const { t } = useTranslation();
-  return (
-    <div>
-      <label
-        htmlFor="theme"
-        className="block mb-2 text-sm font-medium text-white"
-      >
-        {t("profile_settings.theme")}
-      </label>
-      <select
-        name="theme"
-        value={theme}
-        onChange={(e) => setTheme(e.target.value)}
-        className="border-none bg-theme-settings-input-bg w-fit px-4 focus:outline-primary-button active:outline-primary-button outline-none text-white text-sm rounded-lg block py-2"
-      >
-        {Object.entries(availableThemes).map(([key, value]) => (
-          <option key={key} value={key}>
-            {value}
-          </option>
-        ))}
-      </select>
-    </div>
   );
 }
 
