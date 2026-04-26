@@ -10,11 +10,12 @@ function readSource(...segments) {
 }
 
 describe("top-right settings preferences", () => {
-  test("UserButton owns settings preferences without rendering an extra settings button", () => {
+  test("TextSizeMenu owns theme and language preferences", () => {
     const source = readSource(
       "components",
-      "UserMenu",
-      "UserButton",
+      "WorkspaceChat",
+      "ChatContainer",
+      "TextSizeMenu",
       "index.jsx"
     );
 
@@ -22,6 +23,23 @@ describe("top-right settings preferences", () => {
     expect(source).toContain("useLanguageOptions");
     expect(source).toContain("availableThemes");
     expect(source).toContain("supportedLanguages");
+    expect(source).toContain("useUser");
+    expect(source).toContain("paths.settings.interface()");
+  });
+
+  test("UserButton keeps the profile dropdown account-focused", () => {
+    const source = readSource(
+      "components",
+      "UserMenu",
+      "UserButton",
+      "index.jsx"
+    );
+
+    expect(source).not.toContain("useThemeContext");
+    expect(source).not.toContain("useLanguageOptions");
+    expect(source).not.toContain("availableThemes");
+    expect(source).not.toContain("supportedLanguages");
+    expect(source).not.toContain("QuickPreferences");
     expect(source).not.toContain(
       'import SettingsButton from "@/components/SettingsButton"'
     );
