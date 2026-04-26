@@ -85,6 +85,7 @@
     "question": "Hva sier forarbeidene til endringsloven om hvorfor Husleietvistutvalget skal være faglig uavhengig?",
     "sourceType": "alpha_seed",
     "tags": ["nl", "answer-contract", "refusal-or-caveat"],
+    "expectedBehavior": "refusal",
     "requiredTerms": ["forarbeider", "ikke"],
     "requiredCitationPatterns": ["lov 22. desember 2025 nr. 127"],
     "minContextRefs": 1

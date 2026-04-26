@@ -29,6 +29,122 @@ describe("legalAnswerEval", () => {
     expect(result.contextRefs).toEqual(["0", "1"]);
   });
 
+  test("accepts Markdown-formatted Norwegian answer headings", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "markdown-headings",
+        requiredTerms: ["Husleietvistutvalget"],
+        requiredCitationPatterns: ["husleieloven § 12-5"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "**Kort svar:** Husleietvistutvalget er regulert i husleieloven § 12-5 [CONTEXT 0].\n\n" +
+          "**Kildegrunnlag:** Husleieloven § 12-5 første ledd [CONTEXT 0].\n\n" +
+          "**Vurdering:** Min vurdering er at kilden gir direkte støtte for svaret [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.checks.hasNorwegianHeadings.passed).toBe(true);
+  });
+
+  test("requires lawyer-style citations instead of bare paragraph references", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "bare-paragraph",
+        requiredTerms: ["sakskostnader"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Sakskostnader reguleres i § 20-2 første ledd [CONTEXT 0]. " +
+          "Kildegrunnlag: § 20-2 første ledd [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.checks.hasLegalCitation.passed).toBe(false);
+  });
+
+  test("recognizes court-style case citations with paragraph references", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "court-citation",
+        requiredTerms: ["tungtveiende grunner"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Terskelen for sakskostnadsansvar etter tungtveiende grunner er relativt høy, jf. HR-2020-2017-A avsnitt 54 [CONTEXT 0]. " +
+          "Kildegrunnlag: HR-2020-2017-A avsnitt 54 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.checks.hasLegalCitation.passed).toBe(true);
+  });
+
+  test("passes expected source-gap refusals when they are cited and explicit", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "expected-refusal",
+        expectedBehavior: "refusal",
+        requiredCitationPatterns: ["lov 22. desember 2025 nr. 127"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Jeg kan ikke svare sikkert ut fra kildene i konteksten. " +
+          "Kildegrunnlag: lov 22. desember 2025 nr. 127 [CONTEXT 0]. " +
+          "Forbehold: Konteksten inneholder ikke forarbeidene som forklarer bakgrunnen [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.triage).toBe("expected_refusal");
+    expect(result.checks.hasSourceGroundedRefusal.passed).toBe(true);
+  });
+
+  test("classifies unexpected source-gap refusals as retrieval debug cases", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "unexpected-refusal",
+        requiredTerms: ["8 520"],
+        requiredCitationPatterns: ["forskrift 16. januar 2026 nr. 54", "§ 11-1"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Jeg finner ikke nok relevant kildemateriale i konteksten til å svare sikkert. " +
+          "Kildegrunnlag: forskrift 16. januar 2026 nr. 54 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.triage).toBe("retrieval_debug");
+  });
+
+  test("does not classify an answered response as retrieval debug just because it has caveats", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "answered-with-caveat",
+        requiredTerms: ["8 520"],
+        requiredCitationPatterns: ["forskrift 16. januar 2026 nr. 54"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Gebyret er kr 8 520 etter FOR-2026-01-16-54 § 11-1 [CONTEXT 0]. " +
+          "Kildegrunnlag: FOR-2026-01-16-54 § 11-1 [CONTEXT 0]. " +
+          "Forbehold: Konteksten inneholder ikke senere endringer [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.triage).toBe("citation_quality");
+  });
+
   test("fails when an answer only has generic context references and no legal citation", () => {
     const result = evaluateAnswerCase(
       {

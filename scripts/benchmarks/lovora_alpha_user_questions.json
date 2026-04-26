@@ -1,0 +1,93 @@
+[
+  {
+    "id": "user_sakskostnader_tvisteloven_20_2",
+    "question": "Jeg tapte ikke hele saken, men motparten krever sakskostnader. Hva er hovedregelen i tvisteloven § 20-2, og hva betyr det å ha vunnet saken?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "civil-procedure"],
+    "requiredTerms": ["sakskostnader", "vunnet saken"],
+    "requiredCitationPatterns": ["tvisteloven § 20-2"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "user_sakskostnader_tvisteloven_20_3",
+    "question": "Når kan en part få sakskostnader etter tvisteloven § 20-3 selv om ingen har vunnet saken fullt ut?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "civil-procedure"],
+    "requiredTerms": ["medhold av betydning", "tungtveiende grunner"],
+    "requiredCitationPatterns": ["tvisteloven § 20-3"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "user_husleietvistutvalget_uavhengighet",
+    "question": "Kan du forklare kort hva endringen om Husleietvistutvalgets uavhengighet går ut på, og hvilken lov som gjør endringen?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "housing", "amending"],
+    "requiredTerms": ["Husleietvistutvalget", "faglig uavhengig"],
+    "requiredCitationPatterns": ["husleieloven § 12-5", "lov 22. desember 2025 nr. 127"],
+    "minContextRefs": 2
+  },
+  {
+    "id": "user_formuesskatt_betalingsutsettelse",
+    "question": "Jeg eier virksomhet og lurer på den nye regelen om utsatt betaling av formuesskatt. Hva sier skattebetalingsloven om vilkåret?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "tax", "rank-watch"],
+    "requiredTerms": ["formuesskatt", "virksomhetsformue", "utsatt betaling"],
+    "requiredCitationPatterns": ["skattebetalingsloven § 9-3", "lov 22. desember 2025 nr. 120"],
+    "minContextRefs": 2
+  },
+  {
+    "id": "user_formuesskatt_forfall_10_51",
+    "question": "Når må utsatt formuesskatt og renter betales etter den nye regelen i skattebetalingsloven?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "tax"],
+    "requiredTerms": ["31. mai", "tredje året", "utsatt formuesskatt"],
+    "requiredCitationPatterns": ["skattebetalingsloven § 10-51", "skattebetalingsloven § 9-3"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "user_gebyr_statens_vegvesen_11_1",
+    "question": "Hva blir gebyret for godkjenning som kursarrangør etter endringen i Statens vegvesens gebyrforskrift?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "transport", "regulation"],
+    "requiredTerms": ["kursarrangør", "8 520"],
+    "requiredCitationPatterns": ["forskrift 16. januar 2026 nr. 54", "§ 11-1"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "user_gebyr_statens_vegvesen_ikraft",
+    "question": "Når trer endringene i Statens vegvesens gebyrforskrift fra januar 2026 i kraft?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "transport", "regulation"],
+    "requiredTerms": ["1. februar 2026", "trer i kraft"],
+    "requiredCitationPatterns": ["forskrift 16. januar 2026 nr. 54"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "user_kostra_rapportering_2026",
+    "question": "Hva endrer KOSTRA-endringsforskriften fra 29. oktober 2025, og gjelder endringen rapporteringsåret 2026?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "municipal-reporting", "regulation"],
+    "requiredTerms": ["KOSTRA-forskriften", "rapporteringsåret 2026"],
+    "requiredCitationPatterns": ["forskrift 29. oktober 2025 nr. 2134"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "user_arbeidsmiljo_alder_ikraft",
+    "question": "Når trer endringsloven om avvikling av bedriftsinterne aldersgrenser i kraft?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "employment", "amending"],
+    "requiredTerms": ["Kongen", "bestemmer"],
+    "requiredCitationPatterns": ["lov 27. mai 2025 nr. 17"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "user_forarbeider_kildegap_husleie",
+    "question": "Sier kildene noe om forarbeidene bak hvorfor Husleietvistutvalget skal være faglig uavhengig?",
+    "sourceType": "alpha_user",
+    "tags": ["user-style", "citation-style", "refusal-or-caveat"],
+    "expectedBehavior": "refusal",
+    "requiredTerms": ["forarbeider", "konteksten"],
+    "requiredCitationPatterns": ["lov 22. desember 2025 nr. 127"],
+    "minContextRefs": 1
+  }
+]

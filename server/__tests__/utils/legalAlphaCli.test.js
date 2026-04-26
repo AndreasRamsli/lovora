@@ -17,6 +17,11 @@ const {
 const {
   buildQuestionCases,
 } = require("../../../scripts/build-alpha-source-question-set.cjs");
+const {
+  parseArgs: parsePromptArgs,
+  buildWorkspaceUpdateRequest,
+  promptDigest,
+} = require("../../../scripts/apply-alpha-system-prompt.cjs");
 
 describe("legal alpha CLI input errors", () => {
   test("answer contract CLI can write an answer template", () => {
@@ -181,5 +186,72 @@ describe("legal alpha CLI input errors", () => {
       sessionId: "prefix-case-a",
       reset: true,
     });
+  });
+
+  test("alpha system prompt requires Norwegian output and lawyer-style citations", () => {
+    const promptPath = path.resolve("scripts/prompts/lovora_alpha_system_prompt.txt");
+    const prompt = fs.readFileSync(promptPath, "utf8");
+
+    expect(prompt).toContain("Output language is Norwegian Bokmal");
+    expect(prompt).toContain("tvisteloven § 20-2 første ledd");
+    expect(prompt).toContain("forskrift 16. januar 2026 nr. 54 § 11-1");
+    expect(prompt).toContain("[CONTEXT n]");
+    expect(prompt).toMatch(/Do not use raw Lovdata IDs/i);
+  });
+
+  test("alpha user-question benchmark captures realistic citation expectations", () => {
+    const benchmark = JSON.parse(
+      fs.readFileSync(
+        path.resolve("scripts/benchmarks/lovora_alpha_user_questions.json"),
+        "utf8"
+      )
+    );
+
+    expect(benchmark.length).toBeGreaterThanOrEqual(8);
+    expect([...new Set(benchmark.flatMap((item) => item.tags))]).toEqual(
+      expect.arrayContaining(["user-style", "citation-style"])
+    );
+    expect(benchmark).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "user_sakskostnader_tvisteloven_20_2",
+          requiredCitationPatterns: expect.arrayContaining([
+            "tvisteloven § 20-2",
+          ]),
+        }),
+        expect.objectContaining({
+          id: "user_gebyr_statens_vegvesen_11_1",
+          requiredCitationPatterns: expect.arrayContaining([
+            "forskrift 16. januar 2026 nr. 54",
+            "§ 11-1",
+          ]),
+        }),
+      ])
+    );
+  });
+
+  test("alpha prompt apply CLI builds a management update request without leaking keys", () => {
+    const prompt = "System prompt";
+    const args = parsePromptArgs([
+      "--workspace",
+      "lovora-alpha",
+      "--api-base",
+      "https://app.lovora.no/api/",
+      "--management-api-key",
+      "secret-management-key",
+      "--prompt-file",
+      "scripts/prompts/lovora_alpha_system_prompt.txt",
+      "--dry-run",
+    ]);
+
+    const request = buildWorkspaceUpdateRequest(args, prompt);
+
+    expect(args.dryRun).toBe(true);
+    expect(request.url).toBe("https://app.lovora.no/api/v1/workspace/lovora-alpha/update");
+    expect(request.options.method).toBe("POST");
+    expect(request.options.headers.Authorization).toBe("Bearer secret-management-key");
+    expect(JSON.parse(request.options.body)).toEqual({ openAiPrompt: prompt });
+    expect(promptDigest(prompt)).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(request.options.body)).not.toContain("secret-management-key");
   });
 });

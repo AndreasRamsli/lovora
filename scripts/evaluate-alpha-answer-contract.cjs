@@ -135,15 +135,24 @@ function renderMarkdown(report, args) {
   lines.push(`- Passed: \`${report.summary.passed}\``);
   lines.push(`- Failed: \`${report.summary.failed}\``);
   lines.push(`- Pass rate: \`${report.summary.passRate}\``);
+  if (report.summary.triage) {
+    lines.push(
+      `- Triage: \`${Object.entries(report.summary.triage)
+        .map(([name, count]) => `${name}: ${count}`)
+        .join(", ")}\``
+    );
+  }
   lines.push("");
-  lines.push("| case | status | failed checks |");
-  lines.push("| --- | --- | --- |");
+  lines.push("| case | status | triage | failed checks |");
+  lines.push("| --- | --- | --- | --- |");
   for (const item of report.cases) {
     const failedChecks = Object.values(item.checks)
       .filter((check) => !check.passed)
       .map((check) => check.name)
       .join(", ");
-    lines.push(`| ${item.id} | ${item.passed ? "pass" : "fail"} | ${failedChecks || "-"} |`);
+    lines.push(
+      `| ${item.id} | ${item.passed ? "pass" : "fail"} | ${item.triage || "-"} | ${failedChecks || "-"} |`
+    );
   }
   lines.push("");
   return lines.join("\n");
