@@ -1,0 +1,9 @@
+[
+  {
+    "id": "nl_skattebetalingsloven_2025_120",
+    "reason": "Matched at rank 2 during live alpha verification; acceptable inside top 3, but should be watched before cohort expansion.",
+    "targetRank": 1,
+    "maxRank": 3,
+    "severity": "warn"
+  }
+]

@@ -1,0 +1,1138 @@
+[
+  {
+    "id": "sf_20260108_0016_effective_date",
+    "question": "Når trer endringene i Forskrift om endring i forskrift om opptak til studier og emner ved Universitetet i Stavanger i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "sf",
+      "answer-contract",
+      "source-mined",
+      "amending_regulation"
+    ],
+    "source": {
+      "corpus": "SF",
+      "lovdataId": "sf-20260108-0016",
+      "title": "Forskrift om endring i forskrift om opptak til studier og emner ved Universitetet i Stavanger",
+      "shortTitle": null,
+      "url": "https://lovdata.no/dokument/LTI/forskrift/2026-01-08-16",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/forskrift/2026-01-08-16#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "trer i kraft"
+    ],
+    "requiredCitationPatterns": [
+      "forskrift 8. januar 2026 nr. 16"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "sf_20260116_0054_section_11_1",
+    "question": "Hva sier Forskrift om endring i forskrift om gebyr på tjenester utført av Statens vegvesen på trafikant- og kjøretøyområdet om § 11-1?",
+    "sourceType": "source_mined",
+    "tags": [
+      "sf",
+      "answer-contract",
+      "source-mined",
+      "amending_regulation"
+    ],
+    "source": {
+      "corpus": "SF",
+      "lovdataId": "sf-20260116-0054",
+      "title": "Forskrift om endring i forskrift om gebyr på tjenester utført av Statens vegvesen på trafikant- og kjøretøyområdet",
+      "shortTitle": null,
+      "url": "https://lovdata.no/dokument/LTI/forskrift/2026-01-16-54",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/forskrift/2026-01-16-54#bundled-document-part-2"
+    },
+    "requiredTerms": [
+      "Gebyrsatsene",
+      "følger",
+      "Godkjenning"
+    ],
+    "requiredCitationPatterns": [
+      "§ 11-1",
+      "forskrift 16. januar 2026 nr. 54"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "sf_20260116_0054_section_15_1",
+    "question": "Hva sier Forskrift om endring i forskrift om gebyr på tjenester utført av Statens vegvesen på trafikant- og kjøretøyområdet om § 15-1?",
+    "sourceType": "source_mined",
+    "tags": [
+      "sf",
+      "answer-contract",
+      "source-mined",
+      "amending_regulation"
+    ],
+    "source": {
+      "corpus": "SF",
+      "lovdataId": "sf-20260116-0054",
+      "title": "Forskrift om endring i forskrift om gebyr på tjenester utført av Statens vegvesen på trafikant- og kjøretøyområdet",
+      "shortTitle": null,
+      "url": "https://lovdata.no/dokument/LTI/forskrift/2026-01-16-54",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/forskrift/2026-01-16-54#bundled-document-part-2"
+    },
+    "requiredTerms": [
+      "Gebyrsatsene",
+      "følger",
+      "Godkjenning"
+    ],
+    "requiredCitationPatterns": [
+      "§ 15-1",
+      "forskrift 16. januar 2026 nr. 54"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "sf_20260116_0054_effective_date",
+    "question": "Når trer endringene i Forskrift om endring i forskrift om gebyr på tjenester utført av Statens vegvesen på trafikant- og kjøretøyområdet i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "sf",
+      "answer-contract",
+      "source-mined",
+      "amending_regulation"
+    ],
+    "source": {
+      "corpus": "SF",
+      "lovdataId": "sf-20260116-0054",
+      "title": "Forskrift om endring i forskrift om gebyr på tjenester utført av Statens vegvesen på trafikant- og kjøretøyområdet",
+      "shortTitle": null,
+      "url": "https://lovdata.no/dokument/LTI/forskrift/2026-01-16-54",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/forskrift/2026-01-16-54#bundled-document-part-2"
+    },
+    "requiredTerms": [
+      "trer i kraft"
+    ],
+    "requiredCitationPatterns": [
+      "forskrift 16. januar 2026 nr. 54"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250527_017_section_23",
+    "question": "Hva sier Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl. om § 23?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250527-017",
+      "title": "Lov om endringer i arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl. og lov om Statens pensjonskasse (avvikling av bedriftsinterne aldersgrenser og økning av den alminnelige aldersgrensen i staten)",
+      "shortTitle": "Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-05-27-17",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-05-27-17#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "opptatt",
+      "medlem",
+      "Statens"
+    ],
+    "requiredCitationPatterns": [
+      "§ 23",
+      "lov 27. mai 2025 nr. 17"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250527_017_section_2",
+    "question": "Hva sier Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl. om § 2?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250527-017",
+      "title": "Lov om endringer i arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl. og lov om Statens pensjonskasse (avvikling av bedriftsinterne aldersgrenser og økning av den alminnelige aldersgrensen i staten)",
+      "shortTitle": "Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-05-27-17",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-05-27-17#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "alminnelige",
+      "aldersgrensen",
+      "fastsettes"
+    ],
+    "requiredCitationPatterns": [
+      "§ 2",
+      "lov 27. mai 2025 nr. 17"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250527_017_section_15_13",
+    "question": "Hva sier Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl. om § 15-13?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250527-017",
+      "title": "Lov om endringer i arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl. og lov om Statens pensjonskasse (avvikling av bedriftsinterne aldersgrenser og økning av den alminnelige aldersgrensen i staten)",
+      "shortTitle": "Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-05-27-17",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-05-27-17#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "lavere",
+      "aldersgrensen",
+      "saklig"
+    ],
+    "requiredCitationPatterns": [
+      "§ 15-13",
+      "lov 27. mai 2025 nr. 17"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250527_017_effective_date",
+    "question": "Når trer endringene i Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl. i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250527-017",
+      "title": "Lov om endringer i arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl. og lov om Statens pensjonskasse (avvikling av bedriftsinterne aldersgrenser og økning av den alminnelige aldersgrensen i staten)",
+      "shortTitle": "Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-05-27-17",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-05-27-17#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "Kongen",
+      "bestemmer"
+    ],
+    "requiredCitationPatterns": [
+      "lov 27. mai 2025 nr. 17"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250527_017_amendment_summary",
+    "question": "Hvilke hovedendringer fremgår av Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl.?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250527-017",
+      "title": "Lov om endringer i arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl. og lov om Statens pensjonskasse (avvikling av bedriftsinterne aldersgrenser og økning av den alminnelige aldersgrensen i staten)",
+      "shortTitle": "Endringslov til arbeidsmiljøloven, lov om aldersgrenser for statsansatte m.fl.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-05-27-17",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-05-27-17#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "endringer",
+      "arbeidsmiljøloven",
+      "aldersgrenser",
+      "statsansatte"
+    ],
+    "requiredCitationPatterns": [
+      "lov 27. mai 2025 nr. 17"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250606_029_section_46",
+    "question": "Hva sier Endringslov til havressurslova om § 46?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250606-029",
+      "title": "Lov om endringer i havressurslova (hjemmel for Fiskeridirektoratet til å beslaglegge og destruere eller avhende umerket fiskeredskap)",
+      "shortTitle": "Endringslov til havressurslova",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-06-29",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-06-29#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "eigaren",
+      "identifiserast",
+      "Fiskeridirektoratet"
+    ],
+    "requiredCitationPatterns": [
+      "§ 46",
+      "lov 6. juni 2025 nr. 29"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250606_029_effective_date",
+    "question": "Når trer endringene i Endringslov til havressurslova i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250606-029",
+      "title": "Lov om endringer i havressurslova (hjemmel for Fiskeridirektoratet til å beslaglegge og destruere eller avhende umerket fiskeredskap)",
+      "shortTitle": "Endringslov til havressurslova",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-06-29",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-06-29#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "Kongen",
+      "bestemmer"
+    ],
+    "requiredCitationPatterns": [
+      "lov 6. juni 2025 nr. 29"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250606_029_amendment_summary",
+    "question": "Hvilke hovedendringer fremgår av Endringslov til havressurslova?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250606-029",
+      "title": "Lov om endringer i havressurslova (hjemmel for Fiskeridirektoratet til å beslaglegge og destruere eller avhende umerket fiskeredskap)",
+      "shortTitle": "Endringslov til havressurslova",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-06-29",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-06-29#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "endringer",
+      "havressurslova",
+      "hjemmel",
+      "Fiskeridirektoratet"
+    ],
+    "requiredCitationPatterns": [
+      "lov 6. juni 2025 nr. 29"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250610_030_effective_date",
+    "question": "Når trer endringene i Endringslov til folketrygdloven i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250610-030",
+      "title": "Lov om endringer i folketrygdloven (yrkessykdommer og elektronisk melding av yrkesskade)",
+      "shortTitle": "Endringslov til folketrygdloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-10-30",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-10-30#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "Kongen",
+      "bestemmer"
+    ],
+    "requiredCitationPatterns": [
+      "lov 10. juni 2025 nr. 30"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250610_030_amendment_summary",
+    "question": "Hvilke hovedendringer fremgår av Endringslov til folketrygdloven?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250610-030",
+      "title": "Lov om endringer i folketrygdloven (yrkessykdommer og elektronisk melding av yrkesskade)",
+      "shortTitle": "Endringslov til folketrygdloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-10-30",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-10-30#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "endringer",
+      "folketrygdloven",
+      "yrkessykdommer",
+      "elektronisk"
+    ],
+    "requiredCitationPatterns": [
+      "lov 10. juni 2025 nr. 30"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250610_031_section_31",
+    "question": "Hva sier Endringslov til lov om Statens pensjonskasse mv. om § 31?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250610-031",
+      "title": "Lov om endringer i lov om Statens pensjonskasse og enkelte andre lover (nye pensjonsregler for personer med særaldersgrense)",
+      "shortTitle": "Endringslov til lov om Statens pensjonskasse mv.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-10-31",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-10-31#bundled-document-part-6"
+    },
+    "requiredTerms": [
+      "Retten",
+      "midlertidig",
+      "uførepensjon"
+    ],
+    "requiredCitationPatterns": [
+      "§ 31",
+      "lov 10. juni 2025 nr. 31"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250610_031_section_42",
+    "question": "Hva sier Endringslov til lov om Statens pensjonskasse mv. om § 42?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250610-031",
+      "title": "Lov om endringer i lov om Statens pensjonskasse og enkelte andre lover (nye pensjonsregler for personer med særaldersgrense)",
+      "shortTitle": "Endringslov til lov om Statens pensjonskasse mv.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-10-31",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-10-31#bundled-document-part-6"
+    },
+    "requiredTerms": [
+      "Tidligpensjon",
+      "særalderspåslag",
+      "kapittel"
+    ],
+    "requiredCitationPatterns": [
+      "§ 42",
+      "lov 10. juni 2025 nr. 31"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250610_031_section_3",
+    "question": "Hva sier Endringslov til lov om Statens pensjonskasse mv. om § 3?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250610-031",
+      "title": "Lov om endringer i lov om Statens pensjonskasse og enkelte andre lover (nye pensjonsregler for personer med særaldersgrense)",
+      "shortTitle": "Endringslov til lov om Statens pensjonskasse mv.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-10-31",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-10-31#bundled-document-part-6"
+    },
+    "requiredTerms": [
+      "omfatter",
+      "alderspensjon",
+      "Statens"
+    ],
+    "requiredCitationPatterns": [
+      "§ 3",
+      "lov 10. juni 2025 nr. 31"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250610_031_effective_date",
+    "question": "Når trer endringene i Endringslov til lov om Statens pensjonskasse mv. i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250610-031",
+      "title": "Lov om endringer i lov om Statens pensjonskasse og enkelte andre lover (nye pensjonsregler for personer med særaldersgrense)",
+      "shortTitle": "Endringslov til lov om Statens pensjonskasse mv.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-10-31",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-10-31#bundled-document-part-6"
+    },
+    "requiredTerms": [
+      "virkning",
+      "måneden",
+      "forholdet",
+      "endringen"
+    ],
+    "requiredCitationPatterns": [
+      "lov 10. juni 2025 nr. 31"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250610_031_amendment_summary",
+    "question": "Hvilke hovedendringer fremgår av Endringslov til lov om Statens pensjonskasse mv.?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250610-031",
+      "title": "Lov om endringer i lov om Statens pensjonskasse og enkelte andre lover (nye pensjonsregler for personer med særaldersgrense)",
+      "shortTitle": "Endringslov til lov om Statens pensjonskasse mv.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-10-31",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-10-31#bundled-document-part-6"
+    },
+    "requiredTerms": [
+      "endringer",
+      "Statens",
+      "pensjonskasse",
+      "enkelte"
+    ],
+    "requiredCitationPatterns": [
+      "lov 10. juni 2025 nr. 31"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250610_031_section_17",
+    "question": "Hva sier Endringslov til lov om Statens pensjonskasse mv. om § 17?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250610-031",
+      "title": "Lov om endringer i lov om Statens pensjonskasse og enkelte andre lover (nye pensjonsregler for personer med særaldersgrense)",
+      "shortTitle": "Endringslov til lov om Statens pensjonskasse mv.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-10-31",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-10-31#bundled-document-part-9"
+    },
+    "requiredTerms": [
+      "Retten",
+      "midlertidig",
+      "uførepensjon"
+    ],
+    "requiredCitationPatterns": [
+      "§ 17",
+      "lov 10. juni 2025 nr. 31"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250610_031_section_39",
+    "question": "Hva sier Endringslov til lov om Statens pensjonskasse mv. om § 39?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250610-031",
+      "title": "Lov om endringer i lov om Statens pensjonskasse og enkelte andre lover (nye pensjonsregler for personer med særaldersgrense)",
+      "shortTitle": "Endringslov til lov om Statens pensjonskasse mv.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-10-31",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-10-31#bundled-document-part-9"
+    },
+    "requiredTerms": [
+      "Tidligpensjon",
+      "særalderspåslag",
+      "kapittel"
+    ],
+    "requiredCitationPatterns": [
+      "§ 39",
+      "lov 10. juni 2025 nr. 31"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_046_section_10_2",
+    "question": "Hva sier Endringslov til energiloven om § 10-2?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-046",
+      "title": "Lov om endringer i energiloven (tidlig saksavslutning mv.)",
+      "shortTitle": "Endringslov til energiloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-46",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-46#bundled-document-part-3"
+    },
+    "requiredTerms": [
+      "Departementet",
+      "reguleringsmyndigheten",
+      "trekke"
+    ],
+    "requiredCitationPatterns": [
+      "§ 10-2",
+      "lov 20. juni 2025 nr. 46"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_046_section_10_7",
+    "question": "Hva sier Endringslov til energiloven om § 10-7?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-046",
+      "title": "Lov om endringer i energiloven (tidlig saksavslutning mv.)",
+      "shortTitle": "Endringslov til energiloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-46",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-46#bundled-document-part-3"
+    },
+    "requiredTerms": [
+      "Departementet",
+      "ilegge",
+      "overtredelsesgebyr"
+    ],
+    "requiredCitationPatterns": [
+      "§ 10-7",
+      "lov 20. juni 2025 nr. 46"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_046_section_11_1",
+    "question": "Hva sier Endringslov til energiloven om § 11-1?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-046",
+      "title": "Lov om endringer i energiloven (tidlig saksavslutning mv.)",
+      "shortTitle": "Endringslov til energiloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-46",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-46#bundled-document-part-3"
+    },
+    "requiredTerms": [
+      "utredningsprogram",
+      "fastsatt",
+      "ikrafttredelsen"
+    ],
+    "requiredCitationPatterns": [
+      "§ 11-1",
+      "lov 20. juni 2025 nr. 46"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_046_effective_date",
+    "question": "Når trer endringene i Endringslov til energiloven i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-046",
+      "title": "Lov om endringer i energiloven (tidlig saksavslutning mv.)",
+      "shortTitle": "Endringslov til energiloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-46",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-46#bundled-document-part-3"
+    },
+    "requiredTerms": [
+      "trer i kraft"
+    ],
+    "requiredCitationPatterns": [
+      "lov 20. juni 2025 nr. 46"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_048_section_5_2",
+    "question": "Hva sier Endringslov til Svalbardskatteloven om § 5-2?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-048",
+      "title": "Lov om endringer i Svalbardskatteloven",
+      "shortTitle": "Endringslov til Svalbardskatteloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-48",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-48#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "Skattebetalingsloven",
+      "kapittel",
+      "forskuddstrekk"
+    ],
+    "requiredCitationPatterns": [
+      "§ 5-2",
+      "lov 20. juni 2025 nr. 48"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_048_effective_date",
+    "question": "Når trer endringene i Endringslov til Svalbardskatteloven i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-048",
+      "title": "Lov om endringer i Svalbardskatteloven",
+      "shortTitle": "Endringslov til Svalbardskatteloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-48",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-48#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "Kongen",
+      "bestemmer"
+    ],
+    "requiredCitationPatterns": [
+      "lov 20. juni 2025 nr. 48"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_048_amendment_summary",
+    "question": "Hvilke hovedendringer fremgår av Endringslov til Svalbardskatteloven?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-048",
+      "title": "Lov om endringer i Svalbardskatteloven",
+      "shortTitle": "Endringslov til Svalbardskatteloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-48",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-48#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "endringer",
+      "Svalbardskatteloven",
+      "lovdata",
+      "dokument"
+    ],
+    "requiredCitationPatterns": [
+      "lov 20. juni 2025 nr. 48"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_063_section_5_13b",
+    "question": "Hva sier Endringslov til skattebetalingsloven om § 5-13b?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-063",
+      "title": "Lov om endringer i skattebetalingsloven",
+      "shortTitle": "Endringslov til skattebetalingsloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-63",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-63#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "årsregnskapet",
+      "arbeidsgiver",
+      "foreta"
+    ],
+    "requiredCitationPatterns": [
+      "§ 5-13b",
+      "lov 20. juni 2025 nr. 63"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_063_section_5_11",
+    "question": "Hva sier Endringslov til skattebetalingsloven om § 5-11?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-063",
+      "title": "Lov om endringer i skattebetalingsloven",
+      "shortTitle": "Endringslov til skattebetalingsloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-63",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-63#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "Arbeidsgiver",
+      "ukrevet",
+      "levere"
+    ],
+    "requiredCitationPatterns": [
+      "§ 5-11",
+      "lov 20. juni 2025 nr. 63"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_063_section_10_10",
+    "question": "Hva sier Endringslov til skattebetalingsloven om § 10-10?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-063",
+      "title": "Lov om endringer i skattebetalingsloven",
+      "shortTitle": "Endringslov til skattebetalingsloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-63",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-63#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "Forskuddstrekk",
+      "skattetrekk",
+      "kildeskatteordning"
+    ],
+    "requiredCitationPatterns": [
+      "§ 10-10",
+      "lov 20. juni 2025 nr. 63"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_063_effective_date",
+    "question": "Når trer endringene i Endringslov til skattebetalingsloven i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-063",
+      "title": "Lov om endringer i skattebetalingsloven",
+      "shortTitle": "Endringslov til skattebetalingsloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-63",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-63#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "straks"
+    ],
+    "requiredCitationPatterns": [
+      "lov 20. juni 2025 nr. 63"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_063_amendment_summary",
+    "question": "Hvilke hovedendringer fremgår av Endringslov til skattebetalingsloven?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-063",
+      "title": "Lov om endringer i skattebetalingsloven",
+      "shortTitle": "Endringslov til skattebetalingsloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-63",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-63#bundled-document-part-1"
+    },
+    "requiredTerms": [
+      "endringer",
+      "skattebetalingsloven",
+      "lovdata",
+      "dokument"
+    ],
+    "requiredCitationPatterns": [
+      "lov 20. juni 2025 nr. 63"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_064_section_11_1",
+    "question": "Hva sier Endringslov til skatteforvaltningsloven om § 11-1?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-064",
+      "title": "Lov om endringer i skatteforvaltningsloven",
+      "shortTitle": "Endringslov til skatteforvaltningsloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-64",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-64#bundled-document-part-2"
+    },
+    "requiredTerms": [
+      "gjelder",
+      "oppbevare",
+      "dokumentasjon"
+    ],
+    "requiredCitationPatterns": [
+      "§ 11-1",
+      "lov 20. juni 2025 nr. 64"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_064_effective_date",
+    "question": "Når trer endringene i Endringslov til skatteforvaltningsloven i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-064",
+      "title": "Lov om endringer i skatteforvaltningsloven",
+      "shortTitle": "Endringslov til skatteforvaltningsloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-64",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-64#bundled-document-part-2"
+    },
+    "requiredTerms": [
+      "straks"
+    ],
+    "requiredCitationPatterns": [
+      "lov 20. juni 2025 nr. 64"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_070_section_16",
+    "question": "Hva sier Endringslov til tobakksskadeloven, strålevernloven og atomenergiloven om §16?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-070",
+      "title": "Lov om endringer i tobakksskadeloven, strålevernloven og atomenergiloven (utvidelse av røykeforbudene og forbud mot grensekryssende fjernsalg)",
+      "shortTitle": "Endringslov til tobakksskadeloven, strålevernloven og atomenergiloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-70",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-70#bundled-document-part-3"
+    },
+    "requiredTerms": [
+      "Produsenter",
+      "importører",
+      "tobakksvarer"
+    ],
+    "requiredCitationPatterns": [
+      "§16",
+      "lov 20. juni 2025 nr. 70"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_070_section_23",
+    "question": "Hva sier Endringslov til tobakksskadeloven, strålevernloven og atomenergiloven om § 23?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-070",
+      "title": "Lov om endringer i tobakksskadeloven, strålevernloven og atomenergiloven (utvidelse av røykeforbudene og forbud mot grensekryssende fjernsalg)",
+      "shortTitle": "Endringslov til tobakksskadeloven, strålevernloven og atomenergiloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-70",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-70#bundled-document-part-3"
+    },
+    "requiredTerms": [
+      "Direktoratet",
+      "strålevern",
+      "atomsikkerhet"
+    ],
+    "requiredCitationPatterns": [
+      "§ 23",
+      "lov 20. juni 2025 nr. 70"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_070_effective_date",
+    "question": "Når trer endringene i Endringslov til tobakksskadeloven, strålevernloven og atomenergiloven i kraft, eller fra når får de virkning?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-070",
+      "title": "Lov om endringer i tobakksskadeloven, strålevernloven og atomenergiloven (utvidelse av røykeforbudene og forbud mot grensekryssende fjernsalg)",
+      "shortTitle": "Endringslov til tobakksskadeloven, strålevernloven og atomenergiloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-70",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-70#bundled-document-part-3"
+    },
+    "requiredTerms": [
+      "gjelder",
+      "Kongen",
+      "bestemmer"
+    ],
+    "requiredCitationPatterns": [
+      "lov 20. juni 2025 nr. 70"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_070_amendment_summary",
+    "question": "Hvilke hovedendringer fremgår av Endringslov til tobakksskadeloven, strålevernloven og atomenergiloven?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-070",
+      "title": "Lov om endringer i tobakksskadeloven, strålevernloven og atomenergiloven (utvidelse av røykeforbudene og forbud mot grensekryssende fjernsalg)",
+      "shortTitle": "Endringslov til tobakksskadeloven, strålevernloven og atomenergiloven",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-70",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-70#bundled-document-part-3"
+    },
+    "requiredTerms": [
+      "endringer",
+      "tobakksskadeloven",
+      "strålevernloven",
+      "atomenergiloven"
+    ],
+    "requiredCitationPatterns": [
+      "lov 20. juni 2025 nr. 70"
+    ],
+    "minContextRefs": 1
+  },
+  {
+    "id": "nl_20250620_071_section_29",
+    "question": "Hva sier Endringslov til helseforskningsloven mv. om § 29?",
+    "sourceType": "source_mined",
+    "tags": [
+      "nl",
+      "answer-contract",
+      "source-mined",
+      "amending_act"
+    ],
+    "source": {
+      "corpus": "NL",
+      "lovdataId": "nl-20250620-071",
+      "title": "Lov om endringer i helseforskningsloven mv. (vilkår for medisinsk og helsefaglig forskning og for bruk av helseopplysninger i forskning)",
+      "shortTitle": "Endringslov til helseforskningsloven mv.",
+      "url": "https://lovdata.no/dokument/LTI/lov/2025-06-20-71",
+      "chunkSource": "link://https://lovdata.no/dokument/LTI/lov/2025-06-20-71#bundled-document-part-4"
+    },
+    "requiredTerms": [
+      "opplysningene",
+      "brukes",
+      "uttrykkelig"
+    ],
+    "requiredCitationPatterns": [
+      "§ 29",
+      "lov 20. juni 2025 nr. 71"
+    ],
+    "minContextRefs": 1
+  }
+]
