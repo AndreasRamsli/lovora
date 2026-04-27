@@ -151,7 +151,8 @@ function normalizeRemoteResult(result = {}) {
       metadata.canonicalSourceId || result.canonicalSourceId || null,
     canonicalSectionId:
       metadata.canonicalSectionId || result.canonicalSectionId || null,
-    embeddingChunkId: metadata.embeddingChunkId || result.embeddingChunkId || null,
+    embeddingChunkId:
+      metadata.embeddingChunkId || result.embeddingChunkId || null,
     retrievalReasons: parseFlexibleList(retrievalReasons, String),
     score: result.score,
     corpus: deriveCorpus(result),

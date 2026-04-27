@@ -27,11 +27,15 @@ function unique(values = []) {
 function documentIdsForReference(reference, store) {
   const ids = new Set();
   for (const hint of reference.documentHints || []) {
-    const matches = store.aliasToDocumentIds.get(normalizeLegalCitationText(hint));
+    const matches = store.aliasToDocumentIds.get(
+      normalizeLegalCitationText(hint)
+    );
     if (matches) for (const id of matches) ids.add(id);
   }
   for (const hint of reference.datedSourceHints || []) {
-    const matches = store.aliasToDocumentIds.get(normalizeLegalCitationText(hint));
+    const matches = store.aliasToDocumentIds.get(
+      normalizeLegalCitationText(hint)
+    );
     if (matches) for (const id of matches) ids.add(id);
   }
   return ids;
@@ -121,8 +125,9 @@ function neighborRowsForSections(store, documentIds, sections) {
   if (store.canonicalByDocumentSection) {
     return [...documentIds].flatMap((documentId) =>
       [...sections].flatMap((section) =>
-        (store.canonicalByDocumentSection.get(`${documentId}:${section}`) || [])
-          .filter((row) => !row.subsection && isCurrentVersion(row))
+        (
+          store.canonicalByDocumentSection.get(`${documentId}:${section}`) || []
+        ).filter((row) => !row.subsection && isCurrentVersion(row))
       )
     );
   }
@@ -136,7 +141,11 @@ function neighborRowsForSections(store, documentIds, sections) {
 
 function rowsForReference(reference, store) {
   const documentIds = documentIdsForReference(reference, store);
-  const matchingRows = exactRowsForSection(store, documentIds, reference.section);
+  const matchingRows = exactRowsForSection(
+    store,
+    documentIds,
+    reference.section
+  );
   const resolvedDocumentIds = new Set(
     matchingRows.map((row) => row.documentId).filter(Boolean)
   );
@@ -144,14 +153,20 @@ function rowsForReference(reference, store) {
   const rows = matchingRows;
   const currentExactDocumentIds = new Set(
     rows
-      .filter((row) => row.section === reference.section && isCurrentVersion(row))
+      .filter(
+        (row) => row.section === reference.section && isCurrentVersion(row)
+      )
       .map((row) => row.documentId)
       .filter(Boolean)
   );
   const neighborSections = new Set(neighboringSectionRefs(reference.section));
   const neighborRows =
     currentExactDocumentIds.size && neighborSections.size
-      ? neighborRowsForSections(store, currentExactDocumentIds, neighborSections)
+      ? neighborRowsForSections(
+          store,
+          currentExactDocumentIds,
+          neighborSections
+        )
       : [];
   const wantedSubsections = new Set(
     (reference.subsections || []).map((item) => `${item.type}:${item.number}`)
@@ -168,7 +183,9 @@ function rowsForReference(reference, store) {
           candidateForRow(row, reference, "subsection")
         ),
         ...sectionRows.map((row) => candidateForRow(row, reference, "section")),
-        ...neighborRows.map((row) => candidateForRow(row, reference, "neighbor")),
+        ...neighborRows.map((row) =>
+          candidateForRow(row, reference, "neighbor")
+        ),
       ];
     }
   }
@@ -207,7 +224,10 @@ function dedupeCanonicalCandidates(candidates = []) {
       candidate.chunkSource;
     if (!id) continue;
     if (!byId.has(id)) {
-      byId.set(id, { ...candidate, retrievalReasons: candidate.retrievalReasons || [] });
+      byId.set(id, {
+        ...candidate,
+        retrievalReasons: candidate.retrievalReasons || [],
+      });
       continue;
     }
     const existing = byId.get(id);
@@ -235,7 +255,10 @@ function resolveLegalReferences({
     candidates.push(...rowsForReference(reference, activeStore));
   }
 
-  return dedupeCanonicalCandidates(rankLegalCandidates(candidates)).slice(0, limit);
+  return dedupeCanonicalCandidates(rankLegalCandidates(candidates)).slice(
+    0,
+    limit
+  );
 }
 
 module.exports = {

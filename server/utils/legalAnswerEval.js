@@ -57,7 +57,9 @@ function hasLegalCitation(response = "") {
     legalTitleWithParagraphPattern.test(text) ||
     courtDecisionPattern.test(text) ||
     /\bnorske lov\b/i.test(text) ||
-    (/\b(?:loven|forskriften|tvisteloven|husleieloven|arbeidsmiljøloven)\b/i.test(text) &&
+    (/\b(?:loven|forskriften|tvisteloven|husleieloven|arbeidsmiljøloven)\b/i.test(
+      text
+    ) &&
       paragraph.test(text))
   );
 }
@@ -68,7 +70,10 @@ function hasSourceGroundedRefusal(response = "") {
   const shortAnswerMatch = headingText.match(
     /Kort svar\s*:\s*([\s\S]*?)(?:Kildegrunnlag\s*:|Vurdering\s*:|Forbehold\s*:|$)/i
   );
-  const opening = (shortAnswerMatch ? shortAnswerMatch[1] : headingText).slice(0, 600);
+  const opening = (shortAnswerMatch ? shortAnswerMatch[1] : headingText).slice(
+    0,
+    600
+  );
   const refusalPattern =
     /\b(?:jeg\s+)?(?:kan ikke|finner ikke|har ikke|ikke nok|ikke tilstrekkelig|utilstrekkelig)\b/i;
   const contextGapConclusion =
@@ -91,7 +96,12 @@ function check(name, passed, details = {}) {
   return { name, passed: Boolean(passed), ...details };
 }
 
-function classifyAnswerCase({ benchmarkCase = {}, response = "", checks = {}, passed = false }) {
+function classifyAnswerCase({
+  benchmarkCase = {},
+  response = "",
+  checks = {},
+  passed = false,
+}) {
   if (benchmarkCase.expectedBehavior === "refusal") {
     return checks.hasSourceGroundedRefusal?.passed
       ? "expected_refusal"
@@ -127,9 +137,13 @@ function evaluateAnswerCase(benchmarkCase = {}, answer = {}) {
   const requiredCitationPatterns = benchmarkCase.requiredCitationPatterns || [];
   const expectedBehavior = benchmarkCase.expectedBehavior || "answer";
   const minContextRefs =
-    benchmarkCase.minContextRefs === undefined ? 1 : Number(benchmarkCase.minContextRefs);
+    benchmarkCase.minContextRefs === undefined
+      ? 1
+      : Number(benchmarkCase.minContextRefs);
 
-  const missingTerms = requiredTerms.filter((term) => !includesLoose(response, term));
+  const missingTerms = requiredTerms.filter(
+    (term) => !includesLoose(response, term)
+  );
   const missingCitationPatterns = requiredCitationPatterns.filter(
     (pattern) => !requiredCitationPassed(response, pattern)
   );
@@ -196,7 +210,9 @@ function countBy(items = [], field) {
 }
 
 function evaluateAnswerReport({ benchmark = [], answers = [] } = {}) {
-  const answerById = new Map(answers.map((answer) => [String(answer.id), answer]));
+  const answerById = new Map(
+    answers.map((answer) => [String(answer.id), answer])
+  );
   const cases = benchmark.map((benchmarkCase) => {
     const answer = answerById.get(String(benchmarkCase.id)) || {};
     return evaluateAnswerCase(benchmarkCase, answer);
@@ -229,7 +245,8 @@ function collectCaseResults(report = {}) {
     for (const config of childReport.configResults || []) {
       for (const item of config.caseResults || []) addCase(item, config.id);
     }
-    for (const item of childReport.cases || []) addCase(item, childReport.config || null);
+    for (const item of childReport.cases || [])
+      addCase(item, childReport.config || null);
   }
   for (const item of report.cases || []) addCase(item, report.config || null);
 

@@ -88,29 +88,28 @@ async function streamChatWithForEmbed(
       });
     });
 
-  const retrieval =
-    shouldUseWorkspaceContextRetrieval({
-      embeddingsCount,
-      workspaceSlug: embed.workspace.slug,
-    })
-      ? await retrieveWorkspaceContext({
-          query: message,
-          workspace: embed.workspace,
-          workspaceSlug: embed.workspace.slug,
-          LLMConnector,
-          topN: embed.workspace?.topN || 4,
-          similarityThreshold: embed.workspace?.similarityThreshold,
-          rerank: embed.workspace?.vectorSearchMode === "rerank",
-          filterIdentifiers: pinnedDocIdentifiers,
-          rawHistory,
-          vectorSearchEnabled: embeddingsCount !== 0,
-          vectorDb: VectorDb,
-        })
-      : {
-          contextTexts: [],
-          sources: [],
-          message: null,
-        };
+  const retrieval = shouldUseWorkspaceContextRetrieval({
+    embeddingsCount,
+    workspaceSlug: embed.workspace.slug,
+  })
+    ? await retrieveWorkspaceContext({
+        query: message,
+        workspace: embed.workspace,
+        workspaceSlug: embed.workspace.slug,
+        LLMConnector,
+        topN: embed.workspace?.topN || 4,
+        similarityThreshold: embed.workspace?.similarityThreshold,
+        rerank: embed.workspace?.vectorSearchMode === "rerank",
+        filterIdentifiers: pinnedDocIdentifiers,
+        rawHistory,
+        vectorSearchEnabled: embeddingsCount !== 0,
+        vectorDb: VectorDb,
+      })
+    : {
+        contextTexts: [],
+        sources: [],
+        message: null,
+      };
 
   // Failed similarity search if it was run at all and failed.
   if (!!retrieval.message) {

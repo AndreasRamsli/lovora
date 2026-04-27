@@ -156,10 +156,14 @@ async function retrieveWorkspaceContext({
   const diagnostics = {
     parsedQuery,
     retrievalReasons: unique(
-      searchResults.flatMap((source) => normalizeReasons(source.retrievalReasons))
+      searchResults.flatMap((source) =>
+        normalizeReasons(source.retrievalReasons)
+      )
     ),
     vectorError: vectorSearchResults.message || false,
-    pinned: exactSources.map((source) => source.canonicalSourceId).filter(Boolean),
+    pinned: exactSources
+      .map((source) => source.canonicalSourceId)
+      .filter(Boolean),
   };
 
   if (process.env.LEGAL_RETRIEVAL_DEBUG === "1") {

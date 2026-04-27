@@ -91,7 +91,10 @@ function parseLegalCitationQuery(query = "") {
   for (const match of normalized.matchAll(sectionPattern)) {
     const section = normalizeSectionRef(match[0]);
     const before = normalized.slice(0, match.index).slice(-140);
-    const after = normalized.slice(match.index + match[0].length, match.index + match[0].length + 40);
+    const after = normalized.slice(
+      match.index + match[0].length,
+      match.index + match[0].length + 40
+    );
     const datedMatch = lastMatch(
       /\b(?:lov|forskrift)\s+\d{1,2}\.\s+[a-zæøå]+\s+\d{4}\s+nr\.\s+\d+/g,
       before
@@ -109,8 +112,7 @@ function parseLegalCitationQuery(query = "") {
       : inheritedDatedSourceHints;
     const ledd = parseLedd(after);
     const rawPrefix =
-      datedSourceHints[0] ||
-      (documentMatch ? documentMatch[1].trim() : "");
+      datedSourceHints[0] || (documentMatch ? documentMatch[1].trim() : "");
     const raw = [rawPrefix, match[0].trim(), ledd.rawSuffix]
       .filter(Boolean)
       .join(" ")
@@ -125,7 +127,9 @@ function parseLegalCitationQuery(query = "") {
     });
     references.push(
       ...parseBareContinuationReferences({
-        text: normalized.slice(match.index + match[0].length + ledd.rawSuffix.length),
+        text: normalized.slice(
+          match.index + match[0].length + ledd.rawSuffix.length
+        ),
         documentHints,
         datedSourceHints,
       })

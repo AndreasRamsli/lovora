@@ -341,29 +341,28 @@ async function chatSync({
     }
   });
 
-  const retrieval =
-    shouldUseWorkspaceContextRetrieval({
-      embeddingsCount,
-      workspaceSlug: workspace.slug,
-    })
-      ? await retrieveWorkspaceContext({
-          query: message,
-          workspace,
-          workspaceSlug: workspace.slug,
-          LLMConnector,
-          topN: workspace?.topN || 4,
-          similarityThreshold: workspace?.similarityThreshold,
-          rerank: workspace?.vectorSearchMode === "rerank",
-          filterIdentifiers: pinnedDocIdentifiers,
-          rawHistory,
-          vectorSearchEnabled: embeddingsCount !== 0,
-          vectorDb: VectorDb,
-        })
-      : {
-          contextTexts: [],
-          sources: [],
-          message: null,
-        };
+  const retrieval = shouldUseWorkspaceContextRetrieval({
+    embeddingsCount,
+    workspaceSlug: workspace.slug,
+  })
+    ? await retrieveWorkspaceContext({
+        query: message,
+        workspace,
+        workspaceSlug: workspace.slug,
+        LLMConnector,
+        topN: workspace?.topN || 4,
+        similarityThreshold: workspace?.similarityThreshold,
+        rerank: workspace?.vectorSearchMode === "rerank",
+        filterIdentifiers: pinnedDocIdentifiers,
+        rawHistory,
+        vectorSearchEnabled: embeddingsCount !== 0,
+        vectorDb: VectorDb,
+      })
+    : {
+        contextTexts: [],
+        sources: [],
+        message: null,
+      };
 
   // Failed similarity search if it was run at all and failed.
   if (!!retrieval.message) {
@@ -707,29 +706,28 @@ async function streamChat({
     }
   });
 
-  const retrieval =
-    shouldUseWorkspaceContextRetrieval({
-      embeddingsCount,
-      workspaceSlug: workspace.slug,
-    })
-      ? await retrieveWorkspaceContext({
-          query: message,
-          workspace,
-          workspaceSlug: workspace.slug,
-          LLMConnector,
-          topN: workspace?.topN || 4,
-          similarityThreshold: workspace?.similarityThreshold,
-          rerank: workspace?.vectorSearchMode === "rerank",
-          filterIdentifiers: pinnedDocIdentifiers,
-          rawHistory,
-          vectorSearchEnabled: embeddingsCount !== 0,
-          vectorDb: VectorDb,
-        })
-      : {
-          contextTexts: [],
-          sources: [],
-          message: null,
-        };
+  const retrieval = shouldUseWorkspaceContextRetrieval({
+    embeddingsCount,
+    workspaceSlug: workspace.slug,
+  })
+    ? await retrieveWorkspaceContext({
+        query: message,
+        workspace,
+        workspaceSlug: workspace.slug,
+        LLMConnector,
+        topN: workspace?.topN || 4,
+        similarityThreshold: workspace?.similarityThreshold,
+        rerank: workspace?.vectorSearchMode === "rerank",
+        filterIdentifiers: pinnedDocIdentifiers,
+        rawHistory,
+        vectorSearchEnabled: embeddingsCount !== 0,
+        vectorDb: VectorDb,
+      })
+    : {
+        contextTexts: [],
+        sources: [],
+        message: null,
+      };
 
   // Failed similarity search if it was run at all and failed.
   if (!!retrieval.message) {

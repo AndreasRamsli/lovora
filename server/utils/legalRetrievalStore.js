@@ -11,7 +11,10 @@ function parseJsonlLine(lineBuffer) {
   return JSON.parse(line);
 }
 
-function readJsonl(filePath, { mapRecord = null, chunkSize = DEFAULT_READ_CHUNK_SIZE } = {}) {
+function readJsonl(
+  filePath,
+  { mapRecord = null, chunkSize = DEFAULT_READ_CHUNK_SIZE } = {}
+) {
   if (!fs.existsSync(filePath)) return [];
   const records = [];
   const fd = fs.openSync(filePath, "r");
@@ -72,7 +75,9 @@ function readJsonl(filePath, { mapRecord = null, chunkSize = DEFAULT_READ_CHUNK_
 
 function artifactPathsForWorkspace({ workspaceSlug, storageDir }) {
   const root =
-    storageDir || process.env.STORAGE_DIR || path.resolve(__dirname, "../storage");
+    storageDir ||
+    process.env.STORAGE_DIR ||
+    path.resolve(__dirname, "../storage");
   const artifactRoot = path.resolve(root, "legal-retrieval", workspaceSlug);
   return {
     artifactRoot,
@@ -181,13 +186,19 @@ function readJsonlRowAt({ filePath, offset, byteLength }) {
 
 function materializeCanonicalText(row = {}) {
   if (typeof row.text === "string") return row.text;
-  if (!row._jsonlPath || row._offset === undefined || row._byteLength === undefined)
+  if (
+    !row._jsonlPath ||
+    row._offset === undefined ||
+    row._byteLength === undefined
+  )
     return "";
-  return readJsonlRowAt({
-    filePath: row._jsonlPath,
-    offset: row._offset,
-    byteLength: row._byteLength,
-  }).text || "";
+  return (
+    readJsonlRowAt({
+      filePath: row._jsonlPath,
+      offset: row._offset,
+      byteLength: row._byteLength,
+    }).text || ""
+  );
 }
 
 function buildStore(canonicalRows, embeddingRows) {
@@ -199,7 +210,8 @@ function buildStore(canonicalRows, embeddingRows) {
   const aliasToDocumentIds = new Map();
 
   for (const row of canonicalRows) {
-    if (row.canonicalSourceId) canonicalBySourceId.set(row.canonicalSourceId, row);
+    if (row.canonicalSourceId)
+      canonicalBySourceId.set(row.canonicalSourceId, row);
     addToMultiMap(canonicalBySectionId, row.canonicalSectionId, row);
     addToMultiMap(canonicalBySection, row.section, row);
     addToMultiMap(
