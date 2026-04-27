@@ -70,9 +70,9 @@ function hasSourceGroundedRefusal(response = "") {
   );
   const opening = (shortAnswerMatch ? shortAnswerMatch[1] : headingText).slice(0, 600);
   const refusalPattern =
-    /\b(?:jeg\s+)?(?:kan ikke|finner ikke|har ikke|mangler|det mangler|ikke nok|ikke tilstrekkelig|utilstrekkelig)\b/i;
+    /\b(?:jeg\s+)?(?:kan ikke|finner ikke|har ikke|ikke nok|ikke tilstrekkelig|utilstrekkelig)\b/i;
   const contextGapConclusion =
-    /\b(?:konteksten\s+(?:inneholder|gir)\s+ikke|mangler)\b/i;
+    /\b(?:(?:konteksten|kildene|de\s+foreliggende\s+kildene)\s+(?:inneholder|gir|sier)\s+(?:ikke|ingenting)|(?:det\s+)?mangler\s+(?!ikke\b)(?:[^.]{0,80}\s+)?(?:i|fra)\s+(?:konteksten|kildene|de\s+foreliggende\s+kildene))\b/i;
   return (
     (refusalPattern.test(opening) || contextGapConclusion.test(opening)) &&
     extractContextRefs(text).length > 0

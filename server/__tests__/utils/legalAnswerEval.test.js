@@ -106,6 +106,47 @@ describe("legalAnswerEval", () => {
     expect(result.checks.hasSourceGroundedRefusal.passed).toBe(true);
   });
 
+  test("accepts source-gap refusals phrased as missing information in the sources", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "expected-refusal-source-wording",
+        expectedBehavior: "refusal",
+        requiredTerms: ["forarbeider", "kildene"],
+        requiredCitationPatterns: ["lov 22. desember 2025 nr. 127"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Nei, kildene sier ingenting om forarbeider eller begrunnelsen. [CONTEXT 0] " +
+          "Kildegrunnlag: lov 22. desember 2025 nr. 127 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.triage).toBe("expected_refusal");
+    expect(result.checks.hasSourceGroundedRefusal.passed).toBe(true);
+  });
+
+  test("does not accept negated missing-source wording as a refusal", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "negated-refusal",
+        expectedBehavior: "refusal",
+        requiredTerms: ["forarbeider", "kildene"],
+        requiredCitationPatterns: ["lov 22. desember 2025 nr. 127"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Det mangler ikke forarbeider i kildene. [CONTEXT 0] " +
+          "Kildegrunnlag: lov 22. desember 2025 nr. 127 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.checks.hasSourceGroundedRefusal.passed).toBe(false);
+  });
+
   test("classifies unexpected source-gap refusals as retrieval debug cases", () => {
     const result = evaluateAnswerCase(
       {

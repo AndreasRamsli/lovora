@@ -86,7 +86,7 @@
     "sourceType": "alpha_user",
     "tags": ["user-style", "citation-style", "refusal-or-caveat"],
     "expectedBehavior": "refusal",
-    "requiredTerms": ["forarbeider", "konteksten"],
+    "requiredTerms": ["forarbeider", "kildene"],
     "requiredCitationPatterns": ["lov 22. desember 2025 nr. 127"],
     "minContextRefs": 1
   }
