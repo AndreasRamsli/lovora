@@ -6,6 +6,20 @@ function parseList(value, mapper = (item) => item) {
     .map(mapper);
 }
 
+function parseFlexibleList(value, mapper = (item) => item) {
+  if (value === undefined || value === null || value === "") return [];
+  if (Array.isArray(value)) return value.map(mapper).filter(Boolean);
+  if (typeof value === "string" && value.trim().startsWith("[")) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.map(mapper).filter(Boolean);
+    } catch {
+      // Fall through to comma parsing for malformed legacy metadata.
+    }
+  }
+  return parseList(value, mapper);
+}
+
 function buildConfigs({
   modes = ["rerank", "default"],
   topNs = [4, 6, 8],
@@ -126,11 +140,19 @@ function deriveCorpus(result = {}) {
 
 function normalizeRemoteResult(result = {}) {
   const metadata = result.metadata || {};
+  const retrievalReasons =
+    metadata.retrievalReasons || result.retrievalReasons || [];
   return {
     text: result.text || metadata.text || "",
     title: metadata.title || result.title || "",
     url: metadata.url || result.url || "",
     chunkSource: metadata.chunkSource || result.chunkSource || "",
+    canonicalSourceId:
+      metadata.canonicalSourceId || result.canonicalSourceId || null,
+    canonicalSectionId:
+      metadata.canonicalSectionId || result.canonicalSectionId || null,
+    embeddingChunkId: metadata.embeddingChunkId || result.embeddingChunkId || null,
+    retrievalReasons: parseFlexibleList(retrievalReasons, String),
     score: result.score,
     corpus: deriveCorpus(result),
     lovdataId: deriveLovdataId(result),
@@ -165,6 +187,26 @@ function matchesSingleExpectation(result, expect = {}) {
     !String(result.title)
       .toLowerCase()
       .includes(String(expect.titleIncludes).toLowerCase())
+  )
+    return false;
+  if (
+    expect.canonicalSourceId &&
+    result.canonicalSourceId !== String(expect.canonicalSourceId)
+  )
+    return false;
+  if (
+    expect.canonicalSectionId &&
+    result.canonicalSectionId !== String(expect.canonicalSectionId)
+  )
+    return false;
+  if (
+    expect.embeddingChunkId &&
+    result.embeddingChunkId !== String(expect.embeddingChunkId)
+  )
+    return false;
+  if (
+    expect.retrievalReason &&
+    !result.retrievalReasons.includes(String(expect.retrievalReason))
   )
     return false;
   return true;
@@ -213,6 +255,7 @@ function isRetryableStatus(status) {
 
 module.exports = {
   parseList,
+  parseFlexibleList,
   buildConfigs,
   computeMetrics,
   deriveLovdataId,

@@ -4,6 +4,10 @@ const { getVectorDbClass, getLLMProvider } = require("../helpers");
 const { writeResponseChunk } = require("../helpers/chat/responses");
 const { chatPrompt, sourceIdentifier } = require("./index");
 const {
+  retrieveWorkspaceContext,
+  shouldUseWorkspaceContextRetrieval,
+} = require("./workspaceContextRetriever");
+const {
   buildProviderSessionId,
   persistAndModerateConversation,
 } = require("./persistence");
@@ -112,16 +116,24 @@ async function chatSync({
       });
     });
 
-  const vectorSearchResults =
-    embeddingsCount !== 0
-      ? await VectorDb.performSimilaritySearch({
-          namespace: workspace.slug,
-          input: String(prompt),
+  const retrieval =
+    shouldUseWorkspaceContextRetrieval({
+      embeddingsCount,
+      workspaceSlug: workspace.slug,
+    })
+      ? await retrieveWorkspaceContext({
+          query: String(prompt),
+          workspace,
+          workspaceSlug: workspace.slug,
           LLMConnector,
+          topN: workspace?.topN || 4,
           similarityThreshold: workspace?.similarityThreshold,
-          topN: workspace?.topN,
-          filterIdentifiers: pinnedDocIdentifiers,
           rerank: workspace?.vectorSearchMode === "rerank",
+          filterIdentifiers: pinnedDocIdentifiers,
+          rawHistory: [],
+          includeHistoryBackfill: false,
+          vectorSearchEnabled: embeddingsCount !== 0,
+          vectorDb: VectorDb,
         })
       : {
           contextTexts: [],
@@ -130,7 +142,7 @@ async function chatSync({
         };
 
   // Failed similarity search if it was run at all and failed.
-  if (!!vectorSearchResults.message) {
+  if (!!retrieval.message) {
     return formatJSON(
       {
         id: uuid,
@@ -138,15 +150,15 @@ async function chatSync({
         textResponse: null,
         sources: [],
         close: true,
-        error: vectorSearchResults.message,
+        error: retrieval.message,
       },
       { model: workspace.slug, finish_reason: "abort" }
     );
   }
 
   // For OpenAI Compatible chats, we cannot do backfilling so we simply aggregate results here.
-  contextTexts = [...contextTexts, ...vectorSearchResults.contextTexts];
-  sources = [...sources, ...vectorSearchResults.sources];
+  contextTexts = [...contextTexts, ...retrieval.contextTexts];
+  sources = [...sources, ...retrieval.sources];
 
   // If in query mode and no context chunks are found from search, backfill, or pins -  do not
   // let the LLM try to hallucinate a response or use general knowledge and exit early
@@ -348,16 +360,24 @@ async function streamChat({
       });
     });
 
-  const vectorSearchResults =
-    embeddingsCount !== 0
-      ? await VectorDb.performSimilaritySearch({
-          namespace: workspace.slug,
-          input: String(prompt),
+  const retrieval =
+    shouldUseWorkspaceContextRetrieval({
+      embeddingsCount,
+      workspaceSlug: workspace.slug,
+    })
+      ? await retrieveWorkspaceContext({
+          query: String(prompt),
+          workspace,
+          workspaceSlug: workspace.slug,
           LLMConnector,
+          topN: workspace?.topN || 4,
           similarityThreshold: workspace?.similarityThreshold,
-          topN: workspace?.topN,
-          filterIdentifiers: pinnedDocIdentifiers,
           rerank: workspace?.vectorSearchMode === "rerank",
+          filterIdentifiers: pinnedDocIdentifiers,
+          rawHistory: [],
+          includeHistoryBackfill: false,
+          vectorSearchEnabled: embeddingsCount !== 0,
+          vectorDb: VectorDb,
         })
       : {
           contextTexts: [],
@@ -366,7 +386,7 @@ async function streamChat({
         };
 
   // Failed similarity search if it was run at all and failed.
-  if (!!vectorSearchResults.message) {
+  if (!!retrieval.message) {
     writeResponseChunk(
       response,
       formatJSON(
@@ -376,7 +396,7 @@ async function streamChat({
           textResponse: null,
           sources: [],
           close: true,
-          error: vectorSearchResults.message,
+          error: retrieval.message,
         },
         { chunked: true, model: workspace.slug, finish_reason: "abort" }
       )
@@ -385,8 +405,8 @@ async function streamChat({
   }
 
   // For OpenAI Compatible chats, we cannot do backfilling so we simply aggregate results here.
-  contextTexts = [...contextTexts, ...vectorSearchResults.contextTexts];
-  sources = [...sources, ...vectorSearchResults.sources];
+  contextTexts = [...contextTexts, ...retrieval.contextTexts];
+  sources = [...sources, ...retrieval.sources];
 
   // If in query mode and no context chunks are found from search, backfill, or pins -  do not
   // let the LLM try to hallucinate a response or use general knowledge and exit early

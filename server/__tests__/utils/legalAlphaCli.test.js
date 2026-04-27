@@ -22,6 +22,13 @@ const {
   buildWorkspaceUpdateRequest,
   promptDigest,
 } = require("../../../scripts/apply-alpha-system-prompt.cjs");
+const {
+  sha256File: sha256InstalledArtifact,
+} = require("../../../scripts/install-legal-retrieval-artifacts.cjs");
+const {
+  evaluateConfig: evaluateRetrievalConfig,
+  rankOfFirstMatch: rankOfRetrievalMatch,
+} = require("../../../scripts/evaluate-retrieval.cjs");
 
 describe("legal alpha CLI input errors", () => {
   test("answer contract CLI can write an answer template", () => {
@@ -228,6 +235,117 @@ describe("legal alpha CLI input errors", () => {
         }),
       ])
     );
+  });
+
+  test("exact section watch benchmark captures canonical retrieval blockers", () => {
+    const benchmark = JSON.parse(
+      fs.readFileSync(
+        path.resolve("scripts/benchmarks/lovora_alpha_exact_section_watch.json"),
+        "utf8"
+      )
+    );
+
+    expect(benchmark.map((item) => item.id)).toEqual([
+      "exact_tvisteloven_20_3",
+      "exact_skattebetalingsloven_9_3",
+      "exact_skattebetalingsloven_10_51_fjerde_ledd",
+    ]);
+    expect(benchmark[2].expect).toEqual(
+      expect.objectContaining({
+        canonicalSourceId:
+          "NO:NL:LOV-2005-06-17-67:section:10-51:ledd:4",
+        retrievalReason: "exact_section_subsection_match",
+      })
+    );
+  });
+
+  test("retrieval evaluator matches canonical IDs and reason codes", () => {
+    const rank = rankOfRetrievalMatch(
+      [
+        {
+          canonicalSourceId: "wrong",
+          retrievalReasons: ["vector_fallback"],
+          text: "31. mai i det tredje året etter fastsettingsåret.",
+        },
+        {
+          canonicalSourceId:
+            "NO:NL:LOV-2005-06-17-67:section:10-51:ledd:4",
+          canonicalSectionId: "NO:NL:LOV-2005-06-17-67:section:10-51",
+          retrievalReasons:
+            '["title_alias_match","exact_section_subsection_match"]',
+          text: "31. mai i det tredje året etter fastsettingsåret.",
+        },
+      ],
+      {
+        canonicalSourceId: "NO:NL:LOV-2005-06-17-67:section:10-51:ledd:4",
+        retrievalReason: "exact_section_subsection_match",
+        textIncludes: "31. mai",
+      }
+    );
+
+    expect(rank).toBe(2);
+  });
+
+  test("retrieval evaluator uses shared workspace context retriever", async () => {
+    const retrieveContext = jest.fn().mockResolvedValue({
+      sources: [
+        {
+          canonicalSourceId: "NO:NL:LOV-2005-06-17-90:section:20-3",
+          retrievalReasons: ["exact_section_match"],
+          text: "Medhold av betydning.",
+        },
+      ],
+    });
+
+    const result = await evaluateRetrievalConfig({
+      workspace: { slug: "lovora-alpha", topN: 4 },
+      benchmark: [
+        {
+          id: "exact_tvisteloven_20_3",
+          query: "Hva sier tvisteloven § 20-3?",
+          tags: [],
+          expect: {
+            canonicalSourceId: "NO:NL:LOV-2005-06-17-90:section:20-3",
+            retrievalReason: "exact_section_match",
+          },
+        },
+      ],
+      vectorDb: {},
+      llmProvider: {},
+      config: {
+        id: "rerank-top4-thr0_25",
+        rerank: true,
+        topN: 4,
+        similarityThreshold: 0.25,
+      },
+      retrieveContext,
+    });
+
+    expect(retrieveContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: "Hva sier tvisteloven § 20-3?",
+        workspaceSlug: "lovora-alpha",
+        topN: 4,
+        includeHistoryBackfill: false,
+      })
+    );
+    expect(result.caseResults[0]).toEqual(
+      expect.objectContaining({ matched: true, rank: 1 })
+    );
+  });
+
+  test("artifact installer hashes files with streaming checksum helper", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lovora-artifact-hash-"));
+    const filePath = path.join(dir, "canonical_section_index.jsonl");
+    const body = "canonical-row\n".repeat(10_000);
+    fs.writeFileSync(filePath, body, "utf8");
+    try {
+      expect(sha256InstalledArtifact(filePath)).toBe(
+        require("crypto").createHash("sha256").update(body).digest("hex")
+      );
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test("alpha prompt apply CLI builds a management update request without leaking keys", () => {

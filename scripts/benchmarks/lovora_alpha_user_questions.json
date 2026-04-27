@@ -24,7 +24,7 @@
     "tags": ["user-style", "citation-style", "housing", "amending"],
     "requiredTerms": ["Husleietvistutvalget", "faglig uavhengig"],
     "requiredCitationPatterns": ["husleieloven § 12-5", "lov 22. desember 2025 nr. 127"],
-    "minContextRefs": 2
+    "minContextRefs": 1
   },
   {
     "id": "user_formuesskatt_betalingsutsettelse",

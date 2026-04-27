@@ -77,6 +77,39 @@ describe("legalRemoteEval", () => {
     expect(rank).toBe(2);
   });
 
+  test("rankOfFirstMatch matches canonical source ids and reason codes", () => {
+    const rank = rankOfFirstMatch(
+      [
+        {
+          text: "31. mai i det tredje året etter fastsettingsåret.",
+          metadata: {
+            canonicalSourceId: "wrong",
+            retrievalReasons: ["vector_fallback"],
+          },
+        },
+        {
+          text: "31. mai i det tredje året etter fastsettingsåret.",
+          metadata: {
+            canonicalSourceId:
+              "NO:NL:LOV-2005-06-17-67:section:10-51:ledd:4",
+            canonicalSectionId: "NO:NL:LOV-2005-06-17-67:section:10-51",
+            embeddingChunkId: "NO:EMBED:NL:nl-20050617-067:bundle:27",
+            retrievalReasons:
+              '["title_alias_match","exact_section_subsection_match"]',
+          },
+        },
+      ],
+      {
+        canonicalSourceId: "NO:NL:LOV-2005-06-17-67:section:10-51:ledd:4",
+        canonicalSectionId: "NO:NL:LOV-2005-06-17-67:section:10-51",
+        embeddingChunkId: "NO:EMBED:NL:nl-20050617-067:bundle:27",
+        retrievalReason: "exact_section_subsection_match",
+        textIncludes: "31. mai",
+      }
+    );
+    expect(rank).toBe(2);
+  });
+
   test("rankOfFirstMatch matches direct ingest LTI metadata", () => {
     const rank = rankOfFirstMatch(
       [

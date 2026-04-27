@@ -13,6 +13,10 @@ const { EventLogs } = require("../../../models/eventLogs");
 const { writeResponseChunk } = require("../../../utils/helpers/chat/responses");
 const { ApiChatHandler } = require("../../../utils/chats/apiChatHandler");
 const {
+  retrieveWorkspaceContext,
+  shouldUseWorkspaceContextRetrieval,
+} = require("../../../utils/chats/workspaceContextRetriever");
+const {
   resolveAuthorizedApiSessionId,
 } = require("../../../utils/auth/apiContentAuthorization");
 const { getModelTag } = require("../../utils");
@@ -1169,7 +1173,13 @@ function apiWorkspaceEndpoints(app) {
           );
           const embeddingsCount = await VectorDb.namespaceCount(workspace.slug);
 
-          if (!hasVectorizedSpace || embeddingsCount === 0)
+          const canRetrieveContext = shouldUseWorkspaceContextRetrieval({
+            embeddingsCount,
+            hasVectorizedSpace,
+            workspaceSlug: workspace.slug,
+          });
+
+          if (!canRetrieveContext)
             return response.status(200).json({
               results: [],
               message: "No embeddings found for this workspace.",
@@ -1188,12 +1198,16 @@ function apiWorkspaceEndpoints(app) {
             return input;
           };
 
-          const results = await VectorDb.performSimilaritySearch({
-            namespace: workspace.slug,
-            input: String(query),
+          const results = await retrieveWorkspaceContext({
+            query: String(query),
+            workspace,
+            workspaceSlug: workspace.slug,
             LLMConnector: getLLMProvider(),
             similarityThreshold: parseSimilarityThreshold(),
             topN: parseTopN(),
+            includeHistoryBackfill: false,
+            vectorSearchEnabled: hasVectorizedSpace && embeddingsCount !== 0,
+            vectorDb: VectorDb,
             rerank: workspace?.vectorSearchMode === "rerank",
           });
 
@@ -1208,6 +1222,10 @@ function apiWorkspaceEndpoints(app) {
                 description: source.description,
                 docSource: source.docSource,
                 chunkSource: source.chunkSource,
+                canonicalSourceId: source.canonicalSourceId,
+                canonicalSectionId: source.canonicalSectionId,
+                embeddingChunkId: source.embeddingChunkId,
+                retrievalReasons: source.retrievalReasons,
                 published: source.published,
                 wordCount: source.wordCount,
                 tokenCount: source.token_count_estimate,
