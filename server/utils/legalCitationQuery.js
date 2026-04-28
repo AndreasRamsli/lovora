@@ -70,6 +70,11 @@ function lastMatch(pattern, text) {
   return result;
 }
 
+function hasInterveningSectionMarker(text = "", match) {
+  if (!match) return false;
+  return /§/.test(text.slice(match.index + match[0].length));
+}
+
 function parseLedd(afterSection = "") {
   const match = normalizeLegalCitationText(afterSection).match(
     /^\s*(?:(første|fyrste|andre|annet|anna|tredje|fjerde|femte|sjette|sjuende|syvende|åttende|niende|tiende)|(\d+)\.?)\s+ledd\b/
@@ -143,7 +148,9 @@ function parseLegalCitationQuery(query = "") {
       before
     );
     let activeDocumentMatch = documentMatch;
-    let activeDatedMatch = datedMatch;
+    let activeDatedMatch = hasInterveningSectionMarker(before, datedMatch)
+      ? null
+      : datedMatch;
     if (documentMatch && datedMatch) {
       if (documentMatch.index > datedMatch.index) activeDatedMatch = null;
       else activeDocumentMatch = null;
@@ -195,9 +202,11 @@ function parseLegalCitationQuery(query = "") {
     if (documentHints.length) {
       inheritedDocumentHints = documentHints;
       inheritedPreferredVersionType = preferredVersionType;
+      inheritedDatedSourceHints = [];
     }
     if (datedSourceHints.length) {
       inheritedDatedSourceHints = datedSourceHints;
+      inheritedDocumentHints = [];
       if (!documentHints.length) inheritedPreferredVersionType = "current";
     }
   }

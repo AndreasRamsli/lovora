@@ -235,6 +235,39 @@ describe("legalCitationQuery", () => {
     ]);
   });
 
+  test("does not retarget bare continuation sections to stale dated sources", () => {
+    expect(
+      parseLegalCitationQuery(
+        "Sammenlign lov 17. juni 2005 nr. 67 § 9-3, tvisteloven § 20-2 og § 20-3."
+      ).references
+    ).toEqual([
+      {
+        raw: "lov 17. juni 2005 nr. 67 § 9-3",
+        documentHints: [],
+        datedSourceHints: ["lov 17. juni 2005 nr. 67"],
+        preferredVersionType: "current",
+        section: "9-3",
+        subsections: [],
+      },
+      {
+        raw: "tvisteloven § 20-2",
+        documentHints: ["tvisteloven"],
+        datedSourceHints: [],
+        preferredVersionType: "current",
+        section: "20-2",
+        subsections: [],
+      },
+      {
+        raw: "§ 20-3",
+        documentHints: ["tvisteloven"],
+        datedSourceHints: [],
+        preferredVersionType: "current",
+        section: "20-3",
+        subsections: [],
+      },
+    ]);
+  });
+
   test("returns no references for broad questions", () => {
     expect(parseLegalCitationQuery("Hva betyr sakskostnader?")).toEqual({
       hasLegalReference: false,
