@@ -7,7 +7,6 @@ import ActiveWorkspaces from "./ActiveWorkspaces";
 import useLogo from "@/hooks/useLogo";
 import useUser from "@/hooks/useUser";
 import Footer from "../Footer";
-import SettingsButton from "../SettingsButton";
 import { Link } from "react-router-dom";
 import paths from "@/utils/paths";
 import { useTranslation } from "react-i18next";
@@ -164,11 +163,6 @@ export function SidebarMobileHeader() {
                   }`}
                 />
               </div>
-              {(!user || user?.role !== "default") && (
-                <div className="flex gap-x-2 items-center text-slate-500 shink-0">
-                  <SettingsButton />
-                </div>
-              )}
             </div>
 
             {/* Primary Body */}

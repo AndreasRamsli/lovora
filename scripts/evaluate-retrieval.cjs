@@ -27,7 +27,11 @@ function loadRuntimeDependencies() {
     "utils/helpers"
   ));
   const { Workspace } = require(path.join(serverRoot, "models/workspace"));
-  return { getVectorDbClass, getLLMProvider, Workspace };
+  const { retrieveWorkspaceContext } = require(path.join(
+    serverRoot,
+    "utils/chats/workspaceContextRetriever"
+  ));
+  return { getVectorDbClass, getLLMProvider, retrieveWorkspaceContext, Workspace };
 }
 
 function printHelp() {
@@ -62,7 +66,9 @@ Benchmark case shape:
 ]
 
 Any subset of the following expectation keys can be used:
-  corpus, lovdataId, chunkSourceIncludes, urlIncludes, textIncludes, titleIncludes, titleExact
+  corpus, lovdataId, chunkSourceIncludes, urlIncludes, textIncludes,
+  titleIncludes, titleExact, canonicalSourceId, canonicalSectionId,
+  embeddingChunkId, retrievalReason
 
 You can also use:
   "expect": {
@@ -80,6 +86,20 @@ function parseArgList(value, mapper = (v) => v) {
     .map((item) => item.trim())
     .filter(Boolean)
     .map(mapper);
+}
+
+function parseFlexibleList(value, mapper = (item) => item) {
+  if (value === undefined || value === null || value === "") return [];
+  if (Array.isArray(value)) return value.map(mapper).filter(Boolean);
+  if (typeof value === "string" && value.trim().startsWith("[")) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.map(mapper).filter(Boolean);
+    } catch {
+      // Fall through to comma parsing for malformed legacy metadata.
+    }
+  }
+  return parseArgList(value, mapper);
 }
 
 function parseArgs(argv) {
@@ -321,12 +341,20 @@ function deriveCorpus(result = {}) {
 
 function normalizeResult(result = {}) {
   const metadata = result.metadata || {};
+  const retrievalReasons =
+    result.retrievalReasons || metadata.retrievalReasons || [];
   return {
     ...result,
     text: result.text || result.chunk || metadata.text || "",
     title: result.title || metadata.title || "",
     url: result.url || metadata.url || "",
     chunkSource: result.chunkSource || metadata.chunkSource || "",
+    canonicalSourceId:
+      result.canonicalSourceId || metadata.canonicalSourceId || null,
+    canonicalSectionId:
+      result.canonicalSectionId || metadata.canonicalSectionId || null,
+    embeddingChunkId: result.embeddingChunkId || metadata.embeddingChunkId || null,
+    retrievalReasons: parseFlexibleList(retrievalReasons, String),
     corpus: deriveCorpus(result),
     lovdataId: deriveLovdataId(result),
   };
@@ -360,6 +388,26 @@ function matchesSingleExpectation(result, expect) {
   if (
     expect.titleExact &&
     toLower(result.title) !== toLower(expect.titleExact)
+  )
+    return false;
+  if (
+    expect.canonicalSourceId &&
+    result.canonicalSourceId !== String(expect.canonicalSourceId)
+  )
+    return false;
+  if (
+    expect.canonicalSectionId &&
+    result.canonicalSectionId !== String(expect.canonicalSectionId)
+  )
+    return false;
+  if (
+    expect.embeddingChunkId &&
+    result.embeddingChunkId !== String(expect.embeddingChunkId)
+  )
+    return false;
+  if (
+    expect.retrievalReason &&
+    !result.retrievalReasons.includes(String(expect.retrievalReason))
   )
     return false;
   return true;
@@ -402,6 +450,10 @@ function summarizeCase(resultSet, benchmarkCase) {
         lovdataId: item.lovdataId || null,
         url: item.url || null,
         chunkSource: item.chunkSource || null,
+        canonicalSourceId: item.canonicalSourceId || null,
+        canonicalSectionId: item.canonicalSectionId || null,
+        embeddingChunkId: item.embeddingChunkId || null,
+        retrievalReasons: item.retrievalReasons || [],
       };
       }
     ),
@@ -529,15 +581,20 @@ async function evaluateConfig({
   vectorDb,
   llmProvider,
   config,
+  retrieveContext,
 }) {
+  const retrieve = retrieveContext || loadRuntimeDependencies().retrieveWorkspaceContext;
   const caseResults = [];
   for (const item of benchmark) {
-    const searchResult = await vectorDb.performSimilaritySearch({
-      namespace: workspace.slug,
-      input: item.query,
+    const searchResult = await retrieve({
+      query: item.query,
+      workspace,
+      workspaceSlug: workspace.slug,
       LLMConnector: llmProvider,
       similarityThreshold: config.similarityThreshold,
       topN: config.topN,
+      includeHistoryBackfill: false,
+      vectorDb,
       rerank: config.rerank,
     });
     caseResults.push(
@@ -556,7 +613,7 @@ async function evaluateConfig({
 }
 
 async function main() {
-  const { getVectorDbClass, getLLMProvider, Workspace } =
+  const { getVectorDbClass, getLLMProvider, retrieveWorkspaceContext, Workspace } =
     loadRuntimeDependencies();
   const args = parseArgs(process.argv.slice(2));
   const benchmarkCases = filterBenchmark(
@@ -590,6 +647,7 @@ async function main() {
         vectorDb,
         llmProvider,
         config,
+        retrieveContext: retrieveWorkspaceContext,
       })
     );
   }
@@ -641,7 +699,9 @@ module.exports = {
   computeMetrics,
   deriveCorpus,
   deriveLovdataId,
+  evaluateConfig,
   extractCanonicalLovdataDocument,
   normalizeResult,
+  parseFlexibleList,
   rankOfFirstMatch,
 };

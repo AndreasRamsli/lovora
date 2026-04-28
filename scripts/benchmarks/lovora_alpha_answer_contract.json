@@ -1,0 +1,93 @@
+[
+  {
+    "id": "alpha_husleietvistutvalget_uavhengighet",
+    "question": "Hvilken endringslov endrer husleieloven § 12-5 om Husleietvistutvalget, og hva er hovedpoenget i endringen?",
+    "sourceType": "alpha_seed",
+    "tags": ["nl", "answer-contract", "citation-style", "amending"],
+    "requiredTerms": ["Husleietvistutvalget", "faglig uavhengig"],
+    "requiredCitationPatterns": ["husleieloven § 12-5", "lov 22. desember 2025 nr. 127"],
+    "minContextRefs": 2
+  },
+  {
+    "id": "alpha_husleietvistutvalget_gammel_lov",
+    "question": "Behandler Husleietvistutvalget også tvister etter lov 16. juni 1939 nr. 6 om husleie?",
+    "sourceType": "alpha_seed",
+    "tags": ["nl", "answer-contract", "citation-style"],
+    "requiredTerms": ["lov 16. juni 1939 nr. 6", "Husleietvistutvalget"],
+    "requiredCitationPatterns": ["husleieloven § 12-5"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "alpha_skattebetaling_formuesskatt_utsettelse",
+    "question": "Hva sier endringsloven om utsatt betaling av formuesskatt på virksomhetsformue?",
+    "sourceType": "alpha_seed",
+    "tags": ["nl", "answer-contract", "citation-style", "rank-watch"],
+    "requiredTerms": ["formuesskatt", "virksomhetsformue", "utsatt betaling"],
+    "requiredCitationPatterns": ["skattebetalingsloven § 9-3", "lov 22. desember 2025 nr. 120"],
+    "minContextRefs": 2
+  },
+  {
+    "id": "alpha_skattebetaling_forfall",
+    "question": "Når forfaller utsatt formuesskatt og renter etter den nye regelen i skattebetalingsloven?",
+    "sourceType": "alpha_seed",
+    "tags": ["nl", "answer-contract", "citation-style"],
+    "requiredTerms": ["31. mai", "tredje året", "utsatt formuesskatt"],
+    "requiredCitationPatterns": ["skattebetalingsloven § 10-51", "skattebetalingsloven § 9-3"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "alpha_kostra_endringsforskrift",
+    "question": "Hvilken endringsforskrift gjelder KOSTRA-forskriften fra 29. oktober 2025, og hva endres?",
+    "sourceType": "alpha_seed",
+    "tags": ["sf", "answer-contract", "citation-style", "amending"],
+    "requiredTerms": ["KOSTRA-forskriften", "vedlegg"],
+    "requiredCitationPatterns": ["forskrift 29. oktober 2025 nr. 2134"],
+    "minContextRefs": 2
+  },
+  {
+    "id": "alpha_kostra_ikrafttredelse",
+    "question": "Når trer endringene i KOSTRA-forskriften i kraft?",
+    "sourceType": "alpha_seed",
+    "tags": ["sf", "answer-contract", "citation-style"],
+    "requiredTerms": ["1. januar 2026", "rapporteringsåret 2026"],
+    "requiredCitationPatterns": ["forskrift 29. oktober 2025 nr. 2134"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "alpha_norske_lov_contracter",
+    "question": "Hva sier Norske Lov om contracter og forpligter?",
+    "sourceType": "alpha_seed",
+    "tags": ["nl", "answer-contract", "citation-style"],
+    "requiredTerms": ["contracter", "forpligter"],
+    "requiredCitationPatterns": ["Norske Lov"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "alpha_stamhus_salg_dokumenter",
+    "question": "Hvilke dokumenter må stamhusbesidderen sende ved salg av leilendingsgods?",
+    "sourceType": "alpha_seed",
+    "tags": ["sf", "answer-contract", "citation-style"],
+    "requiredTerms": ["stamhusbesidderen", "leilendingsgods"],
+    "requiredCitationPatterns": ["forskrifter angaaende"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "alpha_husleietvistutvalget_forbehold",
+    "question": "Hva er bakgrunnen for omorganiseringen av Husleietvistutvalget?",
+    "sourceType": "alpha_seed",
+    "tags": ["nl", "answer-contract", "forbehold"],
+    "requiredTerms": ["forarbeider", "konteksten"],
+    "requiredCitationPatterns": ["lov 22. desember 2025 nr. 127"],
+    "minContextRefs": 1
+  },
+  {
+    "id": "alpha_source_gap_refusal",
+    "question": "Hva sier forarbeidene til endringsloven om hvorfor Husleietvistutvalget skal være faglig uavhengig?",
+    "sourceType": "alpha_seed",
+    "tags": ["nl", "answer-contract", "refusal-or-caveat"],
+    "expectedBehavior": "refusal",
+    "requiredTerms": ["forarbeider", "ikke"],
+    "requiredCitationPatterns": ["lov 22. desember 2025 nr. 127"],
+    "minContextRefs": 1
+  }
+]

@@ -565,7 +565,7 @@ const TRANSLATIONS = {
           "Velg meldingsjusteringsmodus når du bruker chat-grensesnittet.",
       },
       "display-language": {
-        title: "Visningsspråk",
+        title: "Språk",
         description:
           "Velg det foretrukne språket for å gjengi Lovoras brukergrensesnitt på - når oversettelser er tilgjengelige.",
       },

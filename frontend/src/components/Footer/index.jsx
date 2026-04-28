@@ -12,8 +12,6 @@ import {
   LinkSimple,
 } from "@phosphor-icons/react";
 import React, { useEffect, useState } from "react";
-import SettingsButton from "../SettingsButton";
-import { isMobile } from "react-device-detect";
 import { Tooltip } from "react-tooltip";
 import { Link } from "react-router-dom";
 
@@ -97,7 +95,6 @@ export default function Footer() {
               />
             </Link>
           </div>
-          {!isMobile && <SettingsButton />}
         </div>
         <Tooltip
           id="footer-item"
@@ -130,7 +127,6 @@ export default function Footer() {
             )}
           </a>
         ))}
-        {!isMobile && <SettingsButton />}
       </div>
       <Tooltip
         id="footer-item"

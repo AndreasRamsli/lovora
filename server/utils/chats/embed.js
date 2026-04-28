@@ -1,6 +1,10 @@
 const { v4: uuidv4 } = require("uuid");
 const { getVectorDbClass, getLLMProvider } = require("../helpers");
 const { chatPrompt, sourceIdentifier } = require("./index");
+const {
+  retrieveWorkspaceContext,
+  shouldUseWorkspaceContextRetrieval,
+} = require("./workspaceContextRetriever");
 const { EmbedChats } = require("../../models/embedChats");
 const {
   convertToPromptHistory,
@@ -84,25 +88,31 @@ async function streamChatWithForEmbed(
       });
     });
 
-  const vectorSearchResults =
-    embeddingsCount !== 0
-      ? await VectorDb.performSimilaritySearch({
-          namespace: embed.workspace.slug,
-          input: message,
-          LLMConnector,
-          similarityThreshold: embed.workspace?.similarityThreshold,
-          topN: embed.workspace?.topN,
-          filterIdentifiers: pinnedDocIdentifiers,
-          rerank: embed.workspace?.vectorSearchMode === "rerank",
-        })
-      : {
-          contextTexts: [],
-          sources: [],
-          message: null,
-        };
+  const retrieval = shouldUseWorkspaceContextRetrieval({
+    embeddingsCount,
+    workspaceSlug: embed.workspace.slug,
+  })
+    ? await retrieveWorkspaceContext({
+        query: message,
+        workspace: embed.workspace,
+        workspaceSlug: embed.workspace.slug,
+        LLMConnector,
+        topN: embed.workspace?.topN || 4,
+        similarityThreshold: embed.workspace?.similarityThreshold,
+        rerank: embed.workspace?.vectorSearchMode === "rerank",
+        filterIdentifiers: pinnedDocIdentifiers,
+        rawHistory,
+        vectorSearchEnabled: embeddingsCount !== 0,
+        vectorDb: VectorDb,
+      })
+    : {
+        contextTexts: [],
+        sources: [],
+        message: null,
+      };
 
   // Failed similarity search if it was run at all and failed.
-  if (!!vectorSearchResults.message) {
+  if (!!retrieval.message) {
     writeResponseChunk(response, {
       id: uuid,
       type: "abort",
@@ -114,14 +124,6 @@ async function streamChatWithForEmbed(
     return;
   }
 
-  const { fillSourceWindow } = require("../helpers/chat");
-  const filledSources = fillSourceWindow({
-    nDocs: embed.workspace?.topN || 4,
-    searchResults: vectorSearchResults.sources,
-    history: rawHistory,
-    filterIdentifiers: pinnedDocIdentifiers,
-  });
-
   // Why does contextTexts get all the info, but sources only get current search?
   // This is to give the ability of the LLM to "comprehend" a contextual response without
   // populating the Citations under a response with documents the user "thinks" are irrelevant
@@ -129,8 +131,8 @@ async function streamChatWithForEmbed(
   // If a past citation was used to answer the question - that is visible in the history so it logically makes sense
   // and does not appear to the user that a new response used information that is otherwise irrelevant for a given prompt.
   // TLDR; reduces GitHub issues for "LLM citing document that has no answer in it" while keep answers highly accurate.
-  contextTexts = [...contextTexts, ...filledSources.contextTexts];
-  sources = [...sources, ...vectorSearchResults.sources];
+  contextTexts = [...contextTexts, ...retrieval.contextTexts];
+  sources = [...sources, ...retrieval.sources];
 
   // If in query mode and no sources are found in current search or backfilled from history, do not
   // let the LLM try to hallucinate a response or use general knowledge

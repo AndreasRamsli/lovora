@@ -1,0 +1,32 @@
+[
+  {
+    "id": "exact_tvisteloven_20_3",
+    "query": "Når kan en part få sakskostnader etter tvisteloven § 20-3 selv om ingen har vunnet saken fullt ut?",
+    "tags": ["alpha", "exact-section", "civil-procedure"],
+    "expect": {
+      "canonicalSourceId": "NO:NL:LOV-2005-06-17-90:section:20-3",
+      "retrievalReason": "exact_section_match",
+      "textIncludes": "medhold av betydning"
+    }
+  },
+  {
+    "id": "exact_skattebetalingsloven_9_3",
+    "query": "Hva sier skattebetalingsloven § 9-3 om utsatt betaling av formuesskatt på virksomhetsformue?",
+    "tags": ["alpha", "exact-section", "tax"],
+    "expect": {
+      "canonicalSourceId": "NO:NL:LOV-2005-06-17-67:section:9-3",
+      "retrievalReason": "exact_section_match",
+      "textIncludes": "virksomhetsformue"
+    }
+  },
+  {
+    "id": "exact_skattebetalingsloven_10_51_fjerde_ledd",
+    "query": "Når forfaller utsatt formuesskatt etter skattebetalingsloven § 10-51 fjerde ledd?",
+    "tags": ["alpha", "exact-section", "tax"],
+    "expect": {
+      "canonicalSourceId": "NO:NL:LOV-2005-06-17-67:section:10-51:ledd:4",
+      "retrievalReason": "exact_section_subsection_match",
+      "textIncludes": "31. mai i det tredje året etter fastsettingsåret"
+    }
+  }
+]
