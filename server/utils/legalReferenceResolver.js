@@ -66,7 +66,7 @@ function publicCanonicalRow(row = {}) {
   return publicRow;
 }
 
-function candidateForRow(row, reference, matchType) {
+function candidateForRow(row, reference, matchType, referenceIndex = 0) {
   const embeddingChunkId = Array.isArray(row.embeddingChunkIds)
     ? row.embeddingChunkIds[0]
     : row.embeddingChunkId || "";
@@ -87,6 +87,8 @@ function candidateForRow(row, reference, matchType) {
     score: 10_000 - MATCH_PRECEDENCE[matchType],
     embeddingChunkId,
     matchType,
+    preferredVersionType: reference.preferredVersionType || "current",
+    referenceIndex,
     retrievalReasons: unique(retrievalReasons),
   };
 }
@@ -174,7 +176,7 @@ function neighborRowsForSections(store, documentIds, sections) {
   });
 }
 
-function rowsForReference(reference, store) {
+function rowsForReference(reference, store, referenceIndex = 0) {
   const documentIds = documentIdsForReference(reference, store);
   const matchingRows = exactRowsForSection(
     store,
@@ -183,7 +185,9 @@ function rowsForReference(reference, store) {
   );
   if (!matchingRows.length) {
     const fallbackReference = currentLawReferenceForAmendmentFallback(reference);
-    if (fallbackReference) return rowsForReference(fallbackReference, store);
+    if (fallbackReference) {
+      return rowsForReference(fallbackReference, store, referenceIndex);
+    }
   }
   const resolvedDocumentIds = new Set(
     matchingRows.map((row) => row.documentId).filter(Boolean)
@@ -219,11 +223,13 @@ function rowsForReference(reference, store) {
       const sectionRows = rows.filter((row) => !row.subsection);
       return [
         ...subsectionRows.map((row) =>
-          candidateForRow(row, reference, "subsection")
+          candidateForRow(row, reference, "subsection", referenceIndex)
         ),
-        ...sectionRows.map((row) => candidateForRow(row, reference, "section")),
+        ...sectionRows.map((row) =>
+          candidateForRow(row, reference, "section", referenceIndex)
+        ),
         ...neighborRows.map((row) =>
-          candidateForRow(row, reference, "neighbor")
+          candidateForRow(row, reference, "neighbor", referenceIndex)
         ),
       ];
     }
@@ -231,12 +237,22 @@ function rowsForReference(reference, store) {
 
   const sectionRows = rows.filter((row) => !row.subsection);
   return [
-    ...sectionRows.map((row) => candidateForRow(row, reference, "section")),
-    ...neighborRows.map((row) => candidateForRow(row, reference, "neighbor")),
+    ...sectionRows.map((row) =>
+      candidateForRow(row, reference, "section", referenceIndex)
+    ),
+    ...neighborRows.map((row) =>
+      candidateForRow(row, reference, "neighbor", referenceIndex)
+    ),
   ];
 }
 
 function candidatePrecedence(candidate = {}) {
+  if (
+    candidate.preferredVersionType === "amending" &&
+    isAmendingVersion(candidate)
+  ) {
+    return MATCH_PRECEDENCE[candidate.matchType] ?? 2;
+  }
   const version = VERSION_PRECEDENCE[candidate.versionType] ?? 2;
   if (version >= 3) return version;
   return MATCH_PRECEDENCE[candidate.matchType] ?? 2;
@@ -247,6 +263,15 @@ function rankLegalCandidates(candidates = []) {
     const aPrecedence = candidatePrecedence(a);
     const bPrecedence = candidatePrecedence(b);
     if (aPrecedence !== bPrecedence) return aPrecedence - bPrecedence;
+    const aReferenceIndex = Number.isInteger(a.referenceIndex)
+      ? a.referenceIndex
+      : Number.MAX_SAFE_INTEGER;
+    const bReferenceIndex = Number.isInteger(b.referenceIndex)
+      ? b.referenceIndex
+      : Number.MAX_SAFE_INTEGER;
+    if (aReferenceIndex !== bReferenceIndex) {
+      return aReferenceIndex - bReferenceIndex;
+    }
 
     return String(a.canonicalSourceId || "").localeCompare(
       String(b.canonicalSourceId || "")
@@ -290,8 +315,8 @@ function resolveLegalReferences({
     store || loadLegalRetrievalStore({ workspaceSlug, storageDir });
 
   const candidates = [];
-  for (const reference of parsedQuery.references || []) {
-    candidates.push(...rowsForReference(reference, activeStore));
+  for (const [index, reference] of (parsedQuery.references || []).entries()) {
+    candidates.push(...rowsForReference(reference, activeStore, index));
   }
 
   return dedupeCanonicalCandidates(rankLegalCandidates(candidates)).slice(

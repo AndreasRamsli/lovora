@@ -135,6 +135,48 @@ function fixtureStore() {
       text: "Gjennomføring av kontroll.",
     },
     {
+      documentId: "LOV-2008-06-06-37",
+      canonicalTitle: "havressurslova",
+      aliases: ["havressurslova"],
+      title: "Havressurslova",
+      section: "47",
+      subsection: "",
+      versionType: "consolidated",
+      canonicalSectionId: "NO:NL:LOV-2008-06-06-37:section:47",
+      canonicalSourceId: "NO:NL:LOV-2008-06-06-37:section:47",
+      embeddingChunkIds: ["chunk-havressurs-47-current"],
+      embeddingChunkSources: ["link://havressurs#47"],
+      text: "Straff.",
+    },
+    {
+      documentId: "LOV-2008-06-06-37",
+      canonicalTitle: "havressurslova",
+      aliases: ["havressurslova"],
+      title: "Havressurslova",
+      section: "48",
+      subsection: "",
+      versionType: "consolidated",
+      canonicalSectionId: "NO:NL:LOV-2008-06-06-37:section:48",
+      canonicalSourceId: "NO:NL:LOV-2008-06-06-37:section:48",
+      embeddingChunkIds: ["chunk-havressurs-48-current"],
+      embeddingChunkSources: ["link://havressurs#48"],
+      text: "Inndraging.",
+    },
+    {
+      documentId: "LOV-2008-06-06-37",
+      canonicalTitle: "havressurslova",
+      aliases: ["havressurslova"],
+      title: "Havressurslova",
+      section: "49",
+      subsection: "",
+      versionType: "consolidated",
+      canonicalSectionId: "NO:NL:LOV-2008-06-06-37:section:49",
+      canonicalSourceId: "NO:NL:LOV-2008-06-06-37:section:49",
+      embeddingChunkIds: ["chunk-havressurs-49-current"],
+      embeddingChunkSources: ["link://havressurs#49"],
+      text: "Straffeprosess.",
+    },
+    {
       documentId: "LOV-2025-06-06-29",
       canonicalTitle: "endringslov til havressurslova",
       aliases: ["endringslov til havressurslova"],
@@ -304,6 +346,26 @@ describe("legalReferenceResolver", () => {
     expect(results[0]).toMatchObject({
       canonicalSourceId: "NO:NL:LOV-2025-06-06-29:amending-section:46",
       embeddingChunkId: "chunk-havressurs-amending",
+      retrievalReasons: ["title_alias_match", "amending_act_section_match"],
+    });
+  });
+
+  test("keeps explicit amendment hits inside tight multi-reference limits", () => {
+    const results = resolveLegalReferences({
+      parsedQuery: parseLegalCitationQuery(
+        "Sammenlign Endringslov til havressurslova § 46, havressurslova § 47, § 48 og § 49."
+      ),
+      store: fixtureStore(),
+      limit: 3,
+    });
+
+    expect(results.map((item) => item.canonicalSourceId)).toEqual([
+      "NO:NL:LOV-2025-06-06-29:amending-section:46",
+      "NO:NL:LOV-2008-06-06-37:section:47",
+      "NO:NL:LOV-2008-06-06-37:section:48",
+    ]);
+    expect(results[0]).toMatchObject({
+      preferredVersionType: "amending",
       retrievalReasons: ["title_alias_match", "amending_act_section_match"],
     });
   });
