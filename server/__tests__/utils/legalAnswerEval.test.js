@@ -110,6 +110,25 @@ describe("legalAnswerEval", () => {
     expect(result.checks.hasRequiredCitationPatterns.passed).toBe(false);
   });
 
+  test("matches exact required citations with non-standard section hyphens", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "section-non-standard-hyphen",
+        requiredTerms: ["gebyr"],
+        requiredCitationPatterns: ["§ 11-1"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Gebyr følger av forskriften § 11‑1 [CONTEXT 0]. " +
+          "Kildegrunnlag: Forskrift 16. januar 2026 nr. 54 § 11‑1 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(true);
+  });
+
   test("does not treat longer section numbers as short follow-up citation matches", () => {
     const result = evaluateAnswerCase(
       {

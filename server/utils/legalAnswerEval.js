@@ -7,6 +7,7 @@ function normalizeText(value = "") {
   return String(value)
     .toLowerCase()
     .normalize("NFKC")
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -85,7 +86,9 @@ function hasSourceGroundedRefusal(response = "") {
 }
 
 function normalizeCitationName(value = "") {
-  return normalizeText(value)
+  const text = normalizeText(value);
+  if (/^§/.test(text)) return "";
+  return text
     .replace(/\s+/g, " ")
     .replace(/\s+§.*$/, "")
     .trim();
@@ -163,12 +166,13 @@ function hasShortFollowUpCitation(response = "", pattern = "") {
 
 function hasExactRequiredCitation(response = "", pattern = "") {
   if (!pattern) return true;
+  const normalizedResponse = normalizeText(response);
   const section = sectionPatternFromCitation(pattern);
   if (!section) {
     const escaped = escapeRegExp(pattern)
       .replace(/\\§/g, "§")
       .replace(/\s+/g, "\\s+");
-    return new RegExp(escaped, "i").test(response);
+    return new RegExp(escaped, "i").test(normalizedResponse);
   }
 
   const lawName = normalizeCitationName(pattern);
@@ -179,7 +183,7 @@ function hasExactRequiredCitation(response = "", pattern = "") {
     `${lawNamePattern}§{1,2}\\s*${escapeRegExp(section)}(?![0-9a-zæøå-])`,
     "i"
   );
-  return exactCitation.test(response);
+  return exactCitation.test(normalizedResponse);
 }
 
 function requiredCitationPassed(response = "", pattern = "") {
