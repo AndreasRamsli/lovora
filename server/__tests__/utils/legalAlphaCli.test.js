@@ -370,12 +370,19 @@ describe("legal alpha CLI input errors", () => {
       "exact_tvisteloven_20_3",
       "exact_skattebetalingsloven_9_3",
       "exact_skattebetalingsloven_10_51_fjerde_ledd",
+      "exact_amending_havressurslova_46",
     ]);
     expect(benchmark[2].expect).toEqual(
       expect.objectContaining({
         canonicalSourceId:
           "NO:NL:LOV-2005-06-17-67:section:10-51:ledd:4",
         retrievalReason: "exact_section_subsection_match",
+      })
+    );
+    expect(benchmark[3].expect).toEqual(
+      expect.objectContaining({
+        canonicalSourceId: "NO:NL:LOV-2025-06-06-29:amending-section:46",
+        retrievalReason: "amending_act_section_match",
       })
     );
   });
