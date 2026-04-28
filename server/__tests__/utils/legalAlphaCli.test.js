@@ -16,6 +16,7 @@ const {
 } = require("../../../scripts/run-alpha-answer-eval.cjs");
 const {
   buildQuestionCases,
+  hasCanonicalSection,
 } = require("../../../scripts/build-alpha-source-question-set.cjs");
 const {
   parseArgs: parsePromptArgs,
@@ -107,6 +108,126 @@ describe("legal alpha CLI input errors", () => {
         requiredCitationPatterns: expect.arrayContaining(["§ 9-3"]),
         minContextRefs: 1,
       })
+    );
+  });
+
+  test("source question builder skips non-canonical exact sections from full-document amending chunks", () => {
+    const cases = buildQuestionCases(
+      [
+        {
+          corpus: "NL",
+          doc_id: "nl-20250606-029",
+          documentId: "LOV-2025-06-06-29",
+          title: "Lov om endringer i havressurslova",
+          shortTitle: "Endringslov til havressurslova",
+          url: "https://lovdata.no/dokument/LTI/lov/2025-06-06-29",
+          docType: "amending_act",
+          section: "full-document",
+          text:
+            "I lov 6. juni 2008 nr. 37 om havressurslova skal § 46 lyde:\n" +
+            "§ 46. Fiskeridirektoratet kan beslaglegge umerket fiskeredskap.\n" +
+            "II Loven trer i kraft fra den tid Kongen bestemmer.",
+        },
+      ],
+      {
+        limit: 5,
+        canonicalSections: new Set(["LOV-2025-06-06-29:full-document"]),
+      }
+    );
+
+    const ids = cases.map((item) => item.id);
+    expect(ids.some((id) => id.includes("section_46"))).toBe(false);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "nl_20250606_029_effective_date",
+        "nl_20250606_029_amendment_summary",
+      ])
+    );
+  });
+
+  test("source question builder keeps exact section cases exposed by the canonical index", () => {
+    const cases = buildQuestionCases(
+      [
+        {
+          corpus: "NL",
+          doc_id: "nl-20251222-120",
+          documentId: "LOV-2025-12-22-120",
+          title: "Lov om endringer i skattebetalingsloven",
+          shortTitle: "Endringslov til skattebetalingsloven",
+          url: "https://lovdata.no/dokument/LTI/lov/2025-12-22-120",
+          docType: "amending_act",
+          text:
+            "Ny § 9-3 skal lyde:\n" +
+            "§ 9-3. Betalingsutsettelse for formuesskatt\n" +
+            "Personlig eier av virksomhet kan kreve utsettelse.",
+        },
+      ],
+      {
+        limit: 5,
+        canonicalSections: new Set(["LOV-2025-12-22-120:9-3"]),
+      }
+    );
+
+    expect(cases.some((item) => item.id.includes("section_9_3"))).toBe(true);
+  });
+
+  test("source question builder checks canonical sections across Lovdata ID shapes", () => {
+    const canonicalSections = new Set(["LOV-2025-12-22-120:9-3"]);
+
+    for (const record of [
+      { documentId: "LOV-2025-12-22-120" },
+      { doc_id: "nl-20251222-120" },
+      { lovdataId: "nl-20251222-120" },
+      { url: "https://lovdata.no/dokument/LTI/lov/2025-12-22-120" },
+    ]) {
+      expect(hasCanonicalSection(record, "§ 9-3", canonicalSections)).toBe(
+        true
+      );
+    }
+  });
+
+  test("source question builder reserves canonical section cases before broad amending cases", () => {
+    const broadRecords = Array.from({ length: 6 }, (_, index) => ({
+      corpus: "NL",
+      doc_id: `nl-2026010${index + 1}-00${index + 1}`,
+      documentId: `LOV-2026-01-0${index + 1}-${index + 1}`,
+      title: `Lov om endringer i testloven ${index + 1}`,
+      shortTitle: `Endringslov ${index + 1}`,
+      url: `https://lovdata.no/dokument/LTI/lov/2026-01-0${index + 1}-${
+        index + 1
+      }`,
+      docType: "amending_act",
+      text:
+        "I loven skal følgende endres.\n" +
+        "§ 1 skal lyde:\n" +
+        "§ 1. Midlertidig prioritet for bred endring.\n" +
+        "Loven trer i kraft straks.",
+    }));
+    const cases = buildQuestionCases(
+      [
+        ...broadRecords,
+        {
+          corpus: "NL",
+          doc_id: "nl-20251222-120",
+          documentId: "LOV-2025-12-22-120",
+          title: "Lov om endringer i skattebetalingsloven",
+          shortTitle: "Endringslov til skattebetalingsloven",
+          url: "https://lovdata.no/dokument/LTI/lov/2025-12-22-120",
+          docType: "amending_act",
+          text:
+            "Ny § 9-3 skal lyde:\n" +
+            "§ 9-3. Betalingsutsettelse for formuesskatt\n" +
+            "Personlig eier av virksomhet kan kreve utsettelse.",
+        },
+      ],
+      {
+        limit: 5,
+        canonicalSections: new Set(["LOV-2025-12-22-120:9-3"]),
+      }
+    );
+
+    expect(cases.map((item) => item.id)).toContain(
+      "nl_20251222_120_section_9_3"
     );
   });
 
