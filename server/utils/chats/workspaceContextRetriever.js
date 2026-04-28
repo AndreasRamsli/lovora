@@ -51,6 +51,75 @@ function withVectorReason(source = {}) {
   };
 }
 
+function hasVectorFallbackReason(sources = []) {
+  return sources.some((source) =>
+    normalizeReasons(source.retrievalReasons).includes("vector_fallback")
+  );
+}
+
+function referenceKeys(parsedQuery = {}) {
+  return unique(
+    (parsedQuery.references || [])
+      .map((reference) => reference.section)
+      .filter(Boolean)
+  );
+}
+
+function exactSourceSections(sources = []) {
+  const exactReasons = new Set([
+    "exact_section_match",
+    "exact_section_subsection_match",
+    "amending_act_section_match",
+  ]);
+  return unique(
+    sources
+      .filter((source) =>
+        normalizeReasons(source.retrievalReasons).some((reason) =>
+          exactReasons.has(reason)
+        )
+      )
+      .map((source) => source.section)
+      .filter(Boolean)
+  );
+}
+
+function legalReferenceDiagnostics({ parsedQuery, exactSources }) {
+  const sections = referenceKeys(parsedQuery);
+  const matchedSections = exactSourceSections(exactSources);
+  const missedSections = sections.filter(
+    (section) => !matchedSections.includes(section)
+  );
+  return {
+    legalReferenceDetected: parsedQuery?.hasLegalReference === true,
+    legalReferenceCount: sections.length,
+    exactMatchCount: matchedSections.length,
+    exactMatchFound: sections.length > 0 && missedSections.length === 0,
+    missedSections,
+    sections,
+  };
+}
+
+function logLegalReferenceFallbackMetric({
+  workspaceSlug,
+  referenceDiagnostics,
+  retrievalReasons,
+}) {
+  console.warn(
+    "[legal-retrieval-metric]",
+    JSON.stringify({
+      workspace: workspaceSlug,
+      legal_reference_detected: true,
+      exact_match_found: false,
+      retrieval_reason: "vector_fallback",
+      retrieval_reasons: retrievalReasons,
+      reference_count: referenceDiagnostics.legalReferenceCount,
+      exact_match_count: referenceDiagnostics.exactMatchCount,
+      sections: referenceDiagnostics.sections,
+      missed_sections: referenceDiagnostics.missedSections,
+    })
+  );
+}
+
 function dedupeRetrievedSources(sources = []) {
   const seen = new Map();
   for (const source of sources) {
@@ -127,12 +196,18 @@ async function retrieveWorkspaceContext({
   }
 
   if (vectorSearchResults.message && exactSources.length === 0) {
+    const referenceDiagnostics = legalReferenceDiagnostics({
+      parsedQuery,
+      exactSources,
+    });
     return {
       contextTexts: [],
       sources: [],
       message: vectorSearchResults.message,
       diagnostics: {
         parsedQuery,
+        ...referenceDiagnostics,
+        legalReferenceFallback: false,
         retrievalReasons: [],
         pinned: [],
       },
@@ -153,8 +228,17 @@ async function retrieveWorkspaceContext({
     filterIdentifiers,
   });
 
+  const referenceDiagnostics = legalReferenceDiagnostics({
+    parsedQuery,
+    exactSources,
+  });
   const diagnostics = {
     parsedQuery,
+    ...referenceDiagnostics,
+    legalReferenceFallback:
+      referenceDiagnostics.legalReferenceDetected &&
+      !referenceDiagnostics.exactMatchFound &&
+      hasVectorFallbackReason(searchResults),
     retrievalReasons: unique(
       searchResults.flatMap((source) =>
         normalizeReasons(source.retrievalReasons)
@@ -165,6 +249,14 @@ async function retrieveWorkspaceContext({
       .map((source) => source.canonicalSourceId)
       .filter(Boolean),
   };
+
+  if (diagnostics.legalReferenceFallback) {
+    logLegalReferenceFallbackMetric({
+      workspaceSlug,
+      referenceDiagnostics,
+      retrievalReasons: diagnostics.retrievalReasons,
+    });
+  }
 
   if (process.env.LEGAL_RETRIEVAL_DEBUG === "1") {
     console.log(
