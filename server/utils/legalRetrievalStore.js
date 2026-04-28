@@ -1,5 +1,9 @@
 const fs = require("fs");
 const path = require("path");
+const {
+  buildVirtualAmendingRows,
+  isAmendingFullDocument,
+} = require("./legalAmendingAnchors");
 const { normalizeLegalCitationText } = require("./legalCitationQuery");
 
 const storeCache = new Map();
@@ -201,7 +205,43 @@ function materializeCanonicalText(row = {}) {
   );
 }
 
+function expandCanonicalRows(canonicalRows) {
+  const expandedRows = [];
+  const seenCandidateKeys = new Set();
+  const seenVirtualSourceIds = new Set();
+
+  for (const row of canonicalRows) {
+    expandedRows.push(row);
+    if (!isAmendingFullDocument(row)) continue;
+
+    const embeddingChunkKey = Array.isArray(row.embeddingChunkIds)
+      ? row.embeddingChunkIds.join("|")
+      : row.embeddingChunkIds || row.canonicalSourceId || "";
+    const candidateKey = `${row.documentId || ""}:${row.section || ""}:${embeddingChunkKey}`;
+    if (seenCandidateKeys.has(candidateKey)) continue;
+    seenCandidateKeys.add(candidateKey);
+
+    for (const virtualRow of buildVirtualAmendingRows({
+      ...row,
+      text: materializeCanonicalText(row),
+    })) {
+      if (
+        virtualRow.canonicalSourceId &&
+        seenVirtualSourceIds.has(virtualRow.canonicalSourceId)
+      )
+        continue;
+      if (virtualRow.canonicalSourceId) {
+        seenVirtualSourceIds.add(virtualRow.canonicalSourceId);
+      }
+      expandedRows.push(virtualRow);
+    }
+  }
+
+  return expandedRows;
+}
+
 function buildStore(canonicalRows, embeddingRows) {
+  const indexedCanonicalRows = expandCanonicalRows(canonicalRows);
   const canonicalBySourceId = new Map();
   const canonicalBySectionId = new Map();
   const canonicalBySection = new Map();
@@ -209,7 +249,7 @@ function buildStore(canonicalRows, embeddingRows) {
   const embeddingByChunkId = new Map();
   const aliasToDocumentIds = new Map();
 
-  for (const row of canonicalRows) {
+  for (const row of indexedCanonicalRows) {
     if (row.canonicalSourceId)
       canonicalBySourceId.set(row.canonicalSourceId, row);
     addToMultiMap(canonicalBySectionId, row.canonicalSectionId, row);
@@ -236,7 +276,7 @@ function buildStore(canonicalRows, embeddingRows) {
   }
 
   return {
-    canonicalRows,
+    canonicalRows: indexedCanonicalRows,
     embeddingRows,
     canonicalBySourceId,
     canonicalBySectionId,
