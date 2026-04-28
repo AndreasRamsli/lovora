@@ -16,11 +16,10 @@ const ORDINAL_LEDD = new Map([
 ]);
 const SHORT_DOCUMENT_TITLE =
   "[a-zæøå][a-zæøå0-9-]*(?:loven|lova|forskriften|forskrifta)";
-const DOCUMENT_HINT_PATTERN =
-  new RegExp(
-    `\\b((?:endringslov(?:en)?|endringsforskrift(?:en)?)\\s+til\\s+${SHORT_DOCUMENT_TITLE}|(?:lov|forskrift)\\s+om\\s+endring(?:er)?\\s+i\\s+${SHORT_DOCUMENT_TITLE}|${SHORT_DOCUMENT_TITLE})\\s*$`,
-    "g"
-  );
+const DOCUMENT_HINT_PATTERN = new RegExp(
+  `\\b((?:endringslov(?:en)?|endringsforskrift(?:en)?)\\s+til\\s+${SHORT_DOCUMENT_TITLE}|(?:lov|forskrift)\\s+om\\s+endring(?:er)?\\s+i\\s+${SHORT_DOCUMENT_TITLE}|${SHORT_DOCUMENT_TITLE})\\s*$`,
+  "g"
+);
 
 function normalizeLegalCitationText(value = "") {
   return String(value)
@@ -43,10 +42,7 @@ function normalizeDocumentHint(hint = "") {
     /^(lov|forskrift)\s+om\s+endring(?:er)?\s+i\s+(.+)$/
   );
   if (!amendmentMatch) {
-    return text.replace(
-      /^(endringslov|endringsforskrift)en(\s+til\b)/,
-      "$1$2"
-    );
+    return text.replace(/^(endringslov|endringsforskrift)en(\s+til\b)/, "$1$2");
   }
 
   const [, sourceType, targetTitle] = amendmentMatch;
@@ -143,10 +139,7 @@ function parseLegalCitationQuery(query = "") {
       /\b(?:lov|forskrift)\s+\d{1,2}\.\s+[a-zæøå]+\s+\d{4}\s+nr\.\s+\d+/g,
       before
     );
-    const documentMatch = lastMatch(
-      DOCUMENT_HINT_PATTERN,
-      before
-    );
+    const documentMatch = lastMatch(DOCUMENT_HINT_PATTERN, before);
     let activeDocumentMatch = documentMatch;
     let activeDatedMatch = hasInterveningSectionMarker(before, datedMatch)
       ? null

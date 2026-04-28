@@ -184,7 +184,8 @@ function rowsForReference(reference, store, referenceIndex = 0) {
     reference.section
   );
   if (!matchingRows.length) {
-    const fallbackReference = currentLawReferenceForAmendmentFallback(reference);
+    const fallbackReference =
+      currentLawReferenceForAmendmentFallback(reference);
     if (fallbackReference) {
       return rowsForReference(fallbackReference, store, referenceIndex);
     }

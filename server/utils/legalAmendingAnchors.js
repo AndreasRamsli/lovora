@@ -1,7 +1,4 @@
-const AMENDING_VERSION_TYPES = new Set([
-  "amending_act",
-  "amending_regulation",
-]);
+const AMENDING_VERSION_TYPES = new Set(["amending_act", "amending_regulation"]);
 
 function isAmendingFullDocument(row = {}) {
   if (String(row.subsection || "").trim()) return false;
