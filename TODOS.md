@@ -1,5 +1,21 @@
 # TODOs
 
+## Frontend: Signup Explainer Wizard
+
+**What:** Add a short 3-step onboarding wizard that appears when people sign up and explains what Lovora is, what users can do first, and how to get value from the app.
+
+**Why:** New users should understand Lovora immediately after signup instead of landing cold in the product. A focused wizard can set expectations, reduce confusion, and guide users toward the first useful action without adding heavy setup friction.
+
+**Pros:** Improves first-run clarity; gives Lovora a more intentional onboarding moment; keeps explanation lightweight by limiting the flow to three steps.
+
+**Cons:** Adds one more signup-path surface to design, localize/copy-edit, and test. The wizard should avoid blocking experienced users or turning into a long setup flow.
+
+**Context:** Keep this as a lightweight product explanation, not a configuration wizard. Suggested steps: (1) what Lovora is, (2) how to ask questions or use workspace context, (3) the recommended first action after signup. Include skip/dismiss behavior and persist completion so returning users are not shown the wizard again.
+
+**Depends on:** Existing signup/session flow and a clear place to persist "onboarding completed" state for the user.
+
+---
+
 ## Frontend: Citation Sidebar Toggle Tests
 
 **What:** Add React Testing Library tests for `Citations` component covering the `activeCitationId` toggle behavior.
