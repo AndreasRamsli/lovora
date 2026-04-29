@@ -10,6 +10,7 @@ function resolverResult() {
       canonicalSourceId: "NO:NL:LOV-2005-06-17-90:section:20-3",
       embeddingChunkId: "chunk-exact",
       title: "Tvisteloven",
+      section: "20-3",
       text: "Eksakt § 20-3.",
       chunkSource: "link://exact",
       retrievalReasons: ["title_alias_match", "exact_section_match"],
@@ -18,6 +19,10 @@ function resolverResult() {
 }
 
 describe("workspaceContextRetriever", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test("pins exact legal hits before vector fallback", async () => {
     const vectorDb = {
       performSimilaritySearch: jest.fn().mockResolvedValue({
@@ -55,6 +60,7 @@ describe("workspaceContextRetriever", () => {
   });
 
   test("uses vector fallback only when no exact legal reference resolves", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     const vectorDb = {
       performSimilaritySearch: jest.fn().mockResolvedValue({
         message: false,
@@ -74,6 +80,104 @@ describe("workspaceContextRetriever", () => {
 
     expect(result.sources).toHaveLength(1);
     expect(result.sources[0].retrievalReasons).toEqual(["vector_fallback"]);
+    expect(result.diagnostics).toMatchObject({
+      legalReferenceDetected: false,
+      legalReferenceCount: 0,
+      exactMatchCount: 0,
+      exactMatchFound: false,
+      legalReferenceFallback: false,
+    });
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  test("warns when a legal reference falls back to vector search", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const vectorDb = {
+      performSimilaritySearch: jest.fn().mockResolvedValue({
+        message: false,
+        sources: [
+          {
+            text: "Vector om tvisteloven.",
+            chunkSource: "link://vector",
+          },
+        ],
+      }),
+    };
+
+    const result = await retrieveWorkspaceContext({
+      query: "Hva sier tvisteloven § 20-3?",
+      workspace: { slug: "lovora-alpha" },
+      LLMConnector: { embedTextInput: jest.fn() },
+      topN: 1,
+      vectorDb,
+      resolveExactSources: () => [],
+      rawHistory: [],
+    });
+
+    expect(result.diagnostics).toMatchObject({
+      legalReferenceDetected: true,
+      legalReferenceCount: 1,
+      exactMatchCount: 0,
+      exactMatchFound: false,
+      legalReferenceFallback: true,
+      missedSections: ["20-3"],
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[legal-retrieval-metric]",
+      expect.stringContaining('"retrieval_reason":"vector_fallback"')
+    );
+    expect(JSON.parse(warnSpy.mock.calls[0][1])).toMatchObject({
+      workspace: "lovora-alpha",
+      legal_reference_detected: true,
+      exact_match_found: false,
+      retrieval_reason: "vector_fallback",
+      sections: ["20-3"],
+      missed_sections: ["20-3"],
+    });
+    expect(warnSpy.mock.calls[0][1]).not.toContain("Hva sier");
+    warnSpy.mockRestore();
+  });
+
+  test("warns when a multi-reference query has a partial exact miss", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const vectorDb = {
+      performSimilaritySearch: jest.fn().mockResolvedValue({
+        message: false,
+        sources: [
+          {
+            text: "Vector om § 20-4.",
+            chunkSource: "link://vector",
+          },
+        ],
+      }),
+    };
+
+    const result = await retrieveWorkspaceContext({
+      query: "Sammenlign tvisteloven § 20-3 og § 20-4.",
+      workspace: { slug: "lovora-alpha" },
+      LLMConnector: { embedTextInput: jest.fn() },
+      topN: 2,
+      vectorDb,
+      resolveExactSources: () => resolverResult(),
+      rawHistory: [],
+    });
+
+    expect(result.diagnostics).toMatchObject({
+      legalReferenceDetected: true,
+      legalReferenceCount: 2,
+      exactMatchCount: 1,
+      exactMatchFound: false,
+      legalReferenceFallback: true,
+      missedSections: ["20-4"],
+    });
+    expect(JSON.parse(warnSpy.mock.calls[0][1])).toMatchObject({
+      reference_count: 2,
+      exact_match_count: 1,
+      sections: ["20-3", "20-4"],
+      missed_sections: ["20-4"],
+    });
+    warnSpy.mockRestore();
   });
 
   test("uses history backfill as context without exposing it as a new citation", async () => {
@@ -105,6 +209,13 @@ describe("workspaceContextRetriever", () => {
       "Eksakt § 20-3.",
       "Skjult historikk-kontekst.",
     ]);
+    expect(result.diagnostics).toMatchObject({
+      legalReferenceDetected: true,
+      legalReferenceCount: 1,
+      exactMatchCount: 1,
+      exactMatchFound: true,
+      legalReferenceFallback: false,
+    });
     expect(result.sources.map((source) => source.text)).toEqual([
       "Eksakt § 20-3.",
     ]);

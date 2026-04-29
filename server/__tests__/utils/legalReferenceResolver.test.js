@@ -121,6 +121,78 @@ function fixtureStore() {
       text: "Endringslov.",
     },
     {
+      documentId: "LOV-2008-06-06-37",
+      canonicalTitle: "havressurslova",
+      aliases: ["havressurslova"],
+      title: "Havressurslova",
+      section: "46",
+      subsection: "",
+      versionType: "consolidated",
+      canonicalSectionId: "NO:NL:LOV-2008-06-06-37:section:46",
+      canonicalSourceId: "NO:NL:LOV-2008-06-06-37:section:46",
+      embeddingChunkIds: ["chunk-havressurs-46-current"],
+      embeddingChunkSources: ["link://havressurs#46"],
+      text: "Gjennomføring av kontroll.",
+    },
+    {
+      documentId: "LOV-2008-06-06-37",
+      canonicalTitle: "havressurslova",
+      aliases: ["havressurslova"],
+      title: "Havressurslova",
+      section: "47",
+      subsection: "",
+      versionType: "consolidated",
+      canonicalSectionId: "NO:NL:LOV-2008-06-06-37:section:47",
+      canonicalSourceId: "NO:NL:LOV-2008-06-06-37:section:47",
+      embeddingChunkIds: ["chunk-havressurs-47-current"],
+      embeddingChunkSources: ["link://havressurs#47"],
+      text: "Straff.",
+    },
+    {
+      documentId: "LOV-2008-06-06-37",
+      canonicalTitle: "havressurslova",
+      aliases: ["havressurslova"],
+      title: "Havressurslova",
+      section: "48",
+      subsection: "",
+      versionType: "consolidated",
+      canonicalSectionId: "NO:NL:LOV-2008-06-06-37:section:48",
+      canonicalSourceId: "NO:NL:LOV-2008-06-06-37:section:48",
+      embeddingChunkIds: ["chunk-havressurs-48-current"],
+      embeddingChunkSources: ["link://havressurs#48"],
+      text: "Inndraging.",
+    },
+    {
+      documentId: "LOV-2008-06-06-37",
+      canonicalTitle: "havressurslova",
+      aliases: ["havressurslova"],
+      title: "Havressurslova",
+      section: "49",
+      subsection: "",
+      versionType: "consolidated",
+      canonicalSectionId: "NO:NL:LOV-2008-06-06-37:section:49",
+      canonicalSourceId: "NO:NL:LOV-2008-06-06-37:section:49",
+      embeddingChunkIds: ["chunk-havressurs-49-current"],
+      embeddingChunkSources: ["link://havressurs#49"],
+      text: "Straffeprosess.",
+    },
+    {
+      documentId: "LOV-2025-06-06-29",
+      canonicalTitle: "endringslov til havressurslova",
+      aliases: ["endringslov til havressurslova"],
+      title: "Endringslov til havressurslova",
+      section: "46",
+      subsection: "",
+      versionType: "amending_act",
+      segmentType: "virtual_amending_section",
+      matchReason: "amending_act_section_match",
+      canonicalSectionId: "NO:NL:LOV-2025-06-06-29:amending-section:46",
+      canonicalSourceId: "NO:NL:LOV-2025-06-06-29:amending-section:46",
+      embeddingChunkIds: ["chunk-havressurs-amending"],
+      embeddingChunkSources: ["link://havressurs-amending"],
+      text: "Beslaglegge og destruere umerket fiskeredskap.",
+    },
+    {
       documentId: "LOV-2005-06-17-67",
       canonicalTitle: "skattebetalingsloven",
       aliases: ["skattebetalingsloven"],
@@ -143,6 +215,15 @@ function fixtureStore() {
     }
   }
   return { canonicalRows: rows, aliasToDocumentIds };
+}
+
+function fixtureStoreWithoutVirtualAmendingSection() {
+  const store = fixtureStore();
+  store.canonicalRows = store.canonicalRows.filter(
+    (row) =>
+      row.canonicalSourceId !== "NO:NL:LOV-2025-06-06-29:amending-section:46"
+  );
+  return store;
 }
 
 describe("legalReferenceResolver", () => {
@@ -227,6 +308,99 @@ describe("legalReferenceResolver", () => {
     ]);
   });
 
+  test("normal law intent prefers consolidated current law", () => {
+    const results = resolveLegalReferences({
+      parsedQuery: parseLegalCitationQuery("Hva sier havressurslova § 46?"),
+      store: fixtureStore(),
+    });
+
+    expect(results[0]).toMatchObject({
+      canonicalSourceId: "NO:NL:LOV-2008-06-06-37:section:46",
+      retrievalReasons: ["title_alias_match", "exact_section_match"],
+    });
+  });
+
+  test("amendment law intent prefers virtual amendment section", () => {
+    const results = resolveLegalReferences({
+      parsedQuery: parseLegalCitationQuery(
+        "Hva sier Endringslov til havressurslova § 46?"
+      ),
+      store: fixtureStore(),
+    });
+
+    expect(results[0]).toMatchObject({
+      canonicalSourceId: "NO:NL:LOV-2025-06-06-29:amending-section:46",
+      embeddingChunkId: "chunk-havressurs-amending",
+      retrievalReasons: ["title_alias_match", "amending_act_section_match"],
+    });
+  });
+
+  test("lov om endringer intent resolves virtual amendment section", () => {
+    const results = resolveLegalReferences({
+      parsedQuery: parseLegalCitationQuery(
+        "Hva sier lov om endringer i havressurslova § 46?"
+      ),
+      store: fixtureStore(),
+    });
+
+    expect(results[0]).toMatchObject({
+      canonicalSourceId: "NO:NL:LOV-2025-06-06-29:amending-section:46",
+      embeddingChunkId: "chunk-havressurs-amending",
+      retrievalReasons: ["title_alias_match", "amending_act_section_match"],
+    });
+  });
+
+  test("keeps explicit amendment hits inside tight multi-reference limits", () => {
+    const results = resolveLegalReferences({
+      parsedQuery: parseLegalCitationQuery(
+        "Sammenlign Endringslov til havressurslova § 46, havressurslova § 47, § 48 og § 49."
+      ),
+      store: fixtureStore(),
+      limit: 3,
+    });
+
+    expect(results.map((item) => item.canonicalSourceId)).toEqual([
+      "NO:NL:LOV-2025-06-06-29:amending-section:46",
+      "NO:NL:LOV-2008-06-06-37:section:47",
+      "NO:NL:LOV-2008-06-06-37:section:48",
+    ]);
+    expect(results[0]).toMatchObject({
+      preferredVersionType: "amending",
+      retrievalReasons: ["title_alias_match", "amending_act_section_match"],
+    });
+  });
+
+  test("falls back to current law when amendment section anchor is unavailable", () => {
+    const results = resolveLegalReferences({
+      parsedQuery: parseLegalCitationQuery(
+        "Hva sier Endringslov til havressurslova § 46?"
+      ),
+      store: fixtureStoreWithoutVirtualAmendingSection(),
+    });
+
+    expect(results[0]).toMatchObject({
+      canonicalSourceId: "NO:NL:LOV-2008-06-06-37:section:46",
+      retrievalReasons: ["title_alias_match", "exact_section_match"],
+    });
+  });
+
+  test("does not mix stale dated source hints into later named-law references", () => {
+    const results = resolveLegalReferences({
+      parsedQuery: parseLegalCitationQuery(
+        "Sammenlign lov 17. juni 2005 nr. 67 § 9-3 og tvisteloven § 20-3."
+      ),
+      store: fixtureStore(),
+      limit: 5,
+    });
+
+    expect(results.map((item) => item.canonicalSourceId)).toContain(
+      "NO:NL:LOV-2005-06-17-90:section:20-3"
+    );
+    expect(results.map((item) => item.canonicalSourceId)).not.toContain(
+      "NO:NL:LOV-2005-06-17-67:section:20-3"
+    );
+  });
+
   test("adds same-doc neighbors after exact current section", () => {
     const results = resolveLegalReferences({
       parsedQuery: parseLegalCitationQuery("Hva sier tvisteloven § 20-3?"),
@@ -238,7 +412,6 @@ describe("legalReferenceResolver", () => {
       "NO:NL:LOV-2005-06-17-90:section:20-3",
       "NO:NL:LOV-2005-06-17-90:section:20-2",
       "NO:NL:LOV-2005-06-17-90:section:20-4",
-      "NO:NL:LOV-2026-01-01-1:section:20-3",
     ]);
     expect(results[1].retrievalReasons).toContain("same_doc_neighbor_section");
   });

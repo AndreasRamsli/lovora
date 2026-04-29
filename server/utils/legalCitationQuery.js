@@ -14,6 +14,12 @@ const ORDINAL_LEDD = new Map([
   ["niende", 9],
   ["tiende", 10],
 ]);
+const SHORT_DOCUMENT_TITLE =
+  "[a-zæøå][a-zæøå0-9-]*(?:loven|lova|forskriften|forskrifta)";
+const DOCUMENT_HINT_PATTERN = new RegExp(
+  `\\b((?:endringslov(?:en)?|endringsforskrift(?:en)?)\\s+til\\s+${SHORT_DOCUMENT_TITLE}|(?:lov|forskrift)\\s+om\\s+endring(?:er)?\\s+i\\s+${SHORT_DOCUMENT_TITLE}|${SHORT_DOCUMENT_TITLE})\\s*$`,
+  "g"
+);
 
 function normalizeLegalCitationText(value = "") {
   return String(value)
@@ -30,10 +36,39 @@ function normalizeSectionRef(value = "") {
   return match ? match[1] : "";
 }
 
+function normalizeDocumentHint(hint = "") {
+  const text = normalizeLegalCitationText(hint);
+  const amendmentMatch = text.match(
+    /^(lov|forskrift)\s+om\s+endring(?:er)?\s+i\s+(.+)$/
+  );
+  if (!amendmentMatch) {
+    return text.replace(/^(endringslov|endringsforskrift)en(\s+til\b)/, "$1$2");
+  }
+
+  const [, sourceType, targetTitle] = amendmentMatch;
+  return `${
+    sourceType === "forskrift" ? "endringsforskrift" : "endringslov"
+  } til ${targetTitle}`;
+}
+
+function preferredVersionTypeForHint(hint = "") {
+  const text = normalizeDocumentHint(hint);
+  return /^(?:endringslov(?:en)?|endringsforskrift(?:en)?)(?:\s+til\b|\b)/.test(
+    text
+  )
+    ? "amending"
+    : "current";
+}
+
 function lastMatch(pattern, text) {
   let result = null;
   for (const match of text.matchAll(pattern)) result = match;
   return result;
+}
+
+function hasInterveningSectionMarker(text = "", match) {
+  if (!match) return false;
+  return /§/.test(text.slice(match.index + match[0].length));
 }
 
 function parseLedd(afterSection = "") {
@@ -54,6 +89,7 @@ function parseBareContinuationReferences({
   text,
   documentHints,
   datedSourceHints,
+  preferredVersionType,
 }) {
   const references = [];
   let remaining = text;
@@ -72,6 +108,9 @@ function parseBareContinuationReferences({
       raw: [section, ledd.rawSuffix].filter(Boolean).join(" ").trim(),
       documentHints,
       datedSourceHints,
+      preferredVersionType:
+        preferredVersionType ||
+        preferredVersionTypeForHint((documentHints || [])[0]),
       section,
       subsections: ledd.subsections,
     });
@@ -86,6 +125,7 @@ function parseLegalCitationQuery(query = "") {
   const references = [];
   let inheritedDocumentHints = [];
   let inheritedDatedSourceHints = [];
+  let inheritedPreferredVersionType = "current";
   const sectionPattern = /§+\s*(\d+[a-zæøå]?(?:-\d+[a-zæøå]?)?)/gi;
 
   for (const match of normalized.matchAll(sectionPattern)) {
@@ -99,20 +139,35 @@ function parseLegalCitationQuery(query = "") {
       /\b(?:lov|forskrift)\s+\d{1,2}\.\s+[a-zæøå]+\s+\d{4}\s+nr\.\s+\d+/g,
       before
     );
-    const documentMatch = lastMatch(
-      /\b([a-zæøå][a-zæøå0-9-]*(?:loven|forskriften))\s*$/g,
-      before
-    );
+    const documentMatch = lastMatch(DOCUMENT_HINT_PATTERN, before);
+    let activeDocumentMatch = documentMatch;
+    let activeDatedMatch = hasInterveningSectionMarker(before, datedMatch)
+      ? null
+      : datedMatch;
+    if (documentMatch && datedMatch) {
+      if (documentMatch.index > datedMatch.index) activeDatedMatch = null;
+      else activeDocumentMatch = null;
+    }
 
-    const documentHints = documentMatch
-      ? [documentMatch[1].trim()]
-      : inheritedDocumentHints;
-    const datedSourceHints = datedMatch
-      ? [datedMatch[0].trim()]
-      : inheritedDatedSourceHints;
+    const documentHints = activeDocumentMatch
+      ? [normalizeDocumentHint(activeDocumentMatch[1])]
+      : activeDatedMatch
+        ? []
+        : inheritedDocumentHints;
+    const datedSourceHints = activeDatedMatch
+      ? [activeDatedMatch[0].trim()]
+      : activeDocumentMatch
+        ? []
+        : inheritedDatedSourceHints;
+    const preferredVersionType = activeDocumentMatch
+      ? preferredVersionTypeForHint(activeDocumentMatch[1])
+      : activeDatedMatch
+        ? "current"
+        : inheritedPreferredVersionType;
     const ledd = parseLedd(after);
     const rawPrefix =
-      datedSourceHints[0] || (documentMatch ? documentMatch[1].trim() : "");
+      datedSourceHints[0] ||
+      (activeDocumentMatch ? activeDocumentMatch[1].trim() : "");
     const raw = [rawPrefix, match[0].trim(), ledd.rawSuffix]
       .filter(Boolean)
       .join(" ")
@@ -122,6 +177,7 @@ function parseLegalCitationQuery(query = "") {
       raw,
       documentHints,
       datedSourceHints,
+      preferredVersionType,
       section,
       subsections: ledd.subsections,
     });
@@ -132,11 +188,20 @@ function parseLegalCitationQuery(query = "") {
         ),
         documentHints,
         datedSourceHints,
+        preferredVersionType,
       })
     );
 
-    if (documentHints.length) inheritedDocumentHints = documentHints;
-    if (datedSourceHints.length) inheritedDatedSourceHints = datedSourceHints;
+    if (documentHints.length) {
+      inheritedDocumentHints = documentHints;
+      inheritedPreferredVersionType = preferredVersionType;
+      inheritedDatedSourceHints = [];
+    }
+    if (datedSourceHints.length) {
+      inheritedDatedSourceHints = datedSourceHints;
+      inheritedDocumentHints = [];
+      if (!documentHints.length) inheritedPreferredVersionType = "current";
+    }
   }
 
   return {
@@ -146,7 +211,9 @@ function parseLegalCitationQuery(query = "") {
 }
 
 module.exports = {
+  normalizeDocumentHint,
   normalizeLegalCitationText,
   normalizeSectionRef,
   parseLegalCitationQuery,
+  preferredVersionTypeForHint,
 };

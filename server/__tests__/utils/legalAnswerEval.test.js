@@ -67,6 +67,207 @@ describe("legalAnswerEval", () => {
     expect(result.checks.hasLegalCitation.passed).toBe(false);
   });
 
+  test("accepts short follow-up paragraph citations after the law name is introduced", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "short-follow-up-citation",
+        requiredTerms: ["31. mai", "tredje året", "utsatt formuesskatt"],
+        requiredCitationPatterns: [
+          "skattebetalingsloven § 9-3",
+          "skattebetalingsloven § 10-51",
+        ],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Utsatt formuesskatt etter skattebetalingsloven § 9-3 " +
+          "forfaller 31. mai i det tredje året etter fastsettingsåret, " +
+          "jf. § 10-51 fjerde ledd [CONTEXT 0]. " +
+          "Kildegrunnlag: Skattebetalingsloven § 9-3 og jf. § 10-51 fjerde ledd [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(true);
+  });
+
+  test("does not treat longer section numbers as full named citation matches", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "full-named-citation-section-prefix",
+        requiredTerms: ["utsatt formuesskatt"],
+        requiredCitationPatterns: ["skattebetalingsloven § 10-5"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Utsatt formuesskatt følger av skattebetalingsloven § 10-51 fjerde ledd [CONTEXT 0]. " +
+          "Kildegrunnlag: Skattebetalingsloven § 10-51 fjerde ledd [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(false);
+  });
+
+  test("matches exact required citations with non-standard section hyphens", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "section-non-standard-hyphen",
+        requiredTerms: ["gebyr"],
+        requiredCitationPatterns: ["§ 11-1"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Gebyr følger av forskriften § 11‑1 [CONTEXT 0]. " +
+          "Kildegrunnlag: Forskrift 16. januar 2026 nr. 54 § 11‑1 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(true);
+  });
+
+  test("does not treat longer section numbers as short follow-up citation matches", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "short-follow-up-citation-section-prefix",
+        requiredTerms: ["utsatt formuesskatt"],
+        requiredCitationPatterns: ["skattebetalingsloven § 10-5"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Utsatt formuesskatt etter skattebetalingsloven § 9-3 " +
+          "omtales sammen med forfall, jf. § 10-51 fjerde ledd [CONTEXT 0]. " +
+          "Kildegrunnlag: Skattebetalingsloven § 9-3 og jf. § 10-51 fjerde ledd [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(false);
+  });
+
+  test("does not accept short follow-up citations tied to another named law", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "short-follow-up-citation-wrong-law",
+        requiredTerms: ["utsatt formuesskatt"],
+        requiredCitationPatterns: ["skattebetalingsloven § 10-51"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Utsatt formuesskatt etter skattebetalingsloven § 9-3 er omtalt her. " +
+          "Arveloven § 10-51 gjelder et annet tema, jf. § 10-51 [CONTEXT 0]. " +
+          "Kildegrunnlag: Skattebetalingsloven § 9-3 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(false);
+  });
+
+  test("does not accept short follow-up citations tied to another legal title", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "short-follow-up-citation-wrong-legal-title",
+        requiredTerms: ["utsatt formuesskatt"],
+        requiredCitationPatterns: ["skattebetalingsloven § 10-51"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Utsatt formuesskatt etter skattebetalingsloven § 9-3 er omtalt her. " +
+          "Lov om arv § 10-51 gjelder et annet tema [CONTEXT 0]. " +
+          "Kildegrunnlag: Skattebetalingsloven § 9-3 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(false);
+  });
+
+  test("does not accept short follow-up citations qualified by Arveloven after the section", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "short-follow-up-citation-post-qualified-arveloven",
+        requiredTerms: ["utsatt formuesskatt"],
+        requiredCitationPatterns: ["skattebetalingsloven § 10-51"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Utsatt formuesskatt etter skattebetalingsloven § 9-3 er omtalt her, " +
+          "jf. § 10-51 i Arveloven [CONTEXT 0]. " +
+          "Kildegrunnlag: Skattebetalingsloven § 9-3 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(false);
+  });
+
+  test("does not accept short follow-up citations qualified by lov om arv after the section", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "short-follow-up-citation-post-qualified-lov-om-arv",
+        requiredTerms: ["utsatt formuesskatt"],
+        requiredCitationPatterns: ["skattebetalingsloven § 10-51"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Utsatt formuesskatt etter skattebetalingsloven § 9-3 er omtalt her, " +
+          "jf. § 10-51 i lov om arv [CONTEXT 0]. " +
+          "Kildegrunnlag: Skattebetalingsloven § 9-3 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(false);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(false);
+  });
+
+  test("accepts generic law follow-up wording after the law name is introduced", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "short-follow-up-citation-generic-law",
+        requiredTerms: ["utsatt formuesskatt"],
+        requiredCitationPatterns: ["skattebetalingsloven § 10-51"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Utsatt formuesskatt etter skattebetalingsloven § 9-3 kan utsettes. " +
+          "Etter loven, jf. § 10-51 fjerde ledd, forfaller kravet senere [CONTEXT 0]. " +
+          "Kildegrunnlag: Skattebetalingsloven § 9-3 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.checks.hasRequiredCitationPatterns.passed).toBe(true);
+  });
+
+  test("matches required terms case-insensitively", () => {
+    const result = evaluateAnswerCase(
+      {
+        id: "case-insensitive-required-terms",
+        requiredTerms: ["stamhusbesidderen", "leilændingsgods"],
+        requiredCitationPatterns: ["forskrift 26. juni 1896"],
+        minContextRefs: 1,
+      },
+      {
+        response:
+          "Kort svar: Stamhusbesidderen må sende dokumentene ved salg av Leilændingsgods. " +
+          "Kildegrunnlag: forskrift 26. juni 1896 § 1 [CONTEXT 0].",
+      }
+    );
+
+    expect(result.passed).toBe(true);
+    expect(result.checks.hasRequiredTerms.passed).toBe(true);
+  });
+
   test("recognizes court-style case citations with paragraph references", () => {
     const result = evaluateAnswerCase(
       {

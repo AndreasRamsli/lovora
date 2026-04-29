@@ -28,6 +28,66 @@ function withArtifacts(fn) {
           subsection: "ledd:1",
           text: "Alpha",
         }),
+        JSON.stringify({
+          canonicalSourceId: "NO:NL:LOV-2025-06-06-29:section:full-document",
+          canonicalSectionId: "NO:NL:LOV-2025-06-06-29:section:full-document",
+          documentId: "LOV-2025-06-06-29",
+          lovdataId: "nl-20250606-029",
+          jurisdiction: "NO",
+          corpus: "NL",
+          canonicalTitle: "endringslov til havressurslova",
+          title: "Lov om endringer i havressurslova",
+          aliases: ["endringslov til havressurslova"],
+          versionType: "amending_act",
+          segmentType: "bundled_document",
+          section: "full-document",
+          embeddingChunkIds: ["NO:EMBED:NL:nl-20250606-029:bundle:1"],
+          embeddingChunkSources: ["link://amending#bundle"],
+          text:
+            "I lov 6. juni 2008 nr. 37 skal § 46 lyde:\n" +
+            "§ 46. Gjennomføring av kontroll\n" +
+            "Fiskeridirektoratet kan beslaglegge redskap.",
+        }),
+        JSON.stringify({
+          canonicalSourceId:
+            "NO:NL:LOV-2025-06-06-29:section:full-document:chunk:duplicate",
+          canonicalSectionId: "NO:NL:LOV-2025-06-06-29:section:full-document",
+          documentId: "LOV-2025-06-06-29",
+          lovdataId: "nl-20250606-029",
+          jurisdiction: "NO",
+          corpus: "NL",
+          canonicalTitle: "endringslov til havressurslova",
+          title: "Lov om endringer i havressurslova",
+          aliases: ["endringslov til havressurslova"],
+          versionType: "amending_act",
+          segmentType: "bundled_document",
+          section: "full-document",
+          embeddingChunkIds: ["NO:EMBED:NL:nl-20250606-029:bundle:2"],
+          embeddingChunkSources: ["link://amending#bundle-duplicate"],
+          text:
+            "I lov 6. juni 2008 nr. 37 skal § 46 lyde:\n" +
+            "§ 46. Gjennomføring av kontroll\n" +
+            "Fiskeridirektoratet kan beslaglegge redskap.",
+        }),
+        JSON.stringify({
+          canonicalSourceId:
+            "NO:NL:LOV-2025-06-06-29:section:full-document:ledd:1",
+          canonicalSectionId: "NO:NL:LOV-2025-06-06-29:section:full-document",
+          documentId: "LOV-2025-06-06-29",
+          lovdataId: "nl-20250606-029",
+          jurisdiction: "NO",
+          corpus: "NL",
+          canonicalTitle: "endringslov til havressurslova",
+          title: "Lov om endringer i havressurslova",
+          aliases: ["endringslov til havressurslova"],
+          versionType: "amending_act",
+          segmentType: "bundled_document",
+          section: "full-document",
+          subsection: "ledd:1",
+          embeddingChunkIds: ["NO:EMBED:NL:nl-20250606-029:bundle:1"],
+          embeddingChunkSources: ["link://amending#bundle"],
+          text: "§ 46. Gjennomføring av kontroll",
+        }),
       ].join("\n") + "\n",
       "utf8"
     );
@@ -37,6 +97,10 @@ function withArtifacts(fn) {
         JSON.stringify({
           embeddingChunkId: "NO:EMBED:NL:nl-20050617-067:bundle:21",
           canonicalSourceIds: ["NO:NL:LOV-2005-06-17-67:section:9-3:ledd:1"],
+        }),
+        JSON.stringify({
+          embeddingChunkId: "NO:EMBED:NL:nl-20250606-029:bundle:1",
+          canonicalSourceIds: ["NO:NL:LOV-2025-06-06-29:section:full-document"],
         }),
       ].join("\n") + "\n",
       "utf8"
@@ -135,6 +199,35 @@ describe("legalRetrievalStore", () => {
           storageDir,
         })
       ).toBe(false);
+    });
+  });
+
+  test("indexes virtual amendment section rows by document and section", () => {
+    withArtifacts((storageDir) => {
+      const store = loadLegalRetrievalStore({
+        workspaceSlug: "lovora-alpha",
+        storageDir,
+      });
+
+      expect(
+        store.canonicalByDocumentSection.get("LOV-2025-06-06-29:46")
+      ).toEqual([
+        expect.objectContaining({
+          canonicalSourceId: "NO:NL:LOV-2025-06-06-29:amending-section:46",
+          section: "46",
+          segmentType: "virtual_amending_section",
+          matchReason: "amending_act_section_match",
+        }),
+      ]);
+      expect(
+        store.canonicalByDocumentSection
+          .get("LOV-2025-06-06-29:46")
+          .filter(
+            (row) =>
+              row.canonicalSourceId ===
+              "NO:NL:LOV-2025-06-06-29:amending-section:46"
+          )
+      ).toHaveLength(1);
     });
   });
 });

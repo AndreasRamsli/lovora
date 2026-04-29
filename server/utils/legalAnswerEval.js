@@ -7,6 +7,7 @@ function normalizeText(value = "") {
   return String(value)
     .toLowerCase()
     .normalize("NFKC")
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -84,12 +85,113 @@ function hasSourceGroundedRefusal(response = "") {
   );
 }
 
+function normalizeCitationName(value = "") {
+  const text = normalizeText(value);
+  if (/^§/.test(text)) return "";
+  return text
+    .replace(/\s+/g, " ")
+    .replace(/\s+§.*$/, "")
+    .trim();
+}
+
+function sectionPatternFromCitation(value = "") {
+  const match = normalizeText(value).match(
+    /§{1,2}\s*(\d+[a-zæøå]?(?:-\d+[a-zæøå]?)?)/
+  );
+  return match ? match[1] : "";
+}
+
+function hasOtherNamedLegalReference(value = "", lawName = "") {
+  const normalizedValue = normalizeText(value);
+  const normalizedLawName = normalizeText(lawName);
+  const namedLegalReference =
+    /\b(?:lov|forskrift)\s+\d{1,2}\.\s+[a-zæøå]+\s+\d{4}(?:\s+nr\.\s+\d+)?\b|\b(?:lov|forskrift)\s+om\s+[a-zæøå0-9 ,()./-]{2,120}\b|\b[a-zæøå][a-zæøå0-9-]*(?:loven|forskriften)\b/gi;
+  let match;
+  while ((match = namedLegalReference.exec(normalizedValue)) !== null) {
+    if (normalizeCitationName(match[0]) !== normalizedLawName) return true;
+  }
+  return false;
+}
+
+function hasDifferentLawQualifierAfterCitation(value = "", lawName = "") {
+  const normalizedValue = normalizeText(value);
+  const normalizedLawName = normalizeText(lawName);
+  const specificLawQualifier =
+    /\b(?:i|etter)\s+((?:(?:lov|forskrift)\s+\d{1,2}\.\s+[a-zæøå]+\s+\d{4}(?:\s+nr\.\s+\d+)?|(?:lov|forskrift)\s+om\s+[a-zæøå0-9 ,()./-]{2,120}|[a-zæøå][a-zæøå0-9-]*(?:loven|forskriften))\b)/gi;
+  let match;
+  while ((match = specificLawQualifier.exec(normalizedValue)) !== null) {
+    if (normalizeCitationName(match[1]) !== normalizedLawName) return true;
+  }
+  return false;
+}
+
+function hasShortFollowUpCitation(response = "", pattern = "") {
+  const normalizedResponse = normalizeText(response);
+  const normalizedPattern = normalizeText(pattern);
+  const section = sectionPatternFromCitation(normalizedPattern);
+  const lawName = normalizeCitationName(normalizedPattern);
+  if (!section || !lawName) return false;
+
+  const shortCitation = new RegExp(
+    `(?:jf\\.\\s*)?§{1,2}\\s*${escapeRegExp(section)}(?![0-9a-zæøå-])(?:\\s*(?:første|andre|annet|tredje|fjerde|femte|sjette|sjuende|syvende|åttende|niende|tiende)\\s+ledd)?`,
+    "gi"
+  );
+  let lawNameIndex = normalizedResponse.indexOf(lawName);
+  while (lawNameIndex !== -1) {
+    const localWindow = normalizedResponse.slice(
+      lawNameIndex + lawName.length,
+      lawNameIndex + lawName.length + 320
+    );
+    let match;
+    while ((match = shortCitation.exec(localWindow)) !== null) {
+      const beforeShortCitation = localWindow.slice(0, match.index);
+      const afterShortCitation = localWindow.slice(
+        match.index + match[0].length,
+        match.index + match[0].length + 100
+      );
+      if (
+        !hasOtherNamedLegalReference(beforeShortCitation, lawName) &&
+        !hasDifferentLawQualifierAfterCitation(afterShortCitation, lawName)
+      ) {
+        return true;
+      }
+    }
+    lawNameIndex = normalizedResponse.indexOf(
+      lawName,
+      lawNameIndex + lawName.length
+    );
+  }
+  return false;
+}
+
+function hasExactRequiredCitation(response = "", pattern = "") {
+  if (!pattern) return true;
+  const normalizedResponse = normalizeText(response);
+  const section = sectionPatternFromCitation(pattern);
+  if (!section) {
+    const escaped = escapeRegExp(pattern)
+      .replace(/\\§/g, "§")
+      .replace(/\s+/g, "\\s+");
+    return new RegExp(escaped, "i").test(normalizedResponse);
+  }
+
+  const lawName = normalizeCitationName(pattern);
+  const lawNamePattern = lawName
+    ? `${escapeRegExp(lawName).replace(/\s+/g, "\\s+")}\\s+`
+    : "";
+  const exactCitation = new RegExp(
+    `${lawNamePattern}§{1,2}\\s*${escapeRegExp(section)}(?![0-9a-zæøå-])`,
+    "i"
+  );
+  return exactCitation.test(normalizedResponse);
+}
+
 function requiredCitationPassed(response = "", pattern = "") {
   if (!pattern) return true;
-  const escaped = escapeRegExp(pattern)
-    .replace(/\\§/g, "§")
-    .replace(/\s+/g, "\\s+");
-  return new RegExp(escaped, "i").test(response);
+  return (
+    hasExactRequiredCitation(response, pattern) ||
+    hasShortFollowUpCitation(response, pattern)
+  );
 }
 
 function check(name, passed, details = {}) {

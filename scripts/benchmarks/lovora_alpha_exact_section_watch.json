@@ -28,5 +28,15 @@
       "retrievalReason": "exact_section_subsection_match",
       "textIncludes": "31. mai i det tredje året etter fastsettingsåret"
     }
+  },
+  {
+    "id": "exact_amending_havressurslova_46",
+    "query": "Hva sier Endringslov til havressurslova § 46?",
+    "tags": ["alpha", "exact-section", "amending-act", "fisheries"],
+    "expect": {
+      "canonicalSourceId": "NO:NL:LOV-2025-06-06-29:amending-section:46",
+      "retrievalReason": "amending_act_section_match",
+      "textIncludes": "Fiskeridirektoratet"
+    }
   }
 ]

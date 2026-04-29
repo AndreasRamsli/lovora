@@ -14,6 +14,7 @@ describe("legalCitationQuery", () => {
           raw: "tvisteloven § 20-3",
           documentHints: ["tvisteloven"],
           datedSourceHints: [],
+          preferredVersionType: "current",
           section: "20-3",
           subsections: [],
         },
@@ -33,6 +34,7 @@ describe("legalCitationQuery", () => {
           raw: "skattebetalingsloven § 10-51 fjerde ledd",
           documentHints: ["skattebetalingsloven"],
           datedSourceHints: [],
+          preferredVersionType: "current",
           section: "10-51",
           subsections: [{ type: "ledd", number: 4, label: "fjerde ledd" }],
         },
@@ -50,6 +52,7 @@ describe("legalCitationQuery", () => {
           raw: "lov 17. juni 2005 nr. 67 § 9-3",
           documentHints: [],
           datedSourceHints: ["lov 17. juni 2005 nr. 67"],
+          preferredVersionType: "current",
           section: "9-3",
           subsections: [],
         },
@@ -66,6 +69,7 @@ describe("legalCitationQuery", () => {
         raw: "tvisteloven § 20-2",
         documentHints: ["tvisteloven"],
         datedSourceHints: [],
+        preferredVersionType: "current",
         section: "20-2",
         subsections: [],
       },
@@ -73,6 +77,7 @@ describe("legalCitationQuery", () => {
         raw: "§ 20-3",
         documentHints: ["tvisteloven"],
         datedSourceHints: [],
+        preferredVersionType: "current",
         section: "20-3",
         subsections: [],
       },
@@ -88,6 +93,7 @@ describe("legalCitationQuery", () => {
         raw: "tvisteloven §§ 20-2",
         documentHints: ["tvisteloven"],
         datedSourceHints: [],
+        preferredVersionType: "current",
         section: "20-2",
         subsections: [],
       },
@@ -95,6 +101,167 @@ describe("legalCitationQuery", () => {
         raw: "20-3",
         documentHints: ["tvisteloven"],
         datedSourceHints: [],
+        preferredVersionType: "current",
+        section: "20-3",
+        subsections: [],
+      },
+    ]);
+  });
+
+  test("parses endringslov title references as amendment intent", () => {
+    expect(
+      parseLegalCitationQuery("Hva sier Endringslov til havressurslova § 46?")
+    ).toMatchObject({
+      hasLegalReference: true,
+      references: [
+        {
+          section: "46",
+          documentHints: ["endringslov til havressurslova"],
+          preferredVersionType: "amending",
+        },
+      ],
+    });
+  });
+
+  test("parses lov om endringer title references as amendment intent", () => {
+    expect(
+      parseLegalCitationQuery("Hva sier lov om endringer i havressurslova § 46?")
+    ).toMatchObject({
+      hasLegalReference: true,
+      references: [
+        {
+          section: "46",
+          documentHints: ["endringslov til havressurslova"],
+          preferredVersionType: "amending",
+        },
+      ],
+    });
+  });
+
+  test("normalizes definite amendment titles to canonical aliases", () => {
+    expect(
+      parseLegalCitationQuery("Hva sier endringsloven til havressurslova § 46?")
+    ).toMatchObject({
+      hasLegalReference: true,
+      references: [
+        {
+          section: "46",
+          documentHints: ["endringslov til havressurslova"],
+          preferredVersionType: "amending",
+        },
+      ],
+    });
+  });
+
+  test("parses forskrift om endring title references as amendment intent", () => {
+    expect(
+      parseLegalCitationQuery(
+        "Hva sier forskrift om endring i akvakulturforskriften § 12?"
+      )
+    ).toMatchObject({
+      hasLegalReference: true,
+      references: [
+        {
+          section: "12",
+          documentHints: ["endringsforskrift til akvakulturforskriften"],
+          preferredVersionType: "amending",
+        },
+      ],
+    });
+  });
+
+  test("keeps normal law references as current-law intent", () => {
+    expect(
+      parseLegalCitationQuery("Hva sier havressurslova § 46?")
+    ).toMatchObject({
+      hasLegalReference: true,
+      references: [
+        {
+          section: "46",
+          documentHints: ["havressurslova"],
+          preferredVersionType: "current",
+        },
+      ],
+    });
+  });
+
+  test("clears stale dated source hints when a later reference names a new law", () => {
+    expect(
+      parseLegalCitationQuery(
+        "Sammenlign lov 17. juni 2005 nr. 67 § 9-3 og tvisteloven § 20-3."
+      ).references
+    ).toEqual([
+      {
+        raw: "lov 17. juni 2005 nr. 67 § 9-3",
+        documentHints: [],
+        datedSourceHints: ["lov 17. juni 2005 nr. 67"],
+        preferredVersionType: "current",
+        section: "9-3",
+        subsections: [],
+      },
+      {
+        raw: "tvisteloven § 20-3",
+        documentHints: ["tvisteloven"],
+        datedSourceHints: [],
+        preferredVersionType: "current",
+        section: "20-3",
+        subsections: [],
+      },
+    ]);
+  });
+
+  test("clears stale document hints when a later reference names a dated source", () => {
+    expect(
+      parseLegalCitationQuery(
+        "Sammenlign tvisteloven § 20-3 og lov 17. juni 2005 nr. 67 § 9-3."
+      ).references
+    ).toEqual([
+      {
+        raw: "tvisteloven § 20-3",
+        documentHints: ["tvisteloven"],
+        datedSourceHints: [],
+        preferredVersionType: "current",
+        section: "20-3",
+        subsections: [],
+      },
+      {
+        raw: "lov 17. juni 2005 nr. 67 § 9-3",
+        documentHints: [],
+        datedSourceHints: ["lov 17. juni 2005 nr. 67"],
+        preferredVersionType: "current",
+        section: "9-3",
+        subsections: [],
+      },
+    ]);
+  });
+
+  test("does not retarget bare continuation sections to stale dated sources", () => {
+    expect(
+      parseLegalCitationQuery(
+        "Sammenlign lov 17. juni 2005 nr. 67 § 9-3, tvisteloven § 20-2 og § 20-3."
+      ).references
+    ).toEqual([
+      {
+        raw: "lov 17. juni 2005 nr. 67 § 9-3",
+        documentHints: [],
+        datedSourceHints: ["lov 17. juni 2005 nr. 67"],
+        preferredVersionType: "current",
+        section: "9-3",
+        subsections: [],
+      },
+      {
+        raw: "tvisteloven § 20-2",
+        documentHints: ["tvisteloven"],
+        datedSourceHints: [],
+        preferredVersionType: "current",
+        section: "20-2",
+        subsections: [],
+      },
+      {
+        raw: "§ 20-3",
+        documentHints: ["tvisteloven"],
+        datedSourceHints: [],
+        preferredVersionType: "current",
         section: "20-3",
         subsections: [],
       },

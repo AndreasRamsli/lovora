@@ -13,6 +13,7 @@ const VERSION_PRECEDENCE = {
   appendix: 4,
 };
 const CURRENT_VERSION_TYPES = new Set(["consolidated", "act", "regulation"]);
+const AMENDING_VERSION_TYPES = new Set(["amending_act", "amending_regulation"]);
 
 const MATCH_PRECEDENCE = {
   subsection: 0,
@@ -49,7 +50,8 @@ function aliasReasons(reference) {
   return reasons;
 }
 
-function retrievalReasonForMatch(matchType) {
+function retrievalReasonForMatch(matchType, row = {}) {
+  if (row.matchReason) return row.matchReason;
   if (matchType === "subsection") return "exact_section_subsection_match";
   if (matchType === "neighbor") return "same_doc_neighbor_section";
   return "exact_section_match";
@@ -64,7 +66,7 @@ function publicCanonicalRow(row = {}) {
   return publicRow;
 }
 
-function candidateForRow(row, reference, matchType) {
+function candidateForRow(row, reference, matchType, referenceIndex = 0) {
   const embeddingChunkId = Array.isArray(row.embeddingChunkIds)
     ? row.embeddingChunkIds[0]
     : row.embeddingChunkId || "";
@@ -73,7 +75,7 @@ function candidateForRow(row, reference, matchType) {
     : row.chunkSource || "";
   const retrievalReasons = [
     ...aliasReasons(reference),
-    retrievalReasonForMatch(matchType),
+    retrievalReasonForMatch(matchType, row),
   ];
 
   return {
@@ -85,12 +87,47 @@ function candidateForRow(row, reference, matchType) {
     score: 10_000 - MATCH_PRECEDENCE[matchType],
     embeddingChunkId,
     matchType,
+    preferredVersionType: reference.preferredVersionType || "current",
+    referenceIndex,
     retrievalReasons: unique(retrievalReasons),
   };
 }
 
 function isCurrentVersion(row = {}) {
   return CURRENT_VERSION_TYPES.has(String(row.versionType || ""));
+}
+
+function isAmendingVersion(row = {}) {
+  return AMENDING_VERSION_TYPES.has(String(row.versionType || ""));
+}
+
+function rowsForPreferredVersionType(reference = {}, matchingRows = []) {
+  const preferredVersionType = reference.preferredVersionType || "current";
+  const filtered =
+    preferredVersionType === "amending"
+      ? matchingRows.filter((row) => isAmendingVersion(row))
+      : matchingRows.filter((row) => !isAmendingVersion(row));
+  return filtered.length ? filtered : matchingRows;
+}
+
+function currentLawReferenceForAmendmentFallback(reference = {}) {
+  if (reference.preferredVersionType !== "amending") return null;
+  const targetHints = unique(
+    (reference.documentHints || [])
+      .map((hint) => {
+        const match = normalizeLegalCitationText(hint).match(
+          /^endrings(?:lov|forskrift)(?:en)?\s+til\s+(.+)$/
+        );
+        return match?.[1] || "";
+      })
+      .filter(Boolean)
+  );
+  if (!targetHints.length) return null;
+  return {
+    ...reference,
+    documentHints: targetHints,
+    preferredVersionType: "current",
+  };
 }
 
 function neighboringSectionRefs(section = "") {
@@ -139,18 +176,25 @@ function neighborRowsForSections(store, documentIds, sections) {
   });
 }
 
-function rowsForReference(reference, store) {
+function rowsForReference(reference, store, referenceIndex = 0) {
   const documentIds = documentIdsForReference(reference, store);
   const matchingRows = exactRowsForSection(
     store,
     documentIds,
     reference.section
   );
+  if (!matchingRows.length) {
+    const fallbackReference =
+      currentLawReferenceForAmendmentFallback(reference);
+    if (fallbackReference) {
+      return rowsForReference(fallbackReference, store, referenceIndex);
+    }
+  }
   const resolvedDocumentIds = new Set(
     matchingRows.map((row) => row.documentId).filter(Boolean)
   );
   if (!documentIds.size && resolvedDocumentIds.size !== 1) return [];
-  const rows = matchingRows;
+  const rows = rowsForPreferredVersionType(reference, matchingRows);
   const currentExactDocumentIds = new Set(
     rows
       .filter(
@@ -180,11 +224,13 @@ function rowsForReference(reference, store) {
       const sectionRows = rows.filter((row) => !row.subsection);
       return [
         ...subsectionRows.map((row) =>
-          candidateForRow(row, reference, "subsection")
+          candidateForRow(row, reference, "subsection", referenceIndex)
         ),
-        ...sectionRows.map((row) => candidateForRow(row, reference, "section")),
+        ...sectionRows.map((row) =>
+          candidateForRow(row, reference, "section", referenceIndex)
+        ),
         ...neighborRows.map((row) =>
-          candidateForRow(row, reference, "neighbor")
+          candidateForRow(row, reference, "neighbor", referenceIndex)
         ),
       ];
     }
@@ -192,12 +238,22 @@ function rowsForReference(reference, store) {
 
   const sectionRows = rows.filter((row) => !row.subsection);
   return [
-    ...sectionRows.map((row) => candidateForRow(row, reference, "section")),
-    ...neighborRows.map((row) => candidateForRow(row, reference, "neighbor")),
+    ...sectionRows.map((row) =>
+      candidateForRow(row, reference, "section", referenceIndex)
+    ),
+    ...neighborRows.map((row) =>
+      candidateForRow(row, reference, "neighbor", referenceIndex)
+    ),
   ];
 }
 
 function candidatePrecedence(candidate = {}) {
+  if (
+    candidate.preferredVersionType === "amending" &&
+    isAmendingVersion(candidate)
+  ) {
+    return MATCH_PRECEDENCE[candidate.matchType] ?? 2;
+  }
   const version = VERSION_PRECEDENCE[candidate.versionType] ?? 2;
   if (version >= 3) return version;
   return MATCH_PRECEDENCE[candidate.matchType] ?? 2;
@@ -208,6 +264,15 @@ function rankLegalCandidates(candidates = []) {
     const aPrecedence = candidatePrecedence(a);
     const bPrecedence = candidatePrecedence(b);
     if (aPrecedence !== bPrecedence) return aPrecedence - bPrecedence;
+    const aReferenceIndex = Number.isInteger(a.referenceIndex)
+      ? a.referenceIndex
+      : Number.MAX_SAFE_INTEGER;
+    const bReferenceIndex = Number.isInteger(b.referenceIndex)
+      ? b.referenceIndex
+      : Number.MAX_SAFE_INTEGER;
+    if (aReferenceIndex !== bReferenceIndex) {
+      return aReferenceIndex - bReferenceIndex;
+    }
 
     return String(a.canonicalSourceId || "").localeCompare(
       String(b.canonicalSourceId || "")
@@ -251,8 +316,8 @@ function resolveLegalReferences({
     store || loadLegalRetrievalStore({ workspaceSlug, storageDir });
 
   const candidates = [];
-  for (const reference of parsedQuery.references || []) {
-    candidates.push(...rowsForReference(reference, activeStore));
+  for (const [index, reference] of (parsedQuery.references || []).entries()) {
+    candidates.push(...rowsForReference(reference, activeStore, index));
   }
 
   return dedupeCanonicalCandidates(rankLegalCandidates(candidates)).slice(
